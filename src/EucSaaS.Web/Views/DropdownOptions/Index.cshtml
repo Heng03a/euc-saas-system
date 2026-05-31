@@ -1,0 +1,107 @@
+@model List<EucSaaS.Domain.Entities.FormFieldOptionDefinition>
+
+@{
+    ViewData["Title"] = "Dropdown Options";
+}
+
+<link rel="stylesheet" href="~/css/admin.css" />
+
+<div class="admin-page">
+
+    <div class="admin-header">
+        <h2>Dropdown Options</h2>
+
+        <a class="btn-primary"
+           asp-controller="DropdownOptions"
+           asp-action="Create">
+            Add Option
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <div class="table-responsive">
+
+        <table class="admin-table">
+
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Display Label</th>
+                    <th>Option Label</th>
+                    <th>Option Value</th>
+                    <th>Display Order</th>
+                    <th>Active</th>
+                    <th class="actions-column">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7">
+                            No dropdown options found.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                @item.FormFieldDefinition.FieldName
+                            </td>
+
+                            <td>
+                                @item.FormFieldDefinition.DisplayLabel
+                            </td>
+
+                            <td>
+                                @item.OptionLabel
+                            </td>
+
+                            <td>
+                                @item.OptionValue
+                            </td>
+
+                            <td>
+                                @item.DisplayOrder
+                            </td>
+
+                            <td>
+                                @(item.IsActive ? "Yes" : "No")
+                            </td>
+
+                            <td class="actions-cell">
+                                <a class="btn-edit"
+                                   asp-controller="DropdownOptions"
+                                   asp-action="Edit"
+                                   asp-route-id="@item.Id">
+                                    Edit
+                                </a>
+
+                                <a class="btn-delete"
+                                   asp-controller="DropdownOptions"
+                                   asp-action="Delete"
+                                   asp-route-id="@item.Id"
+                                   onclick="return confirm('Are you sure you want to delete this option?');">
+                                    Delete
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>

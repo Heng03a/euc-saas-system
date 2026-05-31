@@ -1,0 +1,34 @@
+@model dynamic
+
+<div class="data-grid-wrapper">
+
+    <table class="data-grid-table">
+
+        <thead>
+            <tr>
+                @foreach (var column in Model.Columns)
+                {
+                    <th>@Html.Raw(column)</th>
+                }
+            </tr>
+        </thead>
+
+        <tbody>
+
+            @foreach (var row in Model.Rows)
+            {
+                <tr>
+
+                    @foreach (var cell in row)
+                    {
+                        <td>@cell</td>
+                    }
+
+                </tr>
+            }
+
+        </tbody>
+
+    </table>
+
+</div>

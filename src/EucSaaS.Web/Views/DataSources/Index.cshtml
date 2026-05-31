@@ -1,0 +1,106 @@
+@model IEnumerable<EucSaaS.Domain.Entities.DataSource>
+
+@{
+    ViewData["Title"] = "Data Sources";
+}
+
+<link rel="stylesheet" href="~/css/admin.css" />
+
+<div class="admin-page">
+
+    <h2>Data Sources</h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <div class="table-responsive">
+
+        <table class="admin-table">
+
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Database Type</th>
+                    <th>Host</th>
+                    <th>Port</th>
+                    <th>Database</th>
+                    <th>User Name</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="9">
+                            No Data Sources Found
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.DataSourceCode</td>
+
+                            <td>@item.DataSourceName</td>
+
+                            <td>@item.DatabaseType</td>
+
+                            <td>@item.HostName</td>
+
+                            <td>@item.PortNumber</td>
+
+                            <td>@item.DatabaseName</td>
+
+                            <td>@item.ReadOnlyUserName</td>
+
+                            <td>
+                                @if (item.IsActive)
+                                {
+                                    <span class="badge bg-success">
+                                        Active
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">
+                                        Inactive
+                                    </span>
+                                }
+                            </td>
+
+                            <td>
+                                <a asp-action="TestConnection"
+                                   asp-route-id="@item.Id"
+                                   class="btn btn-sm btn-primary">
+                                    Test Connection
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>

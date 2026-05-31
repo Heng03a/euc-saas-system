@@ -1,0 +1,12 @@
+@model List<EucSaaS.Web.ViewModels.MenuItemViewModel>
+
+@foreach (var menu in Model)
+{
+    <a href="@menu.Url">
+        @if (!string.IsNullOrWhiteSpace(menu.Icon))
+        {
+            <i class="@menu.Icon"></i>
+        }
+        @menu.Name
+    </a>
+}

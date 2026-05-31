@@ -1,0 +1,132 @@
+@model List<EucSaaS.Web.ViewModels.UserListItemViewModel>
+
+@{
+    ViewData["Title"] = "Users";
+
+    var search = ViewBag.Search as string ?? "";
+    var sortBy = ViewBag.SortBy as string ?? "Username";
+    var sortDir = ViewBag.SortDir as string ?? "asc";
+    var page = ViewBag.Page as int? ?? 1;
+    var totalPages = ViewBag.TotalPages as int? ?? 1;
+
+    var searchColumn = ViewBag.SearchColumn as string ?? "Username";
+    var searchOperator = ViewBag.SearchOperator as string ?? "Contains";
+
+    string SortLink(string column)
+    {
+        var nextDir = sortBy == column && sortDir == "asc" ? "desc" : "asc";
+
+        return Url.Action("Index", "Users", new
+        {
+            search,
+            searchColumn,
+            searchOperator,
+            
+            sortBy = column,
+            sortDir = nextDir,
+            page = 1
+        }) ?? "#";
+    }
+
+    var gridModel = new
+    {
+        Columns = new List<string>
+        {
+            $"<a href='{SortLink("Username")}'>Username</a>",
+            $"<a href='{SortLink("FullName")}'>Full Name</a>",
+            $"<a href='{SortLink("Email")}'>Email</a>",
+            $"<a href='{SortLink("Role")}'>Role</a>",
+            $"<a href='{SortLink("Department")}'>Department</a>"
+        },
+        Rows = Model.Select(user => new List<string>
+        {
+            user.Username,
+            user.FullName,
+            user.Email,
+            user.Role,
+            user.Department
+        }).ToList()
+    };
+}
+
+<link rel="stylesheet" href="~/css/admin.css" />
+
+<div class="admin-wrapper">
+    <aside class="admin-sidebar">
+        <div class="admin-logo">EUC SaaS</div>
+
+        <nav class="admin-menu">
+            @await Component.InvokeAsync("SidebarMenu")
+        </nav>
+    </aside>
+
+    <main class="admin-main">
+        <button class="mobile-menu-button" onclick="document.body.classList.toggle('sidebar-open')">
+    ☰ Menu
+</button>
+        <header class="admin-topbar">
+            <div>
+                <strong>Users</strong><br />
+                <span>Manage application users</span>
+            </div>
+
+            <a class="logout-link" asp-controller="Auth" asp-action="Logout">Logout</a>
+        </header>
+
+        <section class="admin-content">
+            <h2>Users DataGrid</h2>
+
+            <form method="get" class="grid-toolbar">
+
+                <select name="searchColumn" class="grid-search-input">
+                    <option value="Username" selected="@(searchColumn == "Username")">Username</option>
+                    <option value="FullName" selected="@(searchColumn == "FullName")">Full Name</option>
+                    <option value="Email" selected="@(searchColumn == "Email")">Email</option>
+                    <option value="Role" selected="@(searchColumn == "Role")">Role</option>
+                    <option value="Department" selected="@(searchColumn == "Department")">Department</option>
+                </select>
+
+                <select name="searchOperator" class="grid-search-input">
+                    <option value="Contains" selected="@(searchOperator == "Contains")">Contains</option>
+                    <option value="Equals" selected="@(searchOperator == "Equals")">Equals</option>
+                    <option value="StartsWith" selected="@(searchOperator == "StartsWith")">Starts With</option>
+                    <option value=">" selected="@(searchOperator == ">")">&gt;</option>
+                    <option value="<" selected="@(searchOperator == "<")">&lt;</option>
+                </select>
+
+                <input
+                    type="text"
+                    name="search"
+                    value="@search"
+                    placeholder="Search value..."
+                    class="grid-search-input" />
+
+                <button type="submit" class="grid-button">Search</button>
+
+                <a asp-controller="Users" asp-action="Index" class="grid-button secondary">
+                    Reset
+                </a>
+
+            </form>
+
+            @await Html.PartialAsync("_DataGrid", gridModel)
+
+            <div class="pagination">
+                @for (var i = 1; i <= totalPages; i++)
+                {
+                    <a class="page-link @(i == page ? "active" : "")"
+                       asp-controller="Users"
+                       asp-action="Index"
+                       asp-route-search="@search"
+                       asp-route-searchColumn="@searchColumn"
+                       asp-route-searchOperator="@searchOperator"
+                       asp-route-sortBy="@sortBy"
+                       asp-route-sortDir="@sortDir"
+                       asp-route-page="@i">
+                        @i
+                    </a>
+                }
+            </div>
+        </section>
+    </main>
+</div>

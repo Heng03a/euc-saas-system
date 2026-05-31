@@ -1,0 +1,36 @@
+@model List<string>
+
+@{
+    ViewData["Title"] = "Discover Tables";
+}
+
+<h2>Discover Tables</h2>
+
+<p>
+    Data Source: <strong>@ViewBag.DataSourceName</strong>
+</p>
+
+@if (Model == null || !Model.Any())
+{
+    <p>No tables found.</p>
+}
+else
+{
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Table Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var table in Model)
+            {
+                <tr>
+                    <td>@table</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<a asp-action="Index" class="btn btn-secondary">Back to Data Sources</a>

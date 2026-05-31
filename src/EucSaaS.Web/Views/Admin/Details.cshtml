@@ -1,0 +1,72 @@
+@model EucSaaS.Domain.Entities.Employee
+@using EucSaaS.Domain.Entities
+
+@{
+    ViewData["Title"] = "Employee Details";
+
+    var screenCode = ViewBag.ScreenCode as string ?? "EMPLOYEES";
+
+    var formFields = ViewBag.FormFields as List<FormFieldDefinition>
+        ?? new List<FormFieldDefinition>();
+
+    string GetValue(string fieldName)
+    {
+        var property = Model?.GetType().GetProperty(
+            fieldName,
+            System.Reflection.BindingFlags.IgnoreCase |
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.Instance);
+
+        var value = property?.GetValue(Model);
+        return value?.ToString() ?? "";
+    }
+}
+
+<link rel="stylesheet" href="~/css/admin.css" />
+
+<div class="admin-page">
+    <h2>Employee Details</h2>
+
+    <div class="admin-form">
+
+        @foreach (var field in formFields)
+        {
+            if (!field.IsVisible)
+            {
+                continue;
+            }
+
+            var fieldName = field.FieldName;
+
+            var labelText = string.IsNullOrWhiteSpace(field.DisplayLabel)
+                ? fieldName
+                : field.DisplayLabel;
+
+            var fieldValue = GetValue(fieldName);
+
+            <div class="form-row">
+                <label>@labelText</label>
+
+                <div class="readonly-field">
+                    @(string.IsNullOrWhiteSpace(fieldValue) ? "-" : fieldValue)
+                </div>
+            </div>
+        }
+
+        <div class="form-actions">
+            <a asp-action="Edit"
+               asp-route-screenCode="@screenCode"
+               asp-route-id="@Model.Id"
+               class="btn-primary">
+                Edit
+            </a>
+
+            <a asp-action="Index"
+               asp-route-screenCode="@screenCode"
+               class="btn-secondary">
+                Back to List
+            </a>
+        </div>
+
+    </div>
+</div>

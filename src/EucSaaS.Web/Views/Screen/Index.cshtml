@@ -1,0 +1,65 @@
+@model EucSaaS.Web.ViewModels.Dynamic.DynamicScreenViewModel
+
+@{
+    ViewData["Title"] = Model.ScreenName;
+}
+
+<div class="page-header">
+    <h2>@Model.ScreenName</h2>
+</div>
+
+<div class="table-container">
+
+    <table class="data-table">
+
+        <thead>
+            <tr>
+
+                @foreach (var column in Model.Columns.Where(c => c.IsVisible))
+                {
+                    <th style="width:@column.Width">
+                        @column.DisplayLabel
+                    </th>
+                }
+
+            </tr>
+        </thead>
+
+        <tbody>
+
+            @foreach (var row in Model.Rows)
+            {
+                <tr>
+
+                    @foreach (var column in Model.Columns.Where(c => c.IsVisible))
+                    {
+                        <td>
+
+                            @{
+                                var value = row.ContainsKey(column.FieldName)
+                                    ? row[column.FieldName]
+                                    : null;
+                            }
+
+                            @if (column.DataType == "badge")
+                            {
+                                <span class="status-badge">
+                                    @value
+                                </span>
+                            }
+                            else
+                            {
+                                @value
+                            }
+
+                        </td>
+                    }
+
+                </tr>
+            }
+
+        </tbody>
+
+    </table>
+
+</div>

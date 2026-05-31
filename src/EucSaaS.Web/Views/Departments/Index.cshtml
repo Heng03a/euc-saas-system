@@ -1,0 +1,51 @@
+@model List<EucSaaS.Web.ViewModels.DepartmentListItemViewModel>
+
+@{
+    ViewData["Title"] = "Departments";
+
+    var gridModel = new
+    {
+        Columns = new List<string>
+        {
+            "Code",
+            "Name"
+        },
+        Rows = Model.Select(department => new List<string>
+        {
+            department.Code,
+            department.Name
+        }).ToList()
+    };
+}
+
+<link rel="stylesheet" href="~/css/admin.css" />
+
+<div class="admin-wrapper">
+    <aside class="admin-sidebar">
+        <div class="admin-logo">EUC SaaS</div>
+
+        <nav class="admin-menu">
+            @await Component.InvokeAsync("SidebarMenu")
+        </nav>
+    </aside>
+
+    <main class="admin-main">
+        <button class="mobile-menu-button" onclick="document.body.classList.toggle('sidebar-open')">
+    ☰ Menu
+</button>
+        <header class="admin-topbar">
+            <div>
+                <strong>Departments</strong><br />
+                <span>Manage organization departments</span>
+            </div>
+
+            <a class="logout-link" asp-controller="Auth" asp-action="Logout">Logout</a>
+        </header>
+
+        <section class="admin-content">
+            <h2>Departments DataGrid</h2>
+
+            @await Html.PartialAsync("_DataGrid", gridModel)
+        </section>
+    </main>
+</div>

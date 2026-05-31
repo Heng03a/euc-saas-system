@@ -1,0 +1,129 @@
+@model EucSaaS.Domain.Entities.Employee
+@using EucSaaS.Domain.Entities
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Edit Employee";
+
+    var formFields = ViewBag.FormFields as List<FormFieldDefinition>
+        ?? new List<FormFieldDefinition>();
+
+    var fieldOptions = ViewBag.FieldOptions as Dictionary<string, List<SelectListItem>>
+        ?? new Dictionary<string, List<SelectListItem>>();
+
+    string GetValue(string fieldName)
+    {
+        var property = Model?.GetType().GetProperty(
+            fieldName,
+            System.Reflection.BindingFlags.IgnoreCase |
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.Instance);
+
+        return property?.GetValue(Model)?.ToString() ?? "";
+    }
+
+    List<SelectListItem> GetOptions(string fieldName)
+    {
+        return fieldOptions
+            .FirstOrDefault(x => x.Key.Equals(fieldName, StringComparison.OrdinalIgnoreCase))
+            .Value
+            ?? new List<SelectListItem>();
+    }
+
+    bool IsDropdown(FormFieldDefinition field)
+    {
+        return field.ControlType != null &&
+               (
+                   field.ControlType.Equals("select", StringComparison.OrdinalIgnoreCase) ||
+                   field.ControlType.Equals("dropdown", StringComparison.OrdinalIgnoreCase)
+               );
+    }
+}
+
+<link rel="stylesheet" href="~/css/admin.css" />
+
+<div class="admin-page">
+    <h2>Edit Employee</h2>
+
+    <form method="post" class="admin-form">
+        <div asp-validation-summary="ModelOnly" class="field-validation-error"></div>
+
+        <input asp-for="Id" type="hidden" />
+
+        @foreach (var field in formFields)
+        {
+            if (!field.IsVisible)
+            {
+                continue;
+            }
+
+            var fieldName = field.FieldName;
+            var fieldValue = GetValue(fieldName);
+
+            var labelText = string.IsNullOrWhiteSpace(field.DisplayLabel)
+                ? fieldName
+                : field.DisplayLabel;
+
+            <div class="form-row">
+                <label for="@fieldName">
+                    @labelText
+                    @if (field.IsRequired)
+                    {
+                        <span class="required-mark">*</span>
+                    }
+                </label>
+
+                @if (IsDropdown(field))
+                {
+                    var options = GetOptions(fieldName);
+
+                    <select id="@fieldName"
+                            name="@fieldName"
+                            required="@field.IsRequired"
+                            disabled="@field.IsReadOnly">
+                        <option value="">
+                            @(string.IsNullOrWhiteSpace(field.Placeholder) ? $"-- Select {labelText} --" : field.Placeholder)
+                        </option>
+
+                        @foreach (var option in options)
+                        {
+                            <option value="@option.Value" selected="@(option.Value == fieldValue)">
+                                @option.Text
+                            </option>
+                        }
+                    </select>
+                }
+                else
+                {
+                    var inputType = field.DataType == "email" ? "email" : "text";
+
+                    <input id="@fieldName"
+                           name="@fieldName"
+                           value="@fieldValue"
+                           type="@inputType"
+                           placeholder="@field.Placeholder"
+                           required="@field.IsRequired"
+                           readonly="@field.IsReadOnly" />
+                }
+
+                <span class="field-validation-error"
+                      data-valmsg-for="@fieldName"
+                      data-valmsg-replace="true"></span>
+            </div>
+        }
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Save</button>
+
+            <a asp-action="Index"
+               asp-route-screenCode="EMPLOYEES"
+               class="btn-secondary">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
