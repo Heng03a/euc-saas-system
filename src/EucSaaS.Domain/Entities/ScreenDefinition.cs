@@ -14,6 +14,7 @@ public class ScreenDefinition
     public string? Description { get; set; }
 
     public Guid? DataSourceId { get; set; }
+	public DataSource? DataSource { get; set; }
     public string SchemaName { get; set; } = "public";
     public bool IsActive { get; set; } = true;
 
