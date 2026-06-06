@@ -2,6 +2,7 @@ namespace EucSaaS.Domain.Entities;
 
 public class ScreenDefinition
 {
+
     public string TableName { get; set; } = string.Empty;
     public Guid Id { get; set; }
 
