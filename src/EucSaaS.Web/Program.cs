@@ -6,17 +6,25 @@ using EucSaaS.Web.Security;
 using EucSaaS.Web.Services;
 using EucSaaS.Application.Interfaces;
 using EucSaaS.Infrastructure.Services;
+using EucSaaS.Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddScoped<DynamicDataService>();
+
 builder.Services.AddScoped<MenuService>();
+
+builder.Services.AddScoped<IDataSourceDiscoveryService, DataSourceDiscoveryService>();
+builder.Services.AddScoped<IDataSourceSchemaReader, PostgreSqlSchemaReader>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")
     ));
+
+builder.Services.AddScoped<IDataSourceSchemaReader, PostgreSqlSchemaReader>();
 
     builder.Services.AddScoped<IDataSourceDiscoveryService, DataSourceDiscoveryService>();
 

@@ -1,0 +1,85 @@
+@model EucSaaS.Domain.Entities.DataSource
+
+@{
+    ViewData["Title"] = "Create Data Source";
+}
+
+<link rel="stylesheet" href="~/css/admin.css" />
+
+<div class="admin-page">
+    <h2>Create Data Source</h2>
+
+    <form asp-action="Create" method="post" class="admin-form">
+        <div asp-validation-summary="ModelOnly" class="field-validation-error"></div>
+
+        <div class="form-row">
+            <label asp-for="DataSourceCode"></label>
+            <input asp-for="DataSourceCode" />
+            <span asp-validation-for="DataSourceCode" class="field-validation-error"></span>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="DataSourceName"></label>
+            <input asp-for="DataSourceName" />
+            <span asp-validation-for="DataSourceName" class="field-validation-error"></span>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="DatabaseType"></label>
+            <select asp-for="DatabaseType">
+                <option value="">-- Select Database Type --</option>
+                <option value="PostgreSQL">PostgreSQL</option>
+                <option value="SQL Server">SQL Server</option>
+                <option value="MySQL">MySQL</option>
+                <option value="Oracle">Oracle</option>
+            </select>
+            <span asp-validation-for="DatabaseType" class="field-validation-error"></span>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="HostName"></label>
+            <input asp-for="HostName" />
+            <span asp-validation-for="HostName" class="field-validation-error"></span>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="PortNumber"></label>
+            <input asp-for="PortNumber" type="number" />
+            <span asp-validation-for="PortNumber" class="field-validation-error"></span>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="DatabaseName"></label>
+            <input asp-for="DatabaseName" />
+            <span asp-validation-for="DatabaseName" class="field-validation-error"></span>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="ReadOnlyUserName"></label>
+            <input asp-for="ReadOnlyUserName" />
+            <span asp-validation-for="ReadOnlyUserName" class="field-validation-error"></span>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="EncryptedPassword">Password</label>
+            <input asp-for="EncryptedPassword" type="password" />
+            <span asp-validation-for="EncryptedPassword" class="field-validation-error"></span>
+        </div>
+
+        <div class="form-row checkbox-row">
+            <label>
+                <input asp-for="IsActive" />
+                Active
+            </label>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Save</button>
+            <a asp-action="Index" class="btn-secondary">Back to List</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

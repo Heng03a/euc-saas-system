@@ -1,0 +1,76 @@
+@model EucSaaS.Web.Models.DataSourceSchemaViewModel
+
+@{
+    ViewData["Title"] = "Discovered Schema";
+}
+
+<link rel="stylesheet" href="~/css/admin.css" />
+
+<div class="admin-page">
+    <h2>Discovered Schema</h2>
+
+    <div class="admin-card">
+        <p><strong>Data Source:</strong> @Model.DataSource.DataSourceName</p>
+        <p><strong>Database:</strong> @Model.DataSource.DatabaseName</p>
+        <p><strong>Database Type:</strong> @Model.DataSource.DatabaseType</p>
+    </div>
+
+    <br />
+
+    @if (!Model.Tables.Any())
+    {
+        <p>No tables found.</p>
+    }
+    else
+    {
+        foreach (var table in Model.Tables)
+        {
+            <div class="admin-card" style="margin-bottom: 20px;">
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h3>@table.SchemaName.@table.TableName</h3>
+
+    <form asp-action="ImportTable"
+          asp-controller="DataSources"
+          method="post">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" name="dataSourceId" value="@Model.DataSource.Id" />
+        <input type="hidden" name="schemaName" value="@table.SchemaName" />
+        <input type="hidden" name="tableName" value="@table.TableName" />
+
+        <button type="submit" class="btn btn-primary">
+            Import
+        </button>
+    </form>
+</div>
+
+
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Column Name</th>
+                                <th>Data Type</th>
+                                <th>Nullable</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var column in table.Columns)
+                            {
+                                <tr>
+                                    <td>@column.OrdinalPosition</td>
+                                    <td>@column.ColumnName</td>
+                                    <td>@column.DataType</td>
+                                    <td>@(column.IsNullable ? "Yes" : "No")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</div>

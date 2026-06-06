@@ -1,0 +1,54 @@
+@model List<EucSaaS.Domain.Entities.ScreenDefinition>
+
+@{
+    ViewData["Title"] = "Screen Definitions";
+}
+
+<link rel="stylesheet" href="~/css/admin.css" />
+
+<div class="admin-page">
+    <h2>Screen Definitions</h2>
+
+    @if (!Model.Any())
+    {
+        <p>No screen definitions found.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Screen Code</th>
+                        <th>Screen Name</th>
+                        <th>Entity Name</th>
+                        <th>Table Name</th>
+                        <th>Route Path</th>
+                        <th>Active</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.ScreenCode</td>
+                            <td>@item.ScreenName</td>
+                            <td>@item.EntityName</td>
+                            <td>@item.TableName</td>
+                            <td>@item.RoutePath</td>
+                            <td>@(item.IsActive ? "Yes" : "No")</td>
+                            <td>
+                                <a asp-action="Details"
+                                   asp-route-id="@item.Id"
+                                   class="btn btn-sm btn-info">
+                                    Details
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -12,6 +12,8 @@ public class ScreenDefinition
 
     public string? Description { get; set; }
 
+    public Guid? DataSourceId { get; set; }
+    public string SchemaName { get; set; } = "public";
     public bool IsActive { get; set; } = true;
 
     public ICollection<ColumnDefinition> Columns { get; set; } = new List<ColumnDefinition>();

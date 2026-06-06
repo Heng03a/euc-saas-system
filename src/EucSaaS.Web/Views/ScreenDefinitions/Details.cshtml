@@ -1,0 +1,66 @@
+@model EucSaaS.Domain.Entities.ScreenDefinition
+
+@{
+    ViewData["Title"] = "Screen Definition Details";
+}
+
+<link rel="stylesheet" href="~/css/admin.css" />
+
+<div class="admin-page">
+    <h2>Screen Definition Details</h2>
+
+    <div class="admin-card">
+        <p><strong>Screen Code:</strong> @Model.ScreenCode</p>
+        <p><strong>Screen Name:</strong> @Model.ScreenName</p>
+        <p><strong>Entity Name:</strong> @Model.EntityName</p>
+        <p><strong>Table Name:</strong> @Model.TableName</p>
+        <p><strong>Route Path:</strong> @Model.RoutePath</p>
+        <p><strong>Description:</strong> @Model.Description</p>
+        <p><strong>Active:</strong> @(Model.IsActive ? "Yes" : "No")</p>
+    </div>
+
+    <h3>Columns</h3>
+
+    @if (Model.Columns == null || !Model.Columns.Any())
+    {
+        <p>No columns found.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Field Name</th>
+                        <th>Display Label</th>
+                        <th>Data Type</th>
+                        <th>Width</th>
+                        <th>Visible</th>
+                        <th>Sortable</th>
+                        <th>Searchable</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var column in Model.Columns.OrderBy(x => x.DisplayOrder))
+                    {
+                        <tr>
+                            <td>@column.DisplayOrder</td>
+                            <td>@column.FieldName</td>
+                            <td>@column.DisplayLabel</td>
+                            <td>@column.DataType</td>
+                            <td>@column.Width</td>
+                            <td>@(column.IsVisible ? "Yes" : "No")</td>
+                            <td>@(column.IsSortable ? "Yes" : "No")</td>
+                            <td>@(column.IsSearchable ? "Yes" : "No")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <br />
+
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</div>

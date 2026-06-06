@@ -1,6 +1,7 @@
 using EucSaaS.Application.Interfaces;
 using EucSaaS.Domain.Entities;
 using EucSaaS.Infrastructure.Data;
+using EucSaaS.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,13 +11,16 @@ public class DataSourcesController : Controller
 {
     private readonly AppDbContext _context;
     private readonly IDataSourceDiscoveryService _discoveryService;
+    private readonly IDataSourceSchemaReader _schemaReader;
 
     public DataSourcesController(
         AppDbContext context,
-        IDataSourceDiscoveryService discoveryService)
+        IDataSourceDiscoveryService discoveryService,
+        IDataSourceSchemaReader schemaReader)
     {
         _context = context;
         _discoveryService = discoveryService;
+        _schemaReader = schemaReader;
     }
 
     public async Task<IActionResult> Index()
@@ -61,39 +65,6 @@ public class DataSourcesController : Controller
 
         return View(dataSource);
     }
-
-public async Task<IActionResult> TestConnection(Guid id)
-{
-    var dataSource = await _context.DataSources.FindAsync(id);
-
-    if (dataSource == null)
-    {
-        return NotFound();
-    }
-
-    var connectionString =
-        $"Host={dataSource.HostName};" +
-        $"Port={dataSource.PortNumber};" +
-        $"Database={dataSource.DatabaseName};" +
-        $"Username={dataSource.ReadOnlyUserName};" +
-        $"Password={dataSource.EncryptedPassword}";
-
-    try
-    {
-        await _discoveryService.DiscoverTablesAsync(
-            dataSource.DatabaseType,
-            connectionString
-        );
-
-        TempData["SuccessMessage"] = "Connection successful.";
-    }
-    catch (Exception ex)
-    {
-        TempData["ErrorMessage"] = "Connection failed: " + ex.Message;
-    }
-
-    return RedirectToAction(nameof(Index));
-}
 
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -156,29 +127,164 @@ public async Task<IActionResult> TestConnection(Guid id)
         return RedirectToAction(nameof(Index));
     }
 
-public async Task<IActionResult> DiscoverTables(Guid id)
-{
-    var dataSource = await _context.DataSources.FindAsync(id);
-
-    if (dataSource == null)
+    public async Task<IActionResult> TestConnection(Guid id)
     {
-        return NotFound();
+        var dataSource = await _context.DataSources.FindAsync(id);
+
+        if (dataSource == null)
+        {
+            return NotFound();
+        }
+
+        var connectionString = BuildPostgreSqlConnectionString(dataSource);
+
+        try
+        {
+            await _discoveryService.DiscoverTablesAsync(
+                dataSource.DatabaseType,
+                connectionString
+            );
+
+            TempData["SuccessMessage"] = "Connection successful.";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = "Connection failed: " + ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index));
     }
 
-    var connectionString =
-        $"Host={dataSource.HostName};" +
-        $"Port={dataSource.PortNumber};" +
-        $"Database={dataSource.DatabaseName};" +
-        $"Username={dataSource.ReadOnlyUserName};" +
-        $"Password={dataSource.EncryptedPassword}";
+    public async Task<IActionResult> DiscoverTables(Guid id)
+    {
+        var dataSource = await _context.DataSources.FindAsync(id);
 
-    var tables = await _discoveryService.DiscoverTablesAsync(
-        dataSource.DatabaseType,
-        connectionString
-    );
+        if (dataSource == null)
+        {
+            return NotFound();
+        }
 
-    ViewBag.DataSourceName = dataSource.DataSourceName;
+        var connectionString = BuildPostgreSqlConnectionString(dataSource);
 
-    return View(tables);
-}
+        var tables = await _discoveryService.DiscoverTablesAsync(
+            dataSource.DatabaseType,
+            connectionString
+        );
+
+        ViewBag.DataSourceName = dataSource.DataSourceName;
+
+        return View(tables);
+    }
+
+    public async Task<IActionResult> Schema(Guid id)
+    {
+        var dataSource = await _context.DataSources.FindAsync(id);
+
+        if (dataSource == null)
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            var tables = await _schemaReader.ReadSchemaAsync(dataSource);
+
+            var model = new DataSourceSchemaViewModel
+            {
+                DataSource = dataSource,
+                Tables = tables
+            };
+
+            return View(model);
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = "Schema discovery failed: " + ex.Message;
+            return RedirectToAction(nameof(Index));
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ImportTable(
+        Guid dataSourceId,
+        string schemaName,
+        string tableName)
+    {
+        var dataSource = await _context.DataSources.FindAsync(dataSourceId);
+
+        if (dataSource == null)
+        {
+            return NotFound();
+        }
+
+        var tables = await _schemaReader.ReadSchemaAsync(dataSource);
+
+        var selectedTable = tables.FirstOrDefault(x =>
+            x.SchemaName == schemaName &&
+            x.TableName == tableName);
+
+        if (selectedTable == null)
+        {
+            TempData["ErrorMessage"] = "Selected table was not found in the data source.";
+            return RedirectToAction(nameof(Schema), new { id = dataSourceId });
+        }
+
+        var screenCode = tableName.ToUpperInvariant();
+
+        var existingScreen = await _context.ScreenDefinitions
+            .FirstOrDefaultAsync(x => x.ScreenCode == screenCode);
+
+        if (existingScreen != null)
+        {
+            TempData["ErrorMessage"] = $"Screen '{screenCode}' already exists.";
+            return RedirectToAction(nameof(Schema), new { id = dataSourceId });
+        }
+
+        var screenDefinition = new ScreenDefinition
+        {
+            Id = Guid.NewGuid(),
+            ScreenCode = screenCode,
+            ScreenName = tableName,
+            TableName = tableName,
+            IsActive = true
+        };
+
+        _context.ScreenDefinitions.Add(screenDefinition);
+
+        var displayOrder = 1;
+
+        foreach (var column in selectedTable.Columns)
+        {
+            var columnDefinition = new ColumnDefinition
+            {
+                Id = Guid.NewGuid(),
+                ScreenDefinitionId = screenDefinition.Id,
+                FieldName = column.ColumnName,
+                DataType = column.DataType,
+                DisplayOrder = displayOrder,
+                IsVisible = true
+            };
+
+            _context.ColumnDefinitions.Add(columnDefinition);
+
+            displayOrder++;
+        }
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Table '{schemaName}.{tableName}' imported successfully.";
+
+        return RedirectToAction(nameof(Schema), new { id = dataSourceId });
+    }
+
+    private static string BuildPostgreSqlConnectionString(DataSource dataSource)
+    {
+        return
+            $"Host={dataSource.HostName};" +
+            $"Port={dataSource.PortNumber};" +
+            $"Database={dataSource.DatabaseName};" +
+            $"Username={dataSource.ReadOnlyUserName};" +
+            $"Password={dataSource.EncryptedPassword}";
+    }
 }
