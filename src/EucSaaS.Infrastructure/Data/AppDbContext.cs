@@ -248,6 +248,27 @@ public class AppDbContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
+//-----------------------------------
+// Form Field Option Definition
+//-----------------------------------
+builder.Entity<FormFieldOptionDefinition>(entity =>
+{
+    entity.HasKey(x => x.Id);
+
+    entity.Property(x => x.OptionLabel)
+          .IsRequired()
+          .HasMaxLength(200);
+
+    entity.Property(x => x.OptionValue)
+          .IsRequired()
+          .HasMaxLength(200);
+
+    entity.HasOne(x => x.FormFieldDefinition)
+          .WithMany(x => x.Options)
+          .HasForeignKey(x => x.FormFieldDefinitionId)
+          .OnDelete(DeleteBehavior.Cascade);
+});
+
         //-----------------------------------
         // Screen Permission
         //-----------------------------------

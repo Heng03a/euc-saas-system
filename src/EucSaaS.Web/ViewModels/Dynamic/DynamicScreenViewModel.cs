@@ -1,7 +1,11 @@
 namespace EucSaaS.Web.ViewModels.Dynamic;
 
+
+
 public class DynamicScreenViewModel
 {
+	public List<DynamicFormFieldViewModel> FormFields { get; set; } = new();
+
     public string ScreenCode { get; set; } = string.Empty;
 
     public string ScreenName { get; set; } = string.Empty;
