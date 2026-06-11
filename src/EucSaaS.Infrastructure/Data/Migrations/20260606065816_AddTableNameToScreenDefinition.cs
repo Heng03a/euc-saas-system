@@ -4,19 +4,23 @@
 
 namespace EucSaaS.Infrastructure.Data.Migrations
 {
-    /// <inheritdoc />
     public partial class AddTableNameToScreenDefinition : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-
+            migrationBuilder.AddColumn<string>(
+                name: "TableName",
+                table: "ScreenDefinitions",
+                type: "text",
+                nullable: false,
+                defaultValue: "");
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-
+            migrationBuilder.DropColumn(
+                name: "TableName",
+                table: "ScreenDefinitions");
         }
     }
 }
