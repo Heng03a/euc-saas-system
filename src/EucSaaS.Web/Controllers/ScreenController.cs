@@ -63,11 +63,12 @@ public class ScreenController : Controller
             rows.Add(row);
         }
 
-        var model = new DynamicScreenViewModel
-        {
-            ScreenName = screen.ScreenName,
+var model = new DynamicScreenViewModel
+{
+    ScreenCode = screen.ScreenCode,
+    ScreenName = screen.ScreenName,
 
-            Columns = screen.Columns
+    Columns = screen.Columns
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => new DynamicColumnViewModel
                 {
@@ -207,19 +208,66 @@ public class ScreenController : Controller
         return Redirect($"/Screen/{screenCode}");
     }
 
-    [HttpPost("/Screen/{screenCode}")]
-    public async Task<IActionResult> Save(string screenCode)
+[HttpGet("/Screen/{screenCode}/Create")]
+public async Task<IActionResult> Create(string screenCode)
+{
+    var screen = await _context.ScreenDefinitions
+        .Include(x => x.FormFields)
+            .ThenInclude(x => x.Options)
+        .FirstOrDefaultAsync(x => x.ScreenCode == screenCode);
+
+    if (screen == null)
+        return Content($"Screen definition '{screenCode}' was not found.");
+
+    var model = new DynamicEditViewModel
     {
-        var screen = await _context.ScreenDefinitions
-            .Include(x => x.FormFields)
-            .FirstOrDefaultAsync(x => x.ScreenCode == screenCode);
+        ScreenCode = screen.ScreenCode,
+        ScreenName = screen.ScreenName,
+        RecordId = Guid.Empty,
+        Fields = screen.FormFields
+            .OrderBy(x => x.DisplayOrder)
+            .ToList(),
+        Values = new Dictionary<string, object?>()
+    };
 
-        if (screen == null)
-            return Content($"Screen definition '{screenCode}' was not found.");
+    return View(model);
+}
 
-        TempData["Message"] =
-            "Form submitted successfully. Dynamic create save logic will be added later.";
+[HttpPost("/Screen/{screenCode}")]
+public async Task<IActionResult> Save(string screenCode)
+{
+    var screen = await _context.ScreenDefinitions
+        .Include(x => x.DataSource)
+        .Include(x => x.FormFields)
+        .FirstOrDefaultAsync(x => x.ScreenCode == screenCode);
 
-        return Redirect($"/Screen/{screenCode}");
+    if (screen == null)
+        return Content($"Screen definition '{screenCode}' was not found.");
+
+    if (screen.DataSource == null)
+        return Content($"Screen '{screenCode}' has no data source assigned.");
+
+    if (string.IsNullOrWhiteSpace(screen.SchemaName))
+        return Content($"Screen '{screenCode}' has no schema name configured.");
+
+
+    var submittedValues = new Dictionary<string, string?>();
+
+    foreach (var field in screen.FormFields.OrderBy(x => x.DisplayOrder))
+    {
+        var value = Request.Form[field.FieldName].ToString();
+        submittedValues[field.FieldName] = value;
     }
+
+    await _dynamicDataService.InsertRecordAsync(
+        screen.DataSource,
+        screen.SchemaName,
+        screen.TableName,
+        submittedValues
+    );
+
+    TempData["Message"] = "Record created successfully.";
+
+    return Redirect($"/Screen/{screenCode}");
+}
 }

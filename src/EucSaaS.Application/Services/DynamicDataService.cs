@@ -27,95 +27,148 @@ public class DynamicDataService
         return table;
     }
 
-public async Task<Dictionary<string, object?>?> GetRecordAsync(
-    DataSource dataSource,
-    string schemaName,
-    string tableName,
-    string primaryKeyColumn,
-    Guid id)
-{
-    var connectionString = BuildConnectionString(dataSource);
-
-    await using var connection = new NpgsqlConnection(connectionString);
-    await connection.OpenAsync();
-
-    var sql = $@"
-        select *
-        from ""{schemaName}"".""{tableName}""
-        where ""{primaryKeyColumn}"" = @id";
-
-    await using var command = new NpgsqlCommand(sql, connection);
-    command.Parameters.AddWithValue("id", id);
-
-    await using var reader = await command.ExecuteReaderAsync();
-
-    if (!await reader.ReadAsync())
+    public async Task<Dictionary<string, object?>?> GetRecordAsync(
+        DataSource dataSource,
+        string schemaName,
+        string tableName,
+        string primaryKeyColumn,
+        Guid id)
     {
-        return null;
-    }
+        var connectionString = BuildConnectionString(dataSource);
 
-    var row = new Dictionary<string, object?>();
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
 
-    for (int i = 0; i < reader.FieldCount; i++)
-    {
-        row[reader.GetName(i)] =
-            reader.IsDBNull(i)
-                ? null
-                : reader.GetValue(i);
-    }
+        var sql = $@"
+            select *
+            from ""{schemaName}"".""{tableName}""
+            where ""{primaryKeyColumn}"" = @id";
 
-    return row;
-}
+        await using var command = new NpgsqlCommand(sql, connection);
+        command.Parameters.AddWithValue("id", id);
 
-public async Task UpdateRecordAsync(
-    DataSource dataSource,
-    string schemaName,
-    string tableName,
-    string primaryKeyColumn,
-    Guid id,
-    Dictionary<string, string?> values)
-{
-    var connectionString = BuildConnectionString(dataSource);
+        await using var reader = await command.ExecuteReaderAsync();
 
-    await using var connection = new NpgsqlConnection(connectionString);
-    await connection.OpenAsync();
-
-    var setClauses = new List<string>();
-    var parameters = new List<NpgsqlParameter>();
-
-    var index = 0;
-
-    foreach (var item in values)
-    {
-        if (item.Key.Equals(primaryKeyColumn, StringComparison.OrdinalIgnoreCase))
+        if (!await reader.ReadAsync())
         {
-            continue;
+            return null;
         }
 
-        var parameterName = $"p{index}";
+        var row = new Dictionary<string, object?>();
 
-        setClauses.Add($@"""{item.Key}"" = @{parameterName}");
-        parameters.Add(new NpgsqlParameter(parameterName, item.Value ?? ""));
+        for (int i = 0; i < reader.FieldCount; i++)
+        {
+            row[reader.GetName(i)] =
+                reader.IsDBNull(i)
+                    ? null
+                    : reader.GetValue(i);
+        }
 
-        index++;
+        return row;
     }
 
-    var sql = $@"
-        update ""{schemaName}"".""{tableName}""
-        set {string.Join(", ", setClauses)}
-        where ""{primaryKeyColumn}"" = @id";
-
-    await using var command = new NpgsqlCommand(sql, connection);
-
-    foreach (var parameter in parameters)
+    public async Task UpdateRecordAsync(
+        DataSource dataSource,
+        string schemaName,
+        string tableName,
+        string primaryKeyColumn,
+        Guid id,
+        Dictionary<string, string?> values)
     {
-        command.Parameters.Add(parameter);
+        var connectionString = BuildConnectionString(dataSource);
+
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        var setClauses = new List<string>();
+        var parameters = new List<NpgsqlParameter>();
+
+        var index = 0;
+
+        foreach (var item in values)
+        {
+            if (item.Key.Equals(primaryKeyColumn, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var parameterName = $"p{index}";
+
+            setClauses.Add($@"""{item.Key}"" = @{parameterName}");
+            parameters.Add(new NpgsqlParameter(parameterName, item.Value ?? ""));
+
+            index++;
+        }
+
+        var sql = $@"
+            update ""{schemaName}"".""{tableName}""
+            set {string.Join(", ", setClauses)}
+            where ""{primaryKeyColumn}"" = @id";
+
+        await using var command = new NpgsqlCommand(sql, connection);
+
+        foreach (var parameter in parameters)
+        {
+            command.Parameters.Add(parameter);
+        }
+
+        command.Parameters.AddWithValue("id", id);
+
+        await command.ExecuteNonQueryAsync();
     }
 
-    command.Parameters.AddWithValue("id", id);
+    public async Task InsertRecordAsync(
+        DataSource dataSource,
+        string schemaName,
+        string tableName,
+        Dictionary<string, string?> values)
+    {
+        var connectionString = BuildConnectionString(dataSource);
 
-    await command.ExecuteNonQueryAsync();
-}
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        var columns = new List<string>();
+        var parameterNames = new List<string>();
+        var parameters = new List<NpgsqlParameter>();
+
+var index = 0;
+
+columns.Add(@"""Id""");
+parameterNames.Add("@id");
+parameters.Add(new NpgsqlParameter("id", Guid.NewGuid()));
+
+columns.Add(@"""CreatedDate""");
+parameterNames.Add("@createdDate");
+parameters.Add(new NpgsqlParameter("createdDate", DateTime.UtcNow));
+
+        foreach (var item in values)
+        {
+            columns.Add($@"""{item.Key}""");
+
+            var parameterName = $"p{index}";
+            parameterNames.Add($"@{parameterName}");
+
+            parameters.Add(new NpgsqlParameter(parameterName, item.Value ?? ""));
+
+            index++;
+        }
+
+        var sql = $@"
+            insert into ""{schemaName}"".""{tableName}""
+            ({string.Join(", ", columns)})
+            values
+            ({string.Join(", ", parameterNames)})";
+
+        await using var command = new NpgsqlCommand(sql, connection);
+
+        foreach (var parameter in parameters)
+        {
+            command.Parameters.Add(parameter);
+        }
+
+        await command.ExecuteNonQueryAsync();
+    }
 
     private static string BuildConnectionString(DataSource dataSource)
     {

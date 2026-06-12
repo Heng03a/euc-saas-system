@@ -1,0 +1,73 @@
+@model EucSaaS.Web.ViewModels.Dynamic.DynamicEditViewModel
+
+@{
+    ViewData["Title"] = "Create " + Model.ScreenName;
+}
+
+<h2>Create @Model.ScreenName</h2>
+
+<form method="post" action="/Screen/@Model.ScreenCode">
+
+    <input type="hidden" name="Id" value="@Model.RecordId" />
+
+    @foreach (var field in Model.Fields)
+    {
+        var value = Model.Values
+            .FirstOrDefault(x =>
+                x.Key.Equals(
+                    field.FieldName,
+                    StringComparison.OrdinalIgnoreCase))
+            .Value;
+
+        var controlType = field.ControlType ?? "";
+
+        <div class="form-group mb-3">
+            <label>@field.DisplayLabel</label>
+
+            @if (controlType.Equals("dropdown", StringComparison.OrdinalIgnoreCase)
+                || controlType.Equals("select", StringComparison.OrdinalIgnoreCase))
+            {
+                <select class="form-control" name="@field.FieldName">
+                    <option value="">-- Select --</option>
+
+                    @foreach (var option in field.Options.OrderBy(x => x.DisplayOrder))
+                    {
+                        var isSelected =
+                            value != null &&
+                            option.OptionValue.Equals(
+                                value.ToString(),
+                                StringComparison.OrdinalIgnoreCase);
+
+                        if (isSelected)
+                        {
+                            <option value="@option.OptionValue" selected="selected">
+                                @option.OptionLabel
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="@option.OptionValue">
+                                @option.OptionLabel
+                            </option>
+                        }
+                    }
+                </select>
+            }
+            else
+            {
+                <input class="form-control"
+                       name="@field.FieldName"
+                       value="@value" />
+            }
+        </div>
+    }
+
+    <button type="submit" class="btn btn-primary">
+        Save
+    </button>
+
+    <a href="/Screen/@Model.ScreenCode" class="btn btn-secondary">
+        Back
+    </a>
+
+</form>

@@ -6,6 +6,13 @@
 
 <div class="page-header">
     <h2>@Model.ScreenName</h2>
+
+    <div style="margin-bottom:20px;">
+        <a href="/Screen/@Model.ScreenCode/Create"
+           class="btn btn-primary">
+            + Create New
+        </a>
+    </div>
 </div>
 
 @if (TempData["Message"] != null)
@@ -35,6 +42,10 @@
                         @column.DisplayLabel
                     </th>
                 }
+
+                <th style="width:120px;">
+                    Actions
+                </th>
 
             </tr>
         </thead>
@@ -68,6 +79,28 @@
 
                         </td>
                     }
+
+                    <td>
+                        @{
+                            Guid recordId = Guid.Empty;
+
+                            if (row.ContainsKey("Id")
+                                && row["Id"] != null)
+                            {
+                                Guid.TryParse(
+                                    row["Id"]!.ToString(),
+                                    out recordId);
+                            }
+                        }
+
+                        @if (recordId != Guid.Empty)
+                        {
+                            <a href="/Screen/@Model.ScreenCode/Edit/@recordId"
+                               class="btn btn-sm btn-primary">
+                                Edit
+                            </a>
+                        }
+                    </td>
 
                 </tr>
             }
