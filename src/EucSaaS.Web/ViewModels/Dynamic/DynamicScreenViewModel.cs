@@ -1,19 +1,29 @@
 namespace EucSaaS.Web.ViewModels.Dynamic;
 
-
-
 public class DynamicScreenViewModel
 {
-	public List<DynamicFormFieldViewModel> FormFields { get; set; } = new();
-
     public string ScreenCode { get; set; } = string.Empty;
 
     public string ScreenName { get; set; } = string.Empty;
 
+    public string ScreenMode { get; set; } = "Maintenance";
+
+    public bool IsMaintenanceMode =>
+        ScreenMode.Equals("Maintenance", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsReportMode =>
+        ScreenMode.Equals("Report", StringComparison.OrdinalIgnoreCase);
+
     public List<DynamicColumnViewModel> Columns { get; set; }
         = new();
 
+    public List<DynamicFormFieldViewModel> FormFields { get; set; }
+        = new();
+
     public List<Dictionary<string, object?>> Rows { get; set; }
+        = new();
+
+    public Dictionary<string, string> SearchValues { get; set; }
         = new();
 }
 

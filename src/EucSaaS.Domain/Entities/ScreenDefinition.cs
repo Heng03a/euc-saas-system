@@ -25,6 +25,9 @@ public class ScreenDefinition
     public Guid? DataSourceId { get; set; }
 
     public DataSource? DataSource { get; set; }
+	
+	public string ScreenMode { get; set; } = "Maintenance";
+
 
     public DateTime CreatedAt { get; set; }
 

@@ -2,18 +2,52 @@
 
 @{
     ViewData["Title"] = Model.ScreenName;
+
+    var searchField1 = Model.SearchValues.ContainsKey("searchField1")
+        ? Model.SearchValues["searchField1"]
+        : "";
+
+    var searchOperator1 = Model.SearchValues.ContainsKey("searchOperator1")
+        ? Model.SearchValues["searchOperator1"]
+        : "contains";
+
+    var searchValue1 = Model.SearchValues.ContainsKey("searchValue1")
+        ? Model.SearchValues["searchValue1"]
+        : "";
+
+    var searchField2 = Model.SearchValues.ContainsKey("searchField2")
+        ? Model.SearchValues["searchField2"]
+        : "";
+
+    var searchOperator2 = Model.SearchValues.ContainsKey("searchOperator2")
+        ? Model.SearchValues["searchOperator2"]
+        : "contains";
+
+    var searchValue2 = Model.SearchValues.ContainsKey("searchValue2")
+        ? Model.SearchValues["searchValue2"]
+        : "";
 }
 
 <div class="page-header">
     <h2>@Model.ScreenName</h2>
 
-    <div style="margin-bottom:20px;">
-        <a href="/Screen/@Model.ScreenCode/Create"
-           class="btn btn-primary">
-            + Create New
-        </a>
-    </div>
+    @if (Model.IsMaintenanceMode)
+    {
+        <div style="margin-bottom:20px;">
+            <a href="/Screen/@Model.ScreenCode/Create"
+               class="btn btn-primary">
+                + Create New
+            </a>
+        </div>
+    }
 </div>
+
+@if (Model.IsReportMode)
+{
+    <div class="alert alert-info">
+        Report Mode - This screen is read-only.
+    </div>
+}
 
 @if (TempData["Message"] != null)
 {
@@ -29,13 +63,108 @@
     </div>
 }
 
+<div class="card" style="margin-bottom:20px; padding:20px;">
+    <form method="get" action="/Screen/@Model.ScreenCode">
+
+        <div style="display:flex; gap:15px; align-items:end; flex-wrap:wrap; margin-bottom:15px;">
+            <div style="font-weight:bold; width:80px;">Filter 1</div>
+
+            <div>
+                <label>Field</label><br />
+                <select name="searchField1" class="form-control" style="width:220px;">
+                    <option value="">-- Select Field --</option>
+                    @foreach (var column in Model.Columns.Where(c => c.IsVisible))
+                    {
+                        <option value="@column.FieldName"
+                                selected="@(searchField1 == column.FieldName)">
+                            @column.DisplayLabel
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <div>
+                <label>Operator</label><br />
+                <select name="searchOperator1" class="form-control" style="width:160px;">
+                    <option value="contains" selected="@(searchOperator1 == "contains")">Contains</option>
+                    <option value="equals" selected="@(searchOperator1 == "equals")">Equals</option>
+                    <option value="starts" selected="@(searchOperator1 == "starts")">Starts With</option>
+                    <option value="gt" selected="@(searchOperator1 == "gt")">&gt;</option>
+                    <option value="lt" selected="@(searchOperator1 == "lt")">&lt;</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Value</label><br />
+                <input type="text"
+                       name="searchValue1"
+                       value="@searchValue1"
+                       class="form-control"
+                       style="width:250px;" />
+            </div>
+        </div>
+
+        <div style="display:flex; gap:15px; align-items:end; flex-wrap:wrap;">
+            <div style="font-weight:bold; width:80px;">Filter 2</div>
+
+            <div>
+                <label>Field</label><br />
+                <select name="searchField2" class="form-control" style="width:220px;">
+                    <option value="">-- Select Field --</option>
+                    @foreach (var column in Model.Columns.Where(c => c.IsVisible))
+                    {
+                        <option value="@column.FieldName"
+                                selected="@(searchField2 == column.FieldName)">
+                            @column.DisplayLabel
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <div>
+                <label>Operator</label><br />
+                <select name="searchOperator2" class="form-control" style="width:160px;">
+                    <option value="contains" selected="@(searchOperator2 == "contains")">Contains</option>
+                    <option value="equals" selected="@(searchOperator2 == "equals")">Equals</option>
+                    <option value="starts" selected="@(searchOperator2 == "starts")">Starts With</option>
+                    <option value="gt" selected="@(searchOperator2 == "gt")">&gt;</option>
+                    <option value="lt" selected="@(searchOperator2 == "lt")">&lt;</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Value</label><br />
+                <input type="text"
+                       name="searchValue2"
+                       value="@searchValue2"
+                       class="form-control"
+                       style="width:250px;" />
+            </div>
+
+            <div>
+                <button type="submit" class="btn btn-primary">
+                    Search
+                </button>
+
+                <a href="/Screen/@Model.ScreenCode"
+                   class="btn btn-secondary">
+                    Reset
+                </a>
+
+                <a href="/Screen/@Model.ScreenCode/Export?searchField1=@searchField1&searchOperator1=@searchOperator1&searchValue1=@searchValue1&searchField2=@searchField2&searchOperator2=@searchOperator2&searchValue2=@searchValue2"
+                   class="btn btn-success">
+                    Export Excel
+                </a>
+            </div>
+        </div>
+
+    </form>
+</div>
+
 <div class="table-container">
-
     <table class="data-table">
-
         <thead>
             <tr>
-
                 @foreach (var column in Model.Columns.Where(c => c.IsVisible))
                 {
                     <th style="width:@column.Width">
@@ -43,23 +172,22 @@
                     </th>
                 }
 
-                <th style="width:120px;">
-                    Actions
-                </th>
-
+                @if (Model.IsMaintenanceMode)
+                {
+                    <th style="width:120px;">
+                        Actions
+                    </th>
+                }
             </tr>
         </thead>
 
         <tbody>
-
             @foreach (var row in Model.Rows)
             {
                 <tr>
-
                     @foreach (var column in Model.Columns.Where(c => c.IsVisible))
                     {
                         <td>
-
                             @{
                                 var value = row.ContainsKey(column.FieldName)
                                     ? row[column.FieldName]
@@ -68,45 +196,38 @@
 
                             @if (column.DataType == "badge")
                             {
-                                <span class="status-badge">
-                                    @value
-                                </span>
+                                <span class="status-badge">@value</span>
                             }
                             else
                             {
                                 @value
                             }
-
                         </td>
                     }
 
-                    <td>
-                        @{
-                            Guid recordId = Guid.Empty;
+                    @if (Model.IsMaintenanceMode)
+                    {
+                        <td>
+                            @{
+                                Guid recordId = Guid.Empty;
 
-                            if (row.ContainsKey("Id")
-                                && row["Id"] != null)
-                            {
-                                Guid.TryParse(
-                                    row["Id"]!.ToString(),
-                                    out recordId);
+                                if (row.ContainsKey("Id") && row["Id"] != null)
+                                {
+                                    Guid.TryParse(row["Id"]!.ToString(), out recordId);
+                                }
                             }
-                        }
 
-                        @if (recordId != Guid.Empty)
-                        {
-                            <a href="/Screen/@Model.ScreenCode/Edit/@recordId"
-                               class="btn btn-sm btn-primary">
-                                Edit
-                            </a>
-                        }
-                    </td>
-
+                            @if (recordId != Guid.Empty)
+                            {
+                                <a href="/Screen/@Model.ScreenCode/Edit/@recordId"
+                                   class="btn btn-sm btn-primary">
+                                    Edit
+                                </a>
+                            }
+                        </td>
+                    }
                 </tr>
             }
-
         </tbody>
-
     </table>
-
 </div>

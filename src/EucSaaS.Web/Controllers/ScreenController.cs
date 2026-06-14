@@ -3,6 +3,7 @@ using EucSaaS.Infrastructure.Data;
 using EucSaaS.Web.ViewModels.Dynamic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ClosedXML.Excel;
 
 namespace EucSaaS.Web.Controllers;
 
@@ -270,4 +271,94 @@ public async Task<IActionResult> Save(string screenCode)
 
     return Redirect($"/Screen/{screenCode}");
 }
+
+[HttpGet("/Screen/{screenCode}/Export")]
+public async Task<IActionResult> Export(
+    string screenCode,
+    string? searchField,
+    string? searchOperator,
+    string? searchValue)
+{
+    searchField ??= "";
+    searchOperator ??= "contains";
+    searchValue ??= "";
+
+    var screen = await _context.ScreenDefinitions
+        .Include(x => x.DataSource)
+        .Include(x => x.Columns)
+        .FirstOrDefaultAsync(x => x.ScreenCode == screenCode);
+
+    if (screen == null)
+        return Content($"Screen definition '{screenCode}' was not found.");
+
+    if (screen.DataSource == null)
+        return Content($"Screen '{screenCode}' has no data source assigned.");
+
+    var table = await _dynamicDataService.GetTableDataAsync(
+        screen.DataSource,
+        screen.SchemaName,
+        screen.TableName
+    );
+
+    var visibleColumns = screen.Columns
+        .Where(x => x.IsVisible)
+        .OrderBy(x => x.DisplayOrder)
+        .ToList();
+
+    using var workbook = new XLWorkbook();
+    var worksheet = workbook.Worksheets.Add(screen.ScreenName);
+
+    for (int i = 0; i < visibleColumns.Count; i++)
+    {
+        worksheet.Cell(1, i + 1).Value = visibleColumns[i].DisplayLabel;
+        worksheet.Cell(1, i + 1).Style.Font.Bold = true;
+    }
+
+    int rowIndex = 2;
+
+    foreach (System.Data.DataRow dataRow in table.Rows)
+    {
+        if (!string.IsNullOrWhiteSpace(searchField)
+            && !string.IsNullOrWhiteSpace(searchValue))
+        {
+            var currentValue = dataRow[searchField]?.ToString() ?? "";
+
+            var matched = searchOperator.ToLower() switch
+            {
+                "equals" => string.Equals(currentValue, searchValue, StringComparison.OrdinalIgnoreCase),
+                "starts" => currentValue.StartsWith(searchValue, StringComparison.OrdinalIgnoreCase),
+                "gt" => string.Compare(currentValue, searchValue, StringComparison.OrdinalIgnoreCase) > 0,
+                "lt" => string.Compare(currentValue, searchValue, StringComparison.OrdinalIgnoreCase) < 0,
+                _ => currentValue.Contains(searchValue, StringComparison.OrdinalIgnoreCase)
+            };
+
+            if (!matched)
+                continue;
+        }
+
+        for (int colIndex = 0; colIndex < visibleColumns.Count; colIndex++)
+        {
+            var columnName = visibleColumns[colIndex].FieldName;
+
+            worksheet.Cell(rowIndex, colIndex + 1).Value =
+                dataRow[columnName]?.ToString() ?? "";
+        }
+
+        rowIndex++;
+    }
+
+    worksheet.Columns().AdjustToContents();
+
+    using var stream = new MemoryStream();
+    workbook.SaveAs(stream);
+
+    var fileName = $"{screen.ScreenName}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+    return File(
+        stream.ToArray(),
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        fileName);
+}
+
+
 }
