@@ -29,6 +29,7 @@ public class ScreenDefinition
 	public string ScreenMode { get; set; } = "Maintenance";
 
 	public string? DefaultSortColumn { get; set; }
+	public string? DefaultSortDirection { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

@@ -47,7 +47,9 @@ var table = await _dynamicDataService.GetTableDataAsync(
     screen.DataSource,
     screen.SchemaName,
     screen.TableName,
-    filters
+    filters,
+    screen.DefaultSortColumn,
+    screen.DefaultSortDirection
 );
 
         var rows = new List<Dictionary<string, object?>>();
@@ -308,7 +310,9 @@ var table = await _dynamicDataService.GetTableDataAsync(
     screen.DataSource,
     screen.SchemaName,
     screen.TableName,
-    filters
+    filters,
+    screen.DefaultSortColumn,
+    screen.DefaultSortDirection
 );
 
 

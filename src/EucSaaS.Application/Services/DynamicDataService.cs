@@ -10,7 +10,9 @@ public async Task<DataTable> GetTableDataAsync(
     DataSource dataSource,
     string schemaName,
     string tableName,
-    Dictionary<string, string>? filters = null)
+    Dictionary<string, string>? filters = null,
+    string? defaultSortColumn = null,
+    string? defaultSortDirection = null)
 {
     var connectionString = BuildConnectionString(dataSource);
 
@@ -39,11 +41,26 @@ public async Task<DataTable> GetTableDataAsync(
         ? " where " + string.Join(" and ", whereClauses)
         : "";
 
-    var sql = $@"
-        select *
-        from ""{schemaName}"".""{tableName}""
-        {whereSql}
-        limit 100";
+var orderBySql = "";
+
+if (!string.IsNullOrWhiteSpace(defaultSortColumn))
+{
+    var direction =
+        string.Equals(defaultSortDirection, "DESC",
+            StringComparison.OrdinalIgnoreCase)
+        ? "DESC"
+        : "ASC";
+
+    orderBySql =
+        $@" order by ""{defaultSortColumn}"" {direction}";
+}
+
+var sql = $@"
+    select *
+    from ""{schemaName}"".""{tableName}""
+    {whereSql}
+    {orderBySql}
+    limit 100";
 
     await using var command = new NpgsqlCommand(sql, connection);
 
