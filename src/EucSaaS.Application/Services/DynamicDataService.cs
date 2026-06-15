@@ -6,26 +6,59 @@ namespace EucSaaS.Application.Services;
 
 public class DynamicDataService
 {
-    public async Task<DataTable> GetTableDataAsync(
-        DataSource dataSource,
-        string schemaName,
-        string tableName)
+public async Task<DataTable> GetTableDataAsync(
+    DataSource dataSource,
+    string schemaName,
+    string tableName,
+    Dictionary<string, string>? filters = null)
+{
+    var connectionString = BuildConnectionString(dataSource);
+
+    await using var connection = new NpgsqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    var whereClauses = new List<string>();
+    var parameters = new List<NpgsqlParameter>();
+
+    var index = 0;
+
+    if (filters != null)
     {
-        var connectionString = BuildConnectionString(dataSource);
+        foreach (var filter in filters)
+        {
+            var parameterName = $"p{index}";
 
-        await using var connection = new NpgsqlConnection(connectionString);
-        await connection.OpenAsync();
+            whereClauses.Add($@"""{filter.Key}""::text ilike @{parameterName}");
+            parameters.Add(new NpgsqlParameter(parameterName, $"%{filter.Value}%"));
 
-        var sql = $@"select * from ""{schemaName}"".""{tableName}"" limit 100";
-
-        await using var command = new NpgsqlCommand(sql, connection);
-        await using var reader = await command.ExecuteReaderAsync();
-
-        var table = new DataTable();
-        table.Load(reader);
-
-        return table;
+            index++;
+        }
     }
+
+    var whereSql = whereClauses.Count > 0
+        ? " where " + string.Join(" and ", whereClauses)
+        : "";
+
+    var sql = $@"
+        select *
+        from ""{schemaName}"".""{tableName}""
+        {whereSql}
+        limit 100";
+
+    await using var command = new NpgsqlCommand(sql, connection);
+
+    foreach (var parameter in parameters)
+    {
+        command.Parameters.Add(parameter);
+    }
+
+    await using var reader = await command.ExecuteReaderAsync();
+
+    var table = new DataTable();
+    table.Load(reader);
+
+    return table;
+}
 
     public async Task<Dictionary<string, object?>?> GetRecordAsync(
         DataSource dataSource,

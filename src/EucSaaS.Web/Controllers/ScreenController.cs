@@ -41,11 +41,14 @@ public class ScreenController : Controller
         if (string.IsNullOrWhiteSpace(screen.TableName))
             return Content($"Screen '{screenCode}' has no table name configured.");
 
-        var table = await _dynamicDataService.GetTableDataAsync(
-            screen.DataSource,
-            screen.SchemaName,
-            screen.TableName
-        );
+var filters = ReadFilters(Request.Query);
+
+var table = await _dynamicDataService.GetTableDataAsync(
+    screen.DataSource,
+    screen.SchemaName,
+    screen.TableName,
+    filters
+);
 
         var rows = new List<Dictionary<string, object?>>();
 
@@ -68,6 +71,11 @@ var model = new DynamicScreenViewModel
 {
     ScreenCode = screen.ScreenCode,
     ScreenName = screen.ScreenName,
+
+SearchValues = Request.Query.ToDictionary(
+    x => x.Key,
+    x => x.Value.ToString()
+),
 
     Columns = screen.Columns
                 .OrderBy(x => x.DisplayOrder)
@@ -294,11 +302,15 @@ public async Task<IActionResult> Export(
     if (screen.DataSource == null)
         return Content($"Screen '{screenCode}' has no data source assigned.");
 
-    var table = await _dynamicDataService.GetTableDataAsync(
-        screen.DataSource,
-        screen.SchemaName,
-        screen.TableName
-    );
+var filters = ReadFilters(Request.Query);
+
+var table = await _dynamicDataService.GetTableDataAsync(
+    screen.DataSource,
+    screen.SchemaName,
+    screen.TableName,
+    filters
+);
+
 
     var visibleColumns = screen.Columns
         .Where(x => x.IsVisible)
@@ -318,23 +330,6 @@ public async Task<IActionResult> Export(
 
     foreach (System.Data.DataRow dataRow in table.Rows)
     {
-        if (!string.IsNullOrWhiteSpace(searchField)
-            && !string.IsNullOrWhiteSpace(searchValue))
-        {
-            var currentValue = dataRow[searchField]?.ToString() ?? "";
-
-            var matched = searchOperator.ToLower() switch
-            {
-                "equals" => string.Equals(currentValue, searchValue, StringComparison.OrdinalIgnoreCase),
-                "starts" => currentValue.StartsWith(searchValue, StringComparison.OrdinalIgnoreCase),
-                "gt" => string.Compare(currentValue, searchValue, StringComparison.OrdinalIgnoreCase) > 0,
-                "lt" => string.Compare(currentValue, searchValue, StringComparison.OrdinalIgnoreCase) < 0,
-                _ => currentValue.Contains(searchValue, StringComparison.OrdinalIgnoreCase)
-            };
-
-            if (!matched)
-                continue;
-        }
 
         for (int colIndex = 0; colIndex < visibleColumns.Count; colIndex++)
         {
@@ -358,6 +353,31 @@ public async Task<IActionResult> Export(
         stream.ToArray(),
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         fileName);
+}
+
+private Dictionary<string, string> ReadFilters(IQueryCollection query)
+{
+    var filters = new Dictionary<string, string>();
+
+    var searchField1 = query["searchField1"].ToString();
+    var searchValue1 = query["searchValue1"].ToString();
+
+    if (!string.IsNullOrWhiteSpace(searchField1)
+        && !string.IsNullOrWhiteSpace(searchValue1))
+    {
+        filters[searchField1] = searchValue1;
+    }
+
+    var searchField2 = query["searchField2"].ToString();
+    var searchValue2 = query["searchValue2"].ToString();
+
+    if (!string.IsNullOrWhiteSpace(searchField2)
+        && !string.IsNullOrWhiteSpace(searchValue2))
+    {
+        filters[searchField2] = searchValue2;
+    }
+
+    return filters;
 }
 
 
