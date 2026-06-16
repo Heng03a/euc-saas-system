@@ -6,76 +6,137 @@ namespace EucSaaS.Application.Services;
 
 public class DynamicDataService
 {
-public async Task<DataTable> GetTableDataAsync(
-    DataSource dataSource,
-    string schemaName,
-    string tableName,
-    Dictionary<string, string>? filters = null,
-    string? defaultSortColumn = null,
-    string? defaultSortDirection = null)
-{
-    var connectionString = BuildConnectionString(dataSource);
-
-    await using var connection = new NpgsqlConnection(connectionString);
-    await connection.OpenAsync();
-
-    var whereClauses = new List<string>();
-    var parameters = new List<NpgsqlParameter>();
-
-    var index = 0;
-
-    if (filters != null)
+    public async Task<DataTable> GetTableDataAsync(
+        DataSource dataSource,
+        string schemaName,
+        string tableName,
+        Dictionary<string, string>? filters = null,
+        string? defaultSortColumn = null,
+        string? defaultSortDirection = null,
+        int pageNumber = 1,
+        int pageSize = 10,
+        bool usePaging = true)
     {
-        foreach (var filter in filters)
+        var connectionString = BuildConnectionString(dataSource);
+
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        var whereClauses = new List<string>();
+        var parameters = new List<NpgsqlParameter>();
+
+        var index = 0;
+
+        if (filters != null)
         {
-            var parameterName = $"p{index}";
-
-            whereClauses.Add($@"""{filter.Key}""::text ilike @{parameterName}");
-            parameters.Add(new NpgsqlParameter(parameterName, $"%{filter.Value}%"));
-
-            index++;
+            foreach (var filter in filters)
+            {
+                var parameterName = $"p{index}";
+                whereClauses.Add($@"""{filter.Key}""::text ilike @{parameterName}");
+                parameters.Add(new NpgsqlParameter(parameterName, $"%{filter.Value}%"));
+                index++;
+            }
         }
+
+        var whereSql = whereClauses.Count > 0
+            ? " where " + string.Join(" and ", whereClauses)
+            : "";
+
+        var orderBySql = "";
+
+        if (!string.IsNullOrWhiteSpace(defaultSortColumn))
+        {
+            var direction =
+                string.Equals(defaultSortDirection, "DESC", StringComparison.OrdinalIgnoreCase)
+                    ? "DESC"
+                    : "ASC";
+
+            orderBySql = $@" order by ""{defaultSortColumn}"" {direction}";
+        }
+
+        var pagingSql = "";
+
+        if (usePaging)
+        {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+
+            var offset = (pageNumber - 1) * pageSize;
+            pagingSql = " limit @pageSize offset @offset";
+
+            parameters.Add(new NpgsqlParameter("pageSize", pageSize));
+            parameters.Add(new NpgsqlParameter("offset", offset));
+        }
+
+        var sql = $@"
+            select *
+            from ""{schemaName}"".""{tableName}""
+            {whereSql}
+            {orderBySql}
+            {pagingSql}";
+
+        await using var command = new NpgsqlCommand(sql, connection);
+
+        foreach (var parameter in parameters)
+        {
+            command.Parameters.Add(parameter);
+        }
+
+        await using var reader = await command.ExecuteReaderAsync();
+
+        var table = new DataTable();
+        table.Load(reader);
+
+        return table;
     }
 
-    var whereSql = whereClauses.Count > 0
-        ? " where " + string.Join(" and ", whereClauses)
-        : "";
-
-var orderBySql = "";
-
-if (!string.IsNullOrWhiteSpace(defaultSortColumn))
-{
-    var direction =
-        string.Equals(defaultSortDirection, "DESC",
-            StringComparison.OrdinalIgnoreCase)
-        ? "DESC"
-        : "ASC";
-
-    orderBySql =
-        $@" order by ""{defaultSortColumn}"" {direction}";
-}
-
-var sql = $@"
-    select *
-    from ""{schemaName}"".""{tableName}""
-    {whereSql}
-    {orderBySql}
-    limit 100";
-
-    await using var command = new NpgsqlCommand(sql, connection);
-
-    foreach (var parameter in parameters)
+    public async Task<int> GetTableCountAsync(
+        DataSource dataSource,
+        string schemaName,
+        string tableName,
+        Dictionary<string, string>? filters = null)
     {
-        command.Parameters.Add(parameter);
+        var connectionString = BuildConnectionString(dataSource);
+
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        var whereClauses = new List<string>();
+        var parameters = new List<NpgsqlParameter>();
+
+        var index = 0;
+
+        if (filters != null)
+        {
+            foreach (var filter in filters)
+            {
+                var parameterName = $"p{index}";
+                whereClauses.Add($@"""{filter.Key}""::text ilike @{parameterName}");
+                parameters.Add(new NpgsqlParameter(parameterName, $"%{filter.Value}%"));
+                index++;
+            }
+        }
+
+        var whereSql = whereClauses.Count > 0
+            ? " where " + string.Join(" and ", whereClauses)
+            : "";
+
+        var sql = $@"
+            select count(*)
+            from ""{schemaName}"".""{tableName}""
+            {whereSql}";
+
+        await using var command = new NpgsqlCommand(sql, connection);
+
+        foreach (var parameter in parameters)
+        {
+            command.Parameters.Add(parameter);
+        }
+
+        var result = await command.ExecuteScalarAsync();
+
+        return Convert.ToInt32(result);
     }
-
-    await using var reader = await command.ExecuteReaderAsync();
-
-    var table = new DataTable();
-    table.Load(reader);
-
-    return table;
-}
 
     public async Task<Dictionary<string, object?>?> GetRecordAsync(
         DataSource dataSource,
@@ -100,18 +161,14 @@ var sql = $@"
         await using var reader = await command.ExecuteReaderAsync();
 
         if (!await reader.ReadAsync())
-        {
             return null;
-        }
 
         var row = new Dictionary<string, object?>();
 
         for (int i = 0; i < reader.FieldCount; i++)
         {
             row[reader.GetName(i)] =
-                reader.IsDBNull(i)
-                    ? null
-                    : reader.GetValue(i);
+                reader.IsDBNull(i) ? null : reader.GetValue(i);
         }
 
         return row;
@@ -138,15 +195,11 @@ var sql = $@"
         foreach (var item in values)
         {
             if (item.Key.Equals(primaryKeyColumn, StringComparison.OrdinalIgnoreCase))
-            {
                 continue;
-            }
 
             var parameterName = $"p{index}";
-
             setClauses.Add($@"""{item.Key}"" = @{parameterName}");
             parameters.Add(new NpgsqlParameter(parameterName, item.Value ?? ""));
-
             index++;
         }
 
@@ -182,15 +235,15 @@ var sql = $@"
         var parameterNames = new List<string>();
         var parameters = new List<NpgsqlParameter>();
 
-var index = 0;
+        var index = 0;
 
-columns.Add(@"""Id""");
-parameterNames.Add("@id");
-parameters.Add(new NpgsqlParameter("id", Guid.NewGuid()));
+        columns.Add(@"""Id""");
+        parameterNames.Add("@id");
+        parameters.Add(new NpgsqlParameter("id", Guid.NewGuid()));
 
-columns.Add(@"""CreatedDate""");
-parameterNames.Add("@createdDate");
-parameters.Add(new NpgsqlParameter("createdDate", DateTime.UtcNow));
+        columns.Add(@"""CreatedDate""");
+        parameterNames.Add("@createdDate");
+        parameters.Add(new NpgsqlParameter("createdDate", DateTime.UtcNow));
 
         foreach (var item in values)
         {

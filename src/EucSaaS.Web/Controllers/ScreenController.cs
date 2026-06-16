@@ -21,7 +21,8 @@ public class ScreenController : Controller
     }
 
     [HttpGet("/Screen/{screenCode}")]
-    public async Task<IActionResult> Index(string screenCode)
+    public async Task<IActionResult> Index(string screenCode, int pageNumber = 1)
+
     {
         var screen = await _context.ScreenDefinitions
             .Include(x => x.DataSource)
@@ -56,6 +57,24 @@ if (string.IsNullOrWhiteSpace(sortDirection))
     sortDirection = screen.DefaultSortDirection ?? "ASC";
 }
 
+var pageSize = 10;
+
+if (pageNumber < 1)
+{
+    pageNumber = 1;
+}
+
+var totalRecords = await _dynamicDataService.GetTableCountAsync(
+    screen.DataSource,
+    screen.SchemaName,
+    screen.TableName,
+    filters
+);
+
+var totalPages = (int)Math.Ceiling(
+    totalRecords / (double)pageSize);
+
+
 var validColumns = screen.Columns.Select(x => x.FieldName).ToList();
 
 if (!validColumns.Contains(sortColumn))
@@ -73,7 +92,10 @@ var table = await _dynamicDataService.GetTableDataAsync(
     screen.TableName,
     filters,
     sortColumn,
-    sortDirection
+    sortDirection,
+    pageNumber,
+    pageSize,
+    true
 );
 
         var rows = new List<Dictionary<string, object?>>();
@@ -97,13 +119,19 @@ var model = new DynamicScreenViewModel
 {
     ScreenCode = screen.ScreenCode,
     ScreenName = screen.ScreenName,
-SortColumn = sortColumn,
-SortDirection = sortDirection,
 
-SearchValues = Request.Query.ToDictionary(
-    x => x.Key,
-    x => x.Value.ToString()
-),
+    SortColumn = sortColumn,
+    SortDirection = sortDirection,
+
+    PageNumber = pageNumber,
+    PageSize = pageSize,
+    TotalRecords = totalRecords,
+    TotalPages = totalPages,
+
+    SearchValues = Request.Query.ToDictionary(
+        x => x.Key,
+        x => x.Value.ToString()
+    ),
 
     Columns = screen.Columns
                 .OrderBy(x => x.DisplayOrder)

@@ -11,6 +11,11 @@ public class DynamicScreenViewModel
 public string SortColumn { get; set; } = "";
 public string SortDirection { get; set; } = "ASC";
 
+public int PageNumber { get; set; } = 1;
+public int PageSize { get; set; } = 10;
+public int TotalRecords { get; set; }
+public int TotalPages { get; set; }
+
     public bool IsMaintenanceMode =>
         ScreenMode.Equals("Maintenance", StringComparison.OrdinalIgnoreCase);
 
