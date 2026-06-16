@@ -8,6 +8,9 @@ public class DynamicScreenViewModel
 
     public string ScreenMode { get; set; } = "Maintenance";
 
+public string SortColumn { get; set; } = "";
+public string SortDirection { get; set; } = "ASC";
+
     public bool IsMaintenanceMode =>
         ScreenMode.Equals("Maintenance", StringComparison.OrdinalIgnoreCase);
 

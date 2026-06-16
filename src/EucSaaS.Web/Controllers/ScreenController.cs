@@ -43,13 +43,37 @@ public class ScreenController : Controller
 
 var filters = ReadFilters(Request.Query);
 
+var sortColumn = Request.Query["sortColumn"].ToString();
+var sortDirection = Request.Query["sortDirection"].ToString();
+
+if (string.IsNullOrWhiteSpace(sortColumn))
+{
+    sortColumn = screen.DefaultSortColumn ?? "";
+}
+
+if (string.IsNullOrWhiteSpace(sortDirection))
+{
+    sortDirection = screen.DefaultSortDirection ?? "ASC";
+}
+
+var validColumns = screen.Columns.Select(x => x.FieldName).ToList();
+
+if (!validColumns.Contains(sortColumn))
+{
+    sortColumn = screen.DefaultSortColumn ?? "";
+}
+
+sortDirection = sortDirection.Equals("DESC", StringComparison.OrdinalIgnoreCase)
+    ? "DESC"
+    : "ASC";
+
 var table = await _dynamicDataService.GetTableDataAsync(
     screen.DataSource,
     screen.SchemaName,
     screen.TableName,
     filters,
-    screen.DefaultSortColumn,
-    screen.DefaultSortDirection
+    sortColumn,
+    sortDirection
 );
 
         var rows = new List<Dictionary<string, object?>>();
@@ -73,6 +97,8 @@ var model = new DynamicScreenViewModel
 {
     ScreenCode = screen.ScreenCode,
     ScreenName = screen.ScreenName,
+SortColumn = sortColumn,
+SortDirection = sortDirection,
 
 SearchValues = Request.Query.ToDictionary(
     x => x.Key,
@@ -306,15 +332,39 @@ public async Task<IActionResult> Export(
 
 var filters = ReadFilters(Request.Query);
 
+var sortColumn = Request.Query["sortColumn"].ToString();
+var sortDirection = Request.Query["sortDirection"].ToString();
+
+if (string.IsNullOrWhiteSpace(sortColumn))
+{
+    sortColumn = screen.DefaultSortColumn ?? "";
+}
+
+if (string.IsNullOrWhiteSpace(sortDirection))
+{
+    sortDirection = screen.DefaultSortDirection ?? "ASC";
+}
+
+var validColumns = screen.Columns.Select(x => x.FieldName).ToList();
+
+if (!validColumns.Contains(sortColumn))
+{
+    sortColumn = screen.DefaultSortColumn ?? "";
+}
+
+sortDirection = sortDirection.Equals("DESC", StringComparison.OrdinalIgnoreCase)
+    ? "DESC"
+    : "ASC";
+
 var table = await _dynamicDataService.GetTableDataAsync(
     screen.DataSource,
     screen.SchemaName,
     screen.TableName,
-    filters,
-    screen.DefaultSortColumn,
-    screen.DefaultSortDirection
-);
 
+    filters,
+    sortColumn,
+    sortDirection
+);
 
     var visibleColumns = screen.Columns
         .Where(x => x.IsVisible)
