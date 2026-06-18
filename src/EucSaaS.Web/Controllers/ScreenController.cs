@@ -21,7 +21,10 @@ public class ScreenController : Controller
     }
 
     [HttpGet("/Screen/{screenCode}")]
-    public async Task<IActionResult> Index(string screenCode, int pageNumber = 1)
+public async Task<IActionResult> Index(
+    string screenCode,
+    int pageNumber = 1,
+    int pageSize = 10)
 
     {
         var screen = await _context.ScreenDefinitions
@@ -57,13 +60,21 @@ if (string.IsNullOrWhiteSpace(sortDirection))
     sortDirection = screen.DefaultSortDirection ?? "ASC";
 }
 
-var pageSize = 10;
+if (pageSize <= 0)
+{
+    pageSize = 10;
+}
+
+if (!new[] { 10, 25, 50, 100 }.Contains(pageSize))
+{
+
+    pageSize = 10;
+}
 
 if (pageNumber < 1)
 {
     pageNumber = 1;
 }
-
 var totalRecords = await _dynamicDataService.GetTableCountAsync(
     screen.DataSource,
     screen.SchemaName,

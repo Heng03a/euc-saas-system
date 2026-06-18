@@ -50,6 +50,8 @@
             </select>
         </div>
 
+
+
         <div class="col-md-4">
             <label>Value</label>
             <input name="searchValue1" value="@searchValue1" class="form-control" />
@@ -88,40 +90,46 @@
         </div>
     </div>
 
-    <div class="row mb-3 align-items-end">
-        <div class="col-md-1 fw-bold">Sorting</div>
+<div class="row mb-3 align-items-end">
+    <div class="col-md-1 fw-bold">Sorting</div>
 
-        <div class="col-md-3">
-            <label>Sort By</label>
-            <select name="sortColumn" class="form-control">
-                <option value="">-- Default Sort --</option>
-                @foreach (var column in Model.Columns.Where(c => c.IsVisible))
-                {
-                    <option value="@column.FieldName" selected="@(Model.SortColumn == column.FieldName)">
-                        @column.DisplayLabel
-                    </option>
-                }
-            </select>
-        </div>
-
-        <div class="col-md-2">
-            <label>Direction</label>
-            <select name="sortDirection" class="form-control">
-                <option value="ASC" selected="@(Model.SortDirection == "ASC")">Ascending</option>
-                <option value="DESC" selected="@(Model.SortDirection == "DESC")">Descending</option>
-            </select>
-        </div>
+    <div class="col-md-3">
+        <label>Sort By</label>
+        <select name="sortColumn" class="form-control">
+            ...
+        </select>
     </div>
 
-    <button type="submit" class="btn btn-primary">Search</button>
-    <a href="/Screen/@Model.ScreenCode" class="btn btn-secondary">Reset</a>
+    <div class="col-md-2">
+        <label>Direction</label>
+        <select name="sortDirection" class="form-control">
+            ...
+        </select>
+    </div>
+</div>
 
-    <button type="submit"
-            formaction="/Screen/@Model.ScreenCode/Export"
-            class="btn btn-success">
-        Export Excel
-    </button>
-</form>
+<div class="row mb-3 align-items-end">
+    <div class="col-md-1 fw-bold">Page Size</div>
+
+    <div class="col-md-2">
+        <label>Show</label>
+        <select name="pageSize" class="form-control">
+            <option value="10" selected="@(Model.PageSize == 10)">10</option>
+            <option value="25" selected="@(Model.PageSize == 25)">25</option>
+            <option value="50" selected="@(Model.PageSize == 50)">50</option>
+            <option value="100" selected="@(Model.PageSize == 100)">100</option>
+        </select>
+    </div>
+</div>
+
+<button type="submit" class="btn btn-primary">Search</button>
+<a href="/Screen/@Model.ScreenCode" class="btn btn-secondary">Reset</a>
+
+<button type="submit"
+        formaction="/Screen/@Model.ScreenCode/Export"
+        class="btn btn-success">
+    Export Excel
+</button></form>
 
 @if (Model.TotalRecords > 0)
 {
@@ -179,7 +187,7 @@
     </tbody>
 </table>
 
-@if (Model.TotalPages > 1)
+@if (Model.TotalPages >= 1)
 {
     <nav>
         <ul class="pagination">
