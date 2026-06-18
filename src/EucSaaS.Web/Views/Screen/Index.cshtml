@@ -140,13 +140,29 @@
         Showing @startRecord - @endRecord of @Model.TotalRecords records
     </div>
 }
-
 <table class="table">
     <thead>
         <tr>
             @foreach (var column in Model.Columns.Where(c => c.IsVisible))
             {
-                <th>@column.DisplayLabel</th>
+                var nextDirection =
+                    Model.SortColumn == column.FieldName && Model.SortDirection == "ASC"
+                        ? "DESC"
+                        : "ASC";
+
+                var sortIcon = "";
+
+                if (Model.SortColumn == column.FieldName)
+                {
+                    sortIcon = Model.SortDirection == "ASC" ? "▲" : "▼";
+                }
+
+                <th>
+                    <a href="?@BuildSortQuery(column.FieldName, nextDirection)"
+                       class="text-dark text-decoration-none">
+                        @column.DisplayLabel @sortIcon
+                    </a>
+                </th>
             }
 
             @if (Model.ScreenMode != "Report")
@@ -186,7 +202,6 @@
         }
     </tbody>
 </table>
-
 @if (Model.TotalPages >= 1)
 {
     <nav>
@@ -230,4 +245,23 @@
             query.Select(x =>
                 $"{System.Net.WebUtility.UrlEncode(x.Key)}={System.Net.WebUtility.UrlEncode(x.Value)}"));
     }
+
+string BuildSortQuery(string sortColumn, string sortDirection)
+{
+    var query = Context.Request.Query
+        .Where(x => x.Key != "sortColumn"
+                 && x.Key != "sortDirection"
+                 && x.Key != "pageNumber")
+        .ToDictionary(x => x.Key, x => x.Value.ToString());
+
+    query["sortColumn"] = sortColumn;
+    query["sortDirection"] = sortDirection;
+    query["pageNumber"] = "1";
+
+    return string.Join("&",
+        query.Select(x =>
+            $"{System.Net.WebUtility.UrlEncode(x.Key)}={System.Net.WebUtility.UrlEncode(x.Value)}"));
 }
+}
+
+
