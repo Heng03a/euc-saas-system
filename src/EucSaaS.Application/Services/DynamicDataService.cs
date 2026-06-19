@@ -273,6 +273,29 @@ public class DynamicDataService
         await command.ExecuteNonQueryAsync();
     }
 
+public async Task DeleteRecordAsync(
+    DataSource dataSource,
+    string schemaName,
+    string tableName,
+    string primaryKeyColumn,
+    Guid id)
+{
+    var connectionString = BuildConnectionString(dataSource);
+
+    await using var connection = new Npgsql.NpgsqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    var sql = $@"
+        delete from ""{schemaName}"".""{tableName}""
+        where ""{primaryKeyColumn}"" = @id;
+    ";
+
+    await using var command = new Npgsql.NpgsqlCommand(sql, connection);
+    command.Parameters.AddWithValue("@id", id);
+
+    await command.ExecuteNonQueryAsync();
+}
+
     private static string BuildConnectionString(DataSource dataSource)
     {
         return

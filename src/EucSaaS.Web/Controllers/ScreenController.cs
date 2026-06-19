@@ -346,6 +346,47 @@ if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
 
 return Redirect($"/Screen/{screenCode}");    }
 
+[HttpPost("/Screen/{screenCode}/Delete/{id}")]
+public async Task<IActionResult> Delete(
+    string screenCode,
+    Guid id,
+    string? returnUrl = null)
+{
+    var screen = await _context.ScreenDefinitions
+        .Include(x => x.DataSource)
+        .FirstOrDefaultAsync(x => x.ScreenCode == screenCode);
+
+    if (screen == null)
+        return Content($"Screen definition '{screenCode}' was not found.");
+
+    if (screen.DataSource == null)
+        return Content($"Screen '{screenCode}' has no data source assigned.");
+
+    if (string.IsNullOrWhiteSpace(screen.SchemaName))
+        return Content($"Screen '{screenCode}' has no schema name configured.");
+
+    if (string.IsNullOrWhiteSpace(screen.TableName))
+        return Content($"Screen '{screenCode}' has no table name configured.");
+
+    if (string.IsNullOrWhiteSpace(screen.PrimaryKeyColumn))
+        return Content($"Screen '{screenCode}' has no primary key column configured.");
+
+    await _dynamicDataService.DeleteRecordAsync(
+        screen.DataSource,
+        screen.SchemaName,
+        screen.TableName,
+        screen.PrimaryKeyColumn,
+        id
+    );
+
+    TempData["Message"] = $"Record {id} deleted successfully.";
+
+    if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        return Redirect(returnUrl);
+
+    return Redirect($"/Screen/{screenCode}");
+}
+
 
     [HttpGet("/Screen/{screenCode}/Export")]
     public async Task<IActionResult> Export(string screenCode)
