@@ -190,13 +190,6 @@ public class ScreenController : Controller
         if (string.IsNullOrWhiteSpace(screen.PrimaryKeyColumn))
             return Content($"Screen '{screenCode}' has no primary key column configured.");
 
-        foreach (var field in screen.FormFields)
-        {
-            await _context.Entry(field)
-                .Collection(x => x.Options)
-                .LoadAsync();
-        }
-
         var record = await _dynamicDataService.GetRecordAsync(
             screen.DataSource,
             screen.SchemaName,
@@ -213,11 +206,7 @@ public class ScreenController : Controller
             ScreenCode = screen.ScreenCode,
             ScreenName = screen.ScreenName,
             RecordId = id,
-
-            Fields = screen.FormFields
-                .OrderBy(x => x.DisplayOrder)
-                .ToList(),
-
+            Fields = screen.FormFields.OrderBy(x => x.DisplayOrder).ToList(),
             Values = record
         };
 
@@ -255,9 +244,11 @@ public class ScreenController : Controller
 
         foreach (var field in screen.FormFields.OrderBy(x => x.DisplayOrder))
         {
-            var value = Request.Form[field.FieldName].ToString();
-            submittedValues[field.FieldName] = value;
+            submittedValues[field.FieldName] =
+                Request.Form[field.FieldName].ToString();
         }
+
+        var displayValue = GetDisplayValue(submittedValues, id);
 
         await _dynamicDataService.UpdateRecordAsync(
             screen.DataSource,
@@ -268,7 +259,8 @@ public class ScreenController : Controller
             submittedValues
         );
 
-        TempData["Message"] = $"Record {id} updated successfully.";
+        TempData["Message"] =
+            $"Employee {displayValue} updated successfully.";
 
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
@@ -276,39 +268,37 @@ public class ScreenController : Controller
         return Redirect($"/Screen/{screenCode}");
     }
 
-[HttpGet("/Screen/{screenCode}/Create")]
-public async Task<IActionResult> Create(
-    string screenCode,
-    string? returnUrl = null)
-{
-    ViewBag.ReturnUrl = returnUrl;
-
-    var screen = await _context.ScreenDefinitions
-        .Include(x => x.FormFields)
-            .ThenInclude(x => x.Options)
-        .FirstOrDefaultAsync(x => x.ScreenCode == screenCode);
-
-    if (screen == null)
-        return Content($"Screen definition '{screenCode}' was not found.");
-
-    var model = new DynamicEditViewModel
+    [HttpGet("/Screen/{screenCode}/Create")]
+    public async Task<IActionResult> Create(
+        string screenCode,
+        string? returnUrl = null)
     {
-        ScreenCode = screen.ScreenCode,
-        ScreenName = screen.ScreenName,
-        RecordId = Guid.Empty,
-        Fields = screen.FormFields
-            .OrderBy(x => x.DisplayOrder)
-            .ToList(),
-        Values = new Dictionary<string, object?>()
-    };
+        ViewBag.ReturnUrl = returnUrl;
 
-    return View(model);
-}
+        var screen = await _context.ScreenDefinitions
+            .Include(x => x.FormFields)
+                .ThenInclude(x => x.Options)
+            .FirstOrDefaultAsync(x => x.ScreenCode == screenCode);
+
+        if (screen == null)
+            return Content($"Screen definition '{screenCode}' was not found.");
+
+        var model = new DynamicEditViewModel
+        {
+            ScreenCode = screen.ScreenCode,
+            ScreenName = screen.ScreenName,
+            RecordId = Guid.Empty,
+            Fields = screen.FormFields.OrderBy(x => x.DisplayOrder).ToList(),
+            Values = new Dictionary<string, object?>()
+        };
+
+        return View(model);
+    }
 
     [HttpPost("/Screen/{screenCode}")]
-public async Task<IActionResult> Save(
-    string screenCode,
-    string? returnUrl = null)
+    public async Task<IActionResult> Save(
+        string screenCode,
+        string? returnUrl = null)
     {
         var screen = await _context.ScreenDefinitions
             .Include(x => x.DataSource)
@@ -328,9 +318,11 @@ public async Task<IActionResult> Save(
 
         foreach (var field in screen.FormFields.OrderBy(x => x.DisplayOrder))
         {
-            var value = Request.Form[field.FieldName].ToString();
-            submittedValues[field.FieldName] = value;
+            submittedValues[field.FieldName] =
+                Request.Form[field.FieldName].ToString();
         }
+
+        var displayValue = GetDisplayValue(submittedValues, Guid.Empty);
 
         await _dynamicDataService.InsertRecordAsync(
             screen.DataSource,
@@ -339,54 +331,66 @@ public async Task<IActionResult> Save(
             submittedValues
         );
 
-        TempData["Message"] = "Record created successfully.";
+        TempData["Message"] =
+            $"Employee {displayValue} created successfully.";
 
-if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-    return Redirect(returnUrl);
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
 
-return Redirect($"/Screen/{screenCode}");    }
+        return Redirect($"/Screen/{screenCode}");
+    }
 
-[HttpPost("/Screen/{screenCode}/Delete/{id}")]
-public async Task<IActionResult> Delete(
-    string screenCode,
-    Guid id,
-    string? returnUrl = null)
-{
-    var screen = await _context.ScreenDefinitions
-        .Include(x => x.DataSource)
-        .FirstOrDefaultAsync(x => x.ScreenCode == screenCode);
+    [HttpPost("/Screen/{screenCode}/Delete/{id}")]
+    public async Task<IActionResult> Delete(
+        string screenCode,
+        Guid id,
+        string? returnUrl = null)
+    {
+        var screen = await _context.ScreenDefinitions
+            .Include(x => x.DataSource)
+            .FirstOrDefaultAsync(x => x.ScreenCode == screenCode);
 
-    if (screen == null)
-        return Content($"Screen definition '{screenCode}' was not found.");
+        if (screen == null)
+            return Content($"Screen definition '{screenCode}' was not found.");
 
-    if (screen.DataSource == null)
-        return Content($"Screen '{screenCode}' has no data source assigned.");
+        if (screen.DataSource == null)
+            return Content($"Screen '{screenCode}' has no data source assigned.");
 
-    if (string.IsNullOrWhiteSpace(screen.SchemaName))
-        return Content($"Screen '{screenCode}' has no schema name configured.");
+        if (string.IsNullOrWhiteSpace(screen.SchemaName))
+            return Content($"Screen '{screenCode}' has no schema name configured.");
 
-    if (string.IsNullOrWhiteSpace(screen.TableName))
-        return Content($"Screen '{screenCode}' has no table name configured.");
+        if (string.IsNullOrWhiteSpace(screen.TableName))
+            return Content($"Screen '{screenCode}' has no table name configured.");
 
-    if (string.IsNullOrWhiteSpace(screen.PrimaryKeyColumn))
-        return Content($"Screen '{screenCode}' has no primary key column configured.");
+        if (string.IsNullOrWhiteSpace(screen.PrimaryKeyColumn))
+            return Content($"Screen '{screenCode}' has no primary key column configured.");
 
-    await _dynamicDataService.DeleteRecordAsync(
-        screen.DataSource,
-        screen.SchemaName,
-        screen.TableName,
-        screen.PrimaryKeyColumn,
-        id
-    );
+        var record = await _dynamicDataService.GetRecordAsync(
+            screen.DataSource,
+            screen.SchemaName,
+            screen.TableName,
+            screen.PrimaryKeyColumn,
+            id
+        );
 
-    TempData["Message"] = $"Record {id} deleted successfully.";
+        var displayValue = GetDisplayValue(record, id);
 
-    if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-        return Redirect(returnUrl);
+        await _dynamicDataService.DeleteRecordAsync(
+            screen.DataSource,
+            screen.SchemaName,
+            screen.TableName,
+            screen.PrimaryKeyColumn,
+            id
+        );
 
-    return Redirect($"/Screen/{screenCode}");
-}
+        TempData["Message"] =
+            $"Employee {displayValue} deleted successfully.";
 
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
+
+        return Redirect($"/Screen/{screenCode}");
+    }
 
     [HttpGet("/Screen/{screenCode}/Export")]
     public async Task<IActionResult> Export(string screenCode)
@@ -471,6 +475,26 @@ public async Task<IActionResult> Delete(
             stream.ToArray(),
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             fileName);
+    }
+
+    private string GetDisplayValue(
+        Dictionary<string, object?>? record,
+        Guid id)
+    {
+        if (record != null && record.ContainsKey("EmployeeCode"))
+            return record["EmployeeCode"]?.ToString() ?? id.ToString();
+
+        return id == Guid.Empty ? "record" : id.ToString();
+    }
+
+    private string GetDisplayValue(
+        Dictionary<string, string?> values,
+        Guid id)
+    {
+        if (values.ContainsKey("EmployeeCode"))
+            return values["EmployeeCode"] ?? id.ToString();
+
+        return id == Guid.Empty ? "record" : id.ToString();
     }
 
     private Dictionary<string, string> ReadFilters(IQueryCollection query)

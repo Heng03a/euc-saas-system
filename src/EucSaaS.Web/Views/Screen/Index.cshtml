@@ -14,6 +14,13 @@
 
 <h1>@Model.ScreenName</h1>
 
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Message"]
+    </div>
+}
+
 @if (Model.ScreenMode != "Report")
 {
 <a class="btn btn-primary mb-4"
