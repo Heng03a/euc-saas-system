@@ -9,6 +9,9 @@
 <form method="post" action="/Screen/@Model.ScreenCode">
 
     <input type="hidden" name="Id" value="@Model.RecordId" />
+<input type="hidden"
+       name="returnUrl"
+       value="@ViewBag.ReturnUrl" />
 
     @foreach (var field in Model.Fields)
     {
@@ -66,8 +69,9 @@
         Save
     </button>
 
-    <a href="/Screen/@Model.ScreenCode" class="btn btn-secondary">
-        Back
-    </a>
+<a href="@(ViewBag.ReturnUrl ?? $"/Screen/{Model.ScreenCode}")"
+   class="btn btn-secondary">
+    Back
+</a>
 
 </form>

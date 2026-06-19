@@ -8,7 +8,11 @@
 
 <form method="post" action="/Screen/@Model.ScreenCode/Edit/@Model.RecordId">
 
-    <input type="hidden" name="Id" value="@Model.RecordId" />
+<input type="hidden" name="Id" value="@Model.RecordId" />
+
+<input type="hidden"
+       name="returnUrl"
+       value="@ViewBag.ReturnUrl" />
 
     @foreach (var field in Model.Fields)
     {
@@ -62,12 +66,13 @@
         </div>
     }
 
-    <button type="submit" class="btn btn-primary">
-        Save
-    </button>
+<button type="submit" class="btn btn-primary">
 
-    <a href="/Screen/@Model.ScreenCode" class="btn btn-secondary">
-        Back
-    </a>
+    Save
+</button>
 
+<a href="@(ViewBag.ReturnUrl ?? $"/Screen/{Model.ScreenCode}")"
+   class="btn btn-secondary">
+    Back
+</a>
 </form>

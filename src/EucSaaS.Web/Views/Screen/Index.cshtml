@@ -16,9 +16,10 @@
 
 @if (Model.ScreenMode != "Report")
 {
-    <a class="btn btn-primary mb-4" href="/Screen/@Model.ScreenCode/Create">
-        + Create New
-    </a>
+<a class="btn btn-primary mb-4"
+   href="/Screen/@Model.ScreenCode/Create?returnUrl=@System.Net.WebUtility.UrlEncode(Context.Request.Path + Context.Request.QueryString)">
+    + Create New
+</a>
 }
 
 <form method="get" class="border rounded p-4 mb-4">
@@ -89,36 +90,44 @@
             <input name="searchValue2" value="@searchValue2" class="form-control" />
         </div>
     </div>
-
 <div class="row mb-3 align-items-end">
     <div class="col-md-1 fw-bold">Sorting</div>
 
     <div class="col-md-3">
         <label>Sort By</label>
         <select name="sortColumn" class="form-control">
-            ...
+            <option value="">-- Default Sort --</option>
+            @foreach (var column in Model.Columns.Where(c => c.IsVisible))
+            {
+                <option value="@column.FieldName" selected="@(Model.SortColumn == column.FieldName)">
+                    @column.DisplayLabel
+                </option>
+            }
         </select>
     </div>
 
     <div class="col-md-2">
         <label>Direction</label>
         <select name="sortDirection" class="form-control">
-            ...
+            <option value="ASC" selected="@(Model.SortDirection == "ASC")">Ascending</option>
+            <option value="DESC" selected="@(Model.SortDirection == "DESC")">Descending</option>
         </select>
     </div>
 </div>
-
 <div class="row mb-3 align-items-end">
     <div class="col-md-1 fw-bold">Page Size</div>
 
     <div class="col-md-2">
         <label>Show</label>
-        <select name="pageSize" class="form-control">
-            <option value="10" selected="@(Model.PageSize == 10)">10</option>
-            <option value="25" selected="@(Model.PageSize == 25)">25</option>
-            <option value="50" selected="@(Model.PageSize == 50)">50</option>
-            <option value="100" selected="@(Model.PageSize == 100)">100</option>
-        </select>
+ <select name="pageSize" class="form-control">
+    <option value="1" selected="@(Model.PageSize == 1)">1</option>
+    <option value="2" selected="@(Model.PageSize == 2)">2</option>
+    <option value="10" selected="@(Model.PageSize == 10)">10</option>
+    <option value="25" selected="@(Model.PageSize == 25)">25</option>
+    <option value="50" selected="@(Model.PageSize == 50)">50</option>
+    <option value="100" selected="@(Model.PageSize == 100)">100</option>
+</select>
+
     </div>
 </div>
 
@@ -192,10 +201,11 @@
                 @if (Model.ScreenMode != "Report")
                 {
                     <td>
-                        <a class="btn btn-primary btn-sm"
-                           href="/Screen/@Model.ScreenCode/Edit/@row["Id"]">
-                            Edit
-                        </a>
+ <a class="btn btn-primary btn-sm"
+   href="/Screen/@Model.ScreenCode/Edit/@row["Id"]?returnUrl=@System.Net.WebUtility.UrlEncode(Context.Request.Path + Context.Request.QueryString)">
+    Edit
+</a>
+
                     </td>
                 }
             </tr>
@@ -230,6 +240,33 @@
 
         </ul>
     </nav>
+
+    <form method="get" class="d-flex align-items-center mt-3 gap-2">
+        @foreach (var item in Context.Request.Query)
+        {
+            if (item.Key != "pageNumber")
+            {
+                <input type="hidden" name="@item.Key" value="@item.Value" />
+            }
+        }
+
+<input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+        <label class="fw-bold">Go To Page:</label>
+
+        <input type="number"
+               name="pageNumber"
+               value="@Model.PageNumber"
+               min="1"
+               max="@Model.TotalPages"
+               class="form-control"
+               style="width:100px;" />
+
+        <span>of @Model.TotalPages</span>
+
+        <button type="submit" class="btn btn-primary">
+            Go
+        </button>
+    </form>
 }
 
 @functions {
