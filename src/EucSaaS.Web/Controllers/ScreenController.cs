@@ -1,4 +1,5 @@
 using EucSaaS.Application.Services;
+using EucSaaS.Domain.Entities;
 using EucSaaS.Infrastructure.Data;
 using EucSaaS.Web.ViewModels.Dynamic;
 using Microsoft.AspNetCore.Mvc;
@@ -116,10 +117,8 @@ public class ScreenController : Controller
             ScreenCode = screen.ScreenCode,
             ScreenName = screen.ScreenName,
             ScreenMode = screen.ScreenMode,
-
             SortColumn = sortColumn,
             SortDirection = sortDirection,
-
             PageNumber = pageNumber,
             PageSize = pageSize,
             TotalRecords = totalRecords,
@@ -201,14 +200,7 @@ public class ScreenController : Controller
         if (record == null)
             return Content($"Record '{id}' was not found.");
 
-        var model = new DynamicEditViewModel
-        {
-            ScreenCode = screen.ScreenCode,
-            ScreenName = screen.ScreenName,
-            RecordId = id,
-            Fields = screen.FormFields.OrderBy(x => x.DisplayOrder).ToList(),
-            Values = record
-        };
+        var model = BuildEditViewModel(screen, id, record);
 
         return View(model);
     }
@@ -219,6 +211,8 @@ public class ScreenController : Controller
         Guid id,
         string? returnUrl = null)
     {
+        ViewBag.ReturnUrl = returnUrl;
+
         var screen = await _context.ScreenDefinitions
             .Include(x => x.DataSource)
             .Include(x => x.FormFields)
@@ -240,12 +234,21 @@ public class ScreenController : Controller
         if (string.IsNullOrWhiteSpace(screen.PrimaryKeyColumn))
             return Content($"Screen '{screenCode}' has no primary key column configured.");
 
-        var submittedValues = new Dictionary<string, string?>();
+        var submittedValues = ReadSubmittedValues(screen);
 
-        foreach (var field in screen.FormFields.OrderBy(x => x.DisplayOrder))
+        ValidateDynamicFields(screen, submittedValues);
+
+await ValidateUniqueFieldsAsync(
+    screen,
+    submittedValues,
+    id
+);
+
+
+        if (!ModelState.IsValid)
         {
-            submittedValues[field.FieldName] =
-                Request.Form[field.FieldName].ToString();
+            var invalidModel = BuildEditViewModel(screen, id, submittedValues);
+            return View("Edit", invalidModel);
         }
 
         var displayValue = GetDisplayValue(submittedValues, id);
@@ -283,14 +286,11 @@ public class ScreenController : Controller
         if (screen == null)
             return Content($"Screen definition '{screenCode}' was not found.");
 
-        var model = new DynamicEditViewModel
-        {
-            ScreenCode = screen.ScreenCode,
-            ScreenName = screen.ScreenName,
-            RecordId = Guid.Empty,
-            Fields = screen.FormFields.OrderBy(x => x.DisplayOrder).ToList(),
-            Values = new Dictionary<string, object?>()
-        };
+        var model = BuildEditViewModel(
+            screen,
+            Guid.Empty,
+            new Dictionary<string, string?>()
+        );
 
         return View(model);
     }
@@ -300,9 +300,12 @@ public class ScreenController : Controller
         string screenCode,
         string? returnUrl = null)
     {
+        ViewBag.ReturnUrl = returnUrl;
+
         var screen = await _context.ScreenDefinitions
             .Include(x => x.DataSource)
             .Include(x => x.FormFields)
+                .ThenInclude(x => x.Options)
             .FirstOrDefaultAsync(x => x.ScreenCode == screenCode);
 
         if (screen == null)
@@ -314,12 +317,28 @@ public class ScreenController : Controller
         if (string.IsNullOrWhiteSpace(screen.SchemaName))
             return Content($"Screen '{screenCode}' has no schema name configured.");
 
-        var submittedValues = new Dictionary<string, string?>();
+        if (string.IsNullOrWhiteSpace(screen.TableName))
+            return Content($"Screen '{screenCode}' has no table name configured.");
 
-        foreach (var field in screen.FormFields.OrderBy(x => x.DisplayOrder))
+        var submittedValues = ReadSubmittedValues(screen);
+
+        ValidateDynamicFields(screen, submittedValues);
+
+await ValidateUniqueFieldsAsync(
+    screen,
+    submittedValues,
+    null
+);
+
+        if (!ModelState.IsValid)
         {
-            submittedValues[field.FieldName] =
-                Request.Form[field.FieldName].ToString();
+            var invalidModel = BuildEditViewModel(
+                screen,
+                Guid.Empty,
+                submittedValues
+            );
+
+            return View("Create", invalidModel);
         }
 
         var displayValue = GetDisplayValue(submittedValues, Guid.Empty);
@@ -477,6 +496,111 @@ public class ScreenController : Controller
             fileName);
     }
 
+    private Dictionary<string, string?> ReadSubmittedValues(
+        ScreenDefinition screen)
+    {
+        var submittedValues = new Dictionary<string, string?>();
+
+        foreach (var field in screen.FormFields.OrderBy(x => x.DisplayOrder))
+        {
+            submittedValues[field.FieldName] =
+                Request.Form[field.FieldName].ToString();
+        }
+
+        return submittedValues;
+    }
+
+    private void ValidateDynamicFields(
+        ScreenDefinition screen,
+        Dictionary<string, string?> values)
+    {
+        foreach (var field in screen.FormFields
+            .Where(x => x.IsVisible)
+            .OrderBy(x => x.DisplayOrder))
+        {
+            values.TryGetValue(field.FieldName, out var value);
+
+            var label = string.IsNullOrWhiteSpace(field.DisplayLabel)
+                ? field.FieldName
+                : field.DisplayLabel;
+
+            if (field.IsRequired && string.IsNullOrWhiteSpace(value))
+            {
+                ModelState.AddModelError(
+                    field.FieldName,
+                    $"{label} is required.");
+            }
+
+            if (field.MinLength.HasValue &&
+                !string.IsNullOrWhiteSpace(value) &&
+                value.Length < field.MinLength.Value)
+            {
+                ModelState.AddModelError(
+                    field.FieldName,
+                    $"{label} minimum length is {field.MinLength.Value}.");
+            }
+
+            if (field.MaxLength.HasValue &&
+                !string.IsNullOrWhiteSpace(value) &&
+                value.Length > field.MaxLength.Value)
+            {
+                ModelState.AddModelError(
+                    field.FieldName,
+                    $"{label} maximum length is {field.MaxLength.Value}.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(field.ValidationRegex) &&
+                !string.IsNullOrWhiteSpace(value))
+            {
+                if (!System.Text.RegularExpressions.Regex.IsMatch(
+                    value,
+                    field.ValidationRegex))
+                {
+                    ModelState.AddModelError(
+                        field.FieldName,
+                        $"{label} format is invalid.");
+                }
+            }
+        }
+    }
+
+    private DynamicEditViewModel BuildEditViewModel(
+        ScreenDefinition screen,
+        Guid recordId,
+        Dictionary<string, string?> values)
+    {
+        return new DynamicEditViewModel
+        {
+            ScreenCode = screen.ScreenCode,
+            ScreenName = screen.ScreenName,
+            RecordId = recordId,
+            Fields = screen.FormFields
+                .OrderBy(x => x.DisplayOrder)
+                .ToList(),
+            Values = values.ToDictionary(
+                x => x.Key,
+                x => (object?)x.Value
+            )
+        };
+    }
+
+    private DynamicEditViewModel BuildEditViewModel(
+        ScreenDefinition screen,
+        Guid recordId,
+        Dictionary<string, object?> values)
+    {
+        return new DynamicEditViewModel
+        {
+            ScreenCode = screen.ScreenCode,
+            ScreenName = screen.ScreenName,
+            RecordId = recordId,
+            Fields = screen.FormFields
+                .OrderBy(x => x.DisplayOrder)
+                .ToList(),
+            Values = values
+        };
+    }
+
     private string GetDisplayValue(
         Dictionary<string, object?>? record,
         Guid id)
@@ -521,4 +645,83 @@ public class ScreenController : Controller
 
         return filters;
     }
+
+private async Task ValidateUniqueFieldsAsync(
+    ScreenDefinition screen,
+    Dictionary<string, string?> values,
+    Guid? currentRecordId = null)
+{
+    if (screen.DataSource == null)
+        return;
+
+    foreach (var field in screen.FormFields
+        .Where(x => x.IsVisible && x.IsUnique)
+        .OrderBy(x => x.DisplayOrder))
+    {
+        if (!values.TryGetValue(field.FieldName, out var value))
+            continue;
+
+        if (string.IsNullOrWhiteSpace(value))
+            continue;
+
+        var filters = new Dictionary<string, string>
+        {
+            { field.FieldName, value }
+        };
+
+        var count = await _dynamicDataService.GetTableCountAsync(
+            screen.DataSource,
+            screen.SchemaName,
+            screen.TableName,
+            filters
+        );
+
+        if (count <= 0)
+            continue;
+
+        if (currentRecordId.HasValue && currentRecordId.Value != Guid.Empty)
+        {
+            var existingRows = await _dynamicDataService.GetTableDataAsync(
+                screen.DataSource,
+                screen.SchemaName,
+                screen.TableName,
+                filters,
+                "",
+                "ASC"
+            );
+
+            var isSameRecordOnly = true;
+
+            foreach (System.Data.DataRow row in existingRows.Rows)
+            {
+                if (!row.Table.Columns.Contains(screen.PrimaryKeyColumn))
+                {
+                    isSameRecordOnly = false;
+                    break;
+                }
+
+                var existingIdText = row[screen.PrimaryKeyColumn]?.ToString();
+
+                if (!Guid.TryParse(existingIdText, out var existingId) ||
+                    existingId != currentRecordId.Value)
+                {
+                    isSameRecordOnly = false;
+                    break;
+                }
+            }
+
+            if (isSameRecordOnly)
+                continue;
+        }
+
+        var label = string.IsNullOrWhiteSpace(field.DisplayLabel)
+            ? field.FieldName
+            : field.DisplayLabel;
+
+        ModelState.AddModelError(
+            field.FieldName,
+            $"{label} already exists.");
+    }
+}
+
 }

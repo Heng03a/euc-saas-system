@@ -3,6 +3,7 @@ using System;
 using EucSaaS.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EucSaaS.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260620064012_AddDynamicFieldValidation")]
+    partial class AddDynamicFieldValidation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -362,9 +365,6 @@ namespace EucSaaS.Infrastructure.Data.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsRequired")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsUnique")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsVisible")

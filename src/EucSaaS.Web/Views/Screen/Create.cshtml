@@ -62,6 +62,10 @@
                        name="@field.FieldName"
                        value="@value" />
             }
+
+<span class="text-danger">
+    @Html.ValidationMessage(field.FieldName)
+</span>
         </div>
     }
 
