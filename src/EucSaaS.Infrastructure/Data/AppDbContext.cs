@@ -19,6 +19,8 @@ public class AppDbContext : DbContext
     public DbSet<AppUser> AppUsers => Set<AppUser>();
     public DbSet<AppMenu> AppMenus => Set<AppMenu>();
 
+public DbSet<LookupDefinition> LookupDefinitions => Set<LookupDefinition>();
+
     public DbSet<ScreenDefinition> ScreenDefinitions => Set<ScreenDefinition>();
     public DbSet<ColumnDefinition> ColumnDefinitions => Set<ColumnDefinition>();
     public DbSet<FormFieldDefinition> FormFieldDefinitions => Set<FormFieldDefinition>();

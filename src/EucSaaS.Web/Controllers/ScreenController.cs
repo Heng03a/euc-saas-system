@@ -5,6 +5,7 @@ using EucSaaS.Web.ViewModels.Dynamic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ClosedXML.Excel;
+using System.Data;
 
 namespace EucSaaS.Web.Controllers;
 
@@ -150,7 +151,8 @@ public class ScreenController : Controller
                     ControlType = x.ControlType,
                     DataType = x.DataType,
                     IsRequired = x.IsRequired,
-                    DisplayOrder = x.DisplayOrder
+                    DisplayOrder = x.DisplayOrder,
+                    LookupCode = x.LookupCode
                 })
                 .ToList(),
 
@@ -200,6 +202,8 @@ public class ScreenController : Controller
         if (record == null)
             return Content($"Record '{id}' was not found.");
 
+        await LoadDynamicLookupOptionsAsync(screen);
+
         var model = BuildEditViewModel(screen, id, record);
 
         return View(model);
@@ -246,6 +250,8 @@ public class ScreenController : Controller
 
         if (!ModelState.IsValid)
         {
+            await LoadDynamicLookupOptionsAsync(screen);
+
             var invalidModel = BuildEditViewModel(screen, id, submittedValues);
             return View("Edit", invalidModel);
         }
@@ -284,6 +290,8 @@ public class ScreenController : Controller
 
         if (screen == null)
             return Content($"Screen definition '{screenCode}' was not found.");
+
+        await LoadDynamicLookupOptionsAsync(screen);
 
         var model = BuildEditViewModel(
             screen,
@@ -331,6 +339,8 @@ public class ScreenController : Controller
 
         if (!ModelState.IsValid)
         {
+            await LoadDynamicLookupOptionsAsync(screen);
+
             var invalidModel = BuildEditViewModel(
                 screen,
                 Guid.Empty,
@@ -493,6 +503,67 @@ public class ScreenController : Controller
             stream.ToArray(),
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             fileName);
+    }
+
+    private async Task LoadDynamicLookupOptionsAsync(ScreenDefinition screen)
+    {
+        foreach (var field in screen.FormFields
+            .Where(x => !string.IsNullOrWhiteSpace(x.LookupCode))
+            .OrderBy(x => x.DisplayOrder))
+        {
+            var lookup = await _context.LookupDefinitions
+                .FirstOrDefaultAsync(x =>
+                    x.LookupCode == field.LookupCode &&
+                    x.IsActive);
+
+            if (lookup == null)
+                continue;
+
+            if (string.IsNullOrWhiteSpace(lookup.SqlQuery))
+                continue;
+
+            var sql = lookup.SqlQuery.Trim();
+
+            if (!sql.StartsWith("select", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Lookup SQL must start with SELECT.");
+
+            if (sql.Contains(";"))
+                throw new InvalidOperationException("Lookup SQL must not contain semicolon.");
+
+            var dynamicOptions = new List<FormFieldOptionDefinition>();
+
+            var connection = _context.Database.GetDbConnection();
+
+            if (connection.State != ConnectionState.Open)
+                await connection.OpenAsync();
+
+            await using var command = connection.CreateCommand();
+            command.CommandText = sql;
+
+            await using var reader = await command.ExecuteReaderAsync();
+
+            var displayOrder = 1;
+
+            while (await reader.ReadAsync())
+            {
+                dynamicOptions.Add(new FormFieldOptionDefinition
+                {
+                    Id = Guid.NewGuid(),
+                    FormFieldDefinitionId = field.Id,
+                    OptionValue = reader["Value"]?.ToString() ?? "",
+                    OptionLabel = reader["Text"]?.ToString() ?? "",
+                    DisplayOrder = displayOrder++,
+                    IsActive = true
+                });
+            }
+
+            field.Options.Clear();
+
+            foreach (var option in dynamicOptions)
+            {
+                field.Options.Add(option);
+            }
+        }
     }
 
     private Dictionary<string, string?> ReadSubmittedValues(

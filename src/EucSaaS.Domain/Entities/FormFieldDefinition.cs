@@ -13,15 +13,19 @@ public class FormFieldDefinition
     public string DataType { get; set; } = "string";
 
     public string? Placeholder { get; set; }
-public ICollection<FormFieldOptionDefinition> Options { get; set; }
-    = new List<FormFieldOptionDefinition>();
+
+    public ICollection<FormFieldOptionDefinition> Options { get; set; }
+        = new List<FormFieldOptionDefinition>();
+
+    public string? LookupCode { get; set; }
 
     public int DisplayOrder { get; set; }
     public bool IsVisible { get; set; } = true;
     public bool IsReadOnly { get; set; } = false;
 
     public bool IsRequired { get; set; } = false;
-public bool IsUnique { get; set; } = false;
+    public bool IsUnique { get; set; } = false;
+
     public int? MaxLength { get; set; }
     public int? MinLength { get; set; }
     public string? ValidationRegex { get; set; }
