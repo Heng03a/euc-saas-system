@@ -238,12 +238,11 @@ public class ScreenController : Controller
 
         ValidateDynamicFields(screen, submittedValues);
 
-await ValidateUniqueFieldsAsync(
-    screen,
-    submittedValues,
-    id
-);
-
+        await ValidateUniqueFieldsAsync(
+            screen,
+            submittedValues,
+            id
+        );
 
         if (!ModelState.IsValid)
         {
@@ -251,7 +250,7 @@ await ValidateUniqueFieldsAsync(
             return View("Edit", invalidModel);
         }
 
-        var displayValue = GetDisplayValue(submittedValues, id);
+        var displayValue = GetDisplayValue(screen, submittedValues, id);
 
         await _dynamicDataService.UpdateRecordAsync(
             screen.DataSource,
@@ -263,7 +262,7 @@ await ValidateUniqueFieldsAsync(
         );
 
         TempData["Message"] =
-            $"Employee {displayValue} updated successfully.";
+            $"{screen.ScreenName} {displayValue} updated successfully.";
 
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
@@ -324,11 +323,11 @@ await ValidateUniqueFieldsAsync(
 
         ValidateDynamicFields(screen, submittedValues);
 
-await ValidateUniqueFieldsAsync(
-    screen,
-    submittedValues,
-    null
-);
+        await ValidateUniqueFieldsAsync(
+            screen,
+            submittedValues,
+            null
+        );
 
         if (!ModelState.IsValid)
         {
@@ -341,7 +340,7 @@ await ValidateUniqueFieldsAsync(
             return View("Create", invalidModel);
         }
 
-        var displayValue = GetDisplayValue(submittedValues, Guid.Empty);
+        var displayValue = GetDisplayValue(screen, submittedValues, Guid.Empty);
 
         await _dynamicDataService.InsertRecordAsync(
             screen.DataSource,
@@ -351,7 +350,7 @@ await ValidateUniqueFieldsAsync(
         );
 
         TempData["Message"] =
-            $"Employee {displayValue} created successfully.";
+            $"{screen.ScreenName} {displayValue} created successfully.";
 
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
@@ -392,7 +391,7 @@ await ValidateUniqueFieldsAsync(
             id
         );
 
-        var displayValue = GetDisplayValue(record, id);
+        var displayValue = GetDisplayValue(screen, record, id);
 
         await _dynamicDataService.DeleteRecordAsync(
             screen.DataSource,
@@ -403,7 +402,7 @@ await ValidateUniqueFieldsAsync(
         );
 
         TempData["Message"] =
-            $"Employee {displayValue} deleted successfully.";
+            $"{screen.ScreenName} {displayValue} deleted successfully.";
 
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
@@ -602,21 +601,30 @@ await ValidateUniqueFieldsAsync(
     }
 
     private string GetDisplayValue(
+        ScreenDefinition screen,
         Dictionary<string, object?>? record,
         Guid id)
     {
-        if (record != null && record.ContainsKey("EmployeeCode"))
-            return record["EmployeeCode"]?.ToString() ?? id.ToString();
+        if (record != null &&
+            !string.IsNullOrWhiteSpace(screen.DisplayField) &&
+            record.ContainsKey(screen.DisplayField))
+        {
+            return record[screen.DisplayField]?.ToString() ?? id.ToString();
+        }
 
         return id == Guid.Empty ? "record" : id.ToString();
     }
 
     private string GetDisplayValue(
+        ScreenDefinition screen,
         Dictionary<string, string?> values,
         Guid id)
     {
-        if (values.ContainsKey("EmployeeCode"))
-            return values["EmployeeCode"] ?? id.ToString();
+        if (!string.IsNullOrWhiteSpace(screen.DisplayField) &&
+            values.ContainsKey(screen.DisplayField))
+        {
+            return values[screen.DisplayField] ?? id.ToString();
+        }
 
         return id == Guid.Empty ? "record" : id.ToString();
     }
@@ -646,83 +654,81 @@ await ValidateUniqueFieldsAsync(
         return filters;
     }
 
-private async Task ValidateUniqueFieldsAsync(
-    ScreenDefinition screen,
-    Dictionary<string, string?> values,
-    Guid? currentRecordId = null)
-{
-    if (screen.DataSource == null)
-        return;
-
-    foreach (var field in screen.FormFields
-        .Where(x => x.IsVisible && x.IsUnique)
-        .OrderBy(x => x.DisplayOrder))
+    private async Task ValidateUniqueFieldsAsync(
+        ScreenDefinition screen,
+        Dictionary<string, string?> values,
+        Guid? currentRecordId = null)
     {
-        if (!values.TryGetValue(field.FieldName, out var value))
-            continue;
+        if (screen.DataSource == null)
+            return;
 
-        if (string.IsNullOrWhiteSpace(value))
-            continue;
-
-        var filters = new Dictionary<string, string>
+        foreach (var field in screen.FormFields
+            .Where(x => x.IsVisible && x.IsUnique)
+            .OrderBy(x => x.DisplayOrder))
         {
-            { field.FieldName, value }
-        };
+            if (!values.TryGetValue(field.FieldName, out var value))
+                continue;
 
-        var count = await _dynamicDataService.GetTableCountAsync(
-            screen.DataSource,
-            screen.SchemaName,
-            screen.TableName,
-            filters
-        );
+            if (string.IsNullOrWhiteSpace(value))
+                continue;
 
-        if (count <= 0)
-            continue;
+            var filters = new Dictionary<string, string>
+            {
+                { field.FieldName, value }
+            };
 
-        if (currentRecordId.HasValue && currentRecordId.Value != Guid.Empty)
-        {
-            var existingRows = await _dynamicDataService.GetTableDataAsync(
+            var count = await _dynamicDataService.GetTableCountAsync(
                 screen.DataSource,
                 screen.SchemaName,
                 screen.TableName,
-                filters,
-                "",
-                "ASC"
+                filters
             );
 
-            var isSameRecordOnly = true;
+            if (count <= 0)
+                continue;
 
-            foreach (System.Data.DataRow row in existingRows.Rows)
+            if (currentRecordId.HasValue && currentRecordId.Value != Guid.Empty)
             {
-                if (!row.Table.Columns.Contains(screen.PrimaryKeyColumn))
+                var existingRows = await _dynamicDataService.GetTableDataAsync(
+                    screen.DataSource,
+                    screen.SchemaName,
+                    screen.TableName,
+                    filters,
+                    "",
+                    "ASC"
+                );
+
+                var isSameRecordOnly = true;
+
+                foreach (System.Data.DataRow row in existingRows.Rows)
                 {
-                    isSameRecordOnly = false;
-                    break;
+                    if (!row.Table.Columns.Contains(screen.PrimaryKeyColumn))
+                    {
+                        isSameRecordOnly = false;
+                        break;
+                    }
+
+                    var existingIdText = row[screen.PrimaryKeyColumn]?.ToString();
+
+                    if (!Guid.TryParse(existingIdText, out var existingId) ||
+                        existingId != currentRecordId.Value)
+                    {
+                        isSameRecordOnly = false;
+                        break;
+                    }
                 }
 
-                var existingIdText = row[screen.PrimaryKeyColumn]?.ToString();
-
-                if (!Guid.TryParse(existingIdText, out var existingId) ||
-                    existingId != currentRecordId.Value)
-                {
-                    isSameRecordOnly = false;
-                    break;
-                }
+                if (isSameRecordOnly)
+                    continue;
             }
 
-            if (isSameRecordOnly)
-                continue;
+            var label = string.IsNullOrWhiteSpace(field.DisplayLabel)
+                ? field.FieldName
+                : field.DisplayLabel;
+
+            ModelState.AddModelError(
+                field.FieldName,
+                $"{label} already exists.");
         }
-
-        var label = string.IsNullOrWhiteSpace(field.DisplayLabel)
-            ? field.FieldName
-            : field.DisplayLabel;
-
-        ModelState.AddModelError(
-            field.FieldName,
-            $"{label} already exists.");
     }
-}
-
-
 }
