@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ClosedXML.Excel;
 using System.Data;
+using EucSaaS.Application.Interfaces;
 
 namespace EucSaaS.Web.Controllers;
 
@@ -14,16 +15,18 @@ public class ScreenController : Controller
     private readonly AppDbContext _context;
     private readonly DynamicDataService _dynamicDataService;
 
-private static readonly Guid CurrentTenantId =
-    new("11111111-1111-1111-1111-111111111111");
+private readonly ICurrentUserService _currentUserService;
 
-    public ScreenController(
-        AppDbContext context,
-        DynamicDataService dynamicDataService)
-    {
-        _context = context;
-        _dynamicDataService = dynamicDataService;
-    }
+
+public ScreenController(
+    AppDbContext context,
+    DynamicDataService dynamicDataService,
+    ICurrentUserService currentUserService)
+{
+    _context = context;
+    _dynamicDataService = dynamicDataService;
+    _currentUserService = currentUserService;
+}
 
     [HttpGet("/Screen/{screenCode}")]
     public async Task<IActionResult> Index(
@@ -547,7 +550,10 @@ private async Task LoadDynamicLookupOptionsAsync(ScreenDefinition screen)
         {
             var tenantParameter = command.CreateParameter();
             tenantParameter.ParameterName = "tenantId";
-            tenantParameter.Value = CurrentTenantId;
+if (_currentUserService.TenantId == Guid.Empty)
+    throw new InvalidOperationException("TenantId was not found for current user.");
+
+tenantParameter.Value = _currentUserService.TenantId;
             command.Parameters.Add(tenantParameter);
         }
 

@@ -1,13 +1,18 @@
 using EucSaaS.Domain.Entities;
 using Npgsql;
 using System.Data;
+using EucSaaS.Application.Interfaces;
 
 namespace EucSaaS.Application.Services;
 
 public class DynamicDataService
 {
-    private static readonly Guid CurrentTenantId =
-        new("11111111-1111-1111-1111-111111111111");
+private readonly ICurrentUserService _currentUserService;
+
+public DynamicDataService(ICurrentUserService currentUserService)
+{
+    _currentUserService = currentUserService;
+}
 
     public async Task<DataTable> GetTableDataAsync(
         DataSource dataSource,
@@ -274,7 +279,10 @@ public class DynamicDataService
         {
             columns.Add(@"""TenantId""");
             parameterNames.Add("@tenantId");
-            parameters.Add(new NpgsqlParameter("tenantId", CurrentTenantId));
+if (_currentUserService.TenantId == Guid.Empty)
+    throw new InvalidOperationException("TenantId was not found for current user.");
+
+parameters.Add(new NpgsqlParameter("tenantId", _currentUserService.TenantId));
         }
 
         foreach (var item in values)
@@ -342,21 +350,24 @@ public class DynamicDataService
         await command.ExecuteNonQueryAsync();
     }
 
-    private static void AddTenantFilter(
-        string tableName,
-        List<string> whereClauses,
-        List<NpgsqlParameter> parameters)
+private void AddTenantFilter(
+    string tableName,
+    List<string> whereClauses,
+    List<NpgsqlParameter> parameters)
+{
+    if (!IsTenantIsolatedTable(tableName))
+        return;
+
+    if (_currentUserService.TenantId == Guid.Empty)
+        throw new InvalidOperationException("TenantId was not found for current user.");
+
+    whereClauses.Add(@"""TenantId"" = @tenantId");
+
+    if (!parameters.Any(x => x.ParameterName == "tenantId"))
     {
-        if (!IsTenantIsolatedTable(tableName))
-            return;
-
-        whereClauses.Add(@"""TenantId"" = @tenantId");
-
-        if (!parameters.Any(x => x.ParameterName == "tenantId"))
-        {
-            parameters.Add(new NpgsqlParameter("tenantId", CurrentTenantId));
-        }
+        parameters.Add(new NpgsqlParameter("tenantId", _currentUserService.TenantId));
     }
+}
 
 private static bool IsTenantIsolatedTable(string tableName)
 {
