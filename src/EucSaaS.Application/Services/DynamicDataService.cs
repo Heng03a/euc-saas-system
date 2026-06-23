@@ -358,10 +358,18 @@ public class DynamicDataService
         }
     }
 
-    private static bool IsTenantIsolatedTable(string tableName)
+private static bool IsTenantIsolatedTable(string tableName)
+{
+    var tenantTables = new[]
     {
-        return tableName.Equals("Employees", StringComparison.OrdinalIgnoreCase);
-    }
+        "Employees",
+        "Departments"
+    };
+
+    return tenantTables.Contains(
+        tableName,
+        StringComparer.OrdinalIgnoreCase);
+}
 
     private static string BuildConnectionString(DataSource dataSource)
     {

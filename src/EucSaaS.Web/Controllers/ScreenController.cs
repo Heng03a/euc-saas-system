@@ -14,6 +14,9 @@ public class ScreenController : Controller
     private readonly AppDbContext _context;
     private readonly DynamicDataService _dynamicDataService;
 
+private static readonly Guid CurrentTenantId =
+    new("11111111-1111-1111-1111-111111111111");
+
     public ScreenController(
         AppDbContext context,
         DynamicDataService dynamicDataService)
@@ -505,66 +508,74 @@ public class ScreenController : Controller
             fileName);
     }
 
-    private async Task LoadDynamicLookupOptionsAsync(ScreenDefinition screen)
+private async Task LoadDynamicLookupOptionsAsync(ScreenDefinition screen)
+{
+    foreach (var field in screen.FormFields
+        .Where(x => !string.IsNullOrWhiteSpace(x.LookupCode))
+        .OrderBy(x => x.DisplayOrder))
     {
-        foreach (var field in screen.FormFields
-            .Where(x => !string.IsNullOrWhiteSpace(x.LookupCode))
-            .OrderBy(x => x.DisplayOrder))
+        var lookup = await _context.LookupDefinitions
+            .FirstOrDefaultAsync(x =>
+                x.LookupCode == field.LookupCode &&
+                x.IsActive);
+
+        if (lookup == null)
+            continue;
+
+        if (string.IsNullOrWhiteSpace(lookup.SqlQuery))
+            continue;
+
+        var sql = lookup.SqlQuery.Trim();
+
+        if (!sql.StartsWith("select", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Lookup SQL must start with SELECT.");
+
+        if (sql.Contains(";"))
+            throw new InvalidOperationException("Lookup SQL must not contain semicolon.");
+
+        var dynamicOptions = new List<FormFieldOptionDefinition>();
+
+        var connection = _context.Database.GetDbConnection();
+
+        if (connection.State != ConnectionState.Open)
+            await connection.OpenAsync();
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+
+        if (sql.Contains("@tenantId", StringComparison.OrdinalIgnoreCase))
         {
-            var lookup = await _context.LookupDefinitions
-                .FirstOrDefaultAsync(x =>
-                    x.LookupCode == field.LookupCode &&
-                    x.IsActive);
+            var tenantParameter = command.CreateParameter();
+            tenantParameter.ParameterName = "tenantId";
+            tenantParameter.Value = CurrentTenantId;
+            command.Parameters.Add(tenantParameter);
+        }
 
-            if (lookup == null)
-                continue;
+        await using var reader = await command.ExecuteReaderAsync();
 
-            if (string.IsNullOrWhiteSpace(lookup.SqlQuery))
-                continue;
+        var displayOrder = 1;
 
-            var sql = lookup.SqlQuery.Trim();
-
-            if (!sql.StartsWith("select", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException("Lookup SQL must start with SELECT.");
-
-            if (sql.Contains(";"))
-                throw new InvalidOperationException("Lookup SQL must not contain semicolon.");
-
-            var dynamicOptions = new List<FormFieldOptionDefinition>();
-
-            var connection = _context.Database.GetDbConnection();
-
-            if (connection.State != ConnectionState.Open)
-                await connection.OpenAsync();
-
-            await using var command = connection.CreateCommand();
-            command.CommandText = sql;
-
-            await using var reader = await command.ExecuteReaderAsync();
-
-            var displayOrder = 1;
-
-            while (await reader.ReadAsync())
+        while (await reader.ReadAsync())
+        {
+            dynamicOptions.Add(new FormFieldOptionDefinition
             {
-                dynamicOptions.Add(new FormFieldOptionDefinition
-                {
-                    Id = Guid.NewGuid(),
-                    FormFieldDefinitionId = field.Id,
-                    OptionValue = reader["Value"]?.ToString() ?? "",
-                    OptionLabel = reader["Text"]?.ToString() ?? "",
-                    DisplayOrder = displayOrder++,
-                    IsActive = true
-                });
-            }
+                Id = Guid.NewGuid(),
+                FormFieldDefinitionId = field.Id,
+                OptionValue = reader["Value"]?.ToString() ?? "",
+                OptionLabel = reader["Text"]?.ToString() ?? "",
+                DisplayOrder = displayOrder++,
+                IsActive = true
+            });
+        }
 
-            field.Options.Clear();
+        field.Options.Clear();
 
-            foreach (var option in dynamicOptions)
-            {
-                field.Options.Add(option);
-            }
+        foreach (var option in dynamicOptions)
+        {
+            field.Options.Add(option);
         }
     }
+}
 
     private Dictionary<string, string?> ReadSubmittedValues(
         ScreenDefinition screen)
