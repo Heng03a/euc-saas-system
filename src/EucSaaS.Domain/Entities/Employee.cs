@@ -5,6 +5,10 @@ public class Employee
 {
     public Guid Id { get; set; }
 
+public Guid TenantId { get; set; }
+
+public Tenant Tenant { get; set; } = null!;
+
 [Required]
 public string EmployeeCode { get; set; } = string.Empty;
 

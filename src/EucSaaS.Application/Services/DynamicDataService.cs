@@ -6,6 +6,9 @@ namespace EucSaaS.Application.Services;
 
 public class DynamicDataService
 {
+    private static readonly Guid CurrentTenantId =
+        new("11111111-1111-1111-1111-111111111111");
+
     public async Task<DataTable> GetTableDataAsync(
         DataSource dataSource,
         string schemaName,
@@ -24,6 +27,8 @@ public class DynamicDataService
 
         var whereClauses = new List<string>();
         var parameters = new List<NpgsqlParameter>();
+
+        AddTenantFilter(tableName, whereClauses, parameters);
 
         var index = 0;
 
@@ -78,9 +83,7 @@ public class DynamicDataService
         await using var command = new NpgsqlCommand(sql, connection);
 
         foreach (var parameter in parameters)
-        {
             command.Parameters.Add(parameter);
-        }
 
         await using var reader = await command.ExecuteReaderAsync();
 
@@ -103,6 +106,8 @@ public class DynamicDataService
 
         var whereClauses = new List<string>();
         var parameters = new List<NpgsqlParameter>();
+
+        AddTenantFilter(tableName, whereClauses, parameters);
 
         var index = 0;
 
@@ -129,9 +134,7 @@ public class DynamicDataService
         await using var command = new NpgsqlCommand(sql, connection);
 
         foreach (var parameter in parameters)
-        {
             command.Parameters.Add(parameter);
-        }
 
         var result = await command.ExecuteScalarAsync();
 
@@ -150,13 +153,27 @@ public class DynamicDataService
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
 
+        var whereClauses = new List<string>
+        {
+            $@"""{primaryKeyColumn}"" = @id"
+        };
+
+        var parameters = new List<NpgsqlParameter>
+        {
+            new("id", id)
+        };
+
+        AddTenantFilter(tableName, whereClauses, parameters);
+
         var sql = $@"
             select *
             from ""{schemaName}"".""{tableName}""
-            where ""{primaryKeyColumn}"" = @id";
+            where {string.Join(" and ", whereClauses)}";
 
         await using var command = new NpgsqlCommand(sql, connection);
-        command.Parameters.AddWithValue("id", id);
+
+        foreach (var parameter in parameters)
+            command.Parameters.Add(parameter);
 
         await using var reader = await command.ExecuteReaderAsync();
 
@@ -197,23 +214,31 @@ public class DynamicDataService
             if (item.Key.Equals(primaryKeyColumn, StringComparison.OrdinalIgnoreCase))
                 continue;
 
+            if (item.Key.Equals("TenantId", StringComparison.OrdinalIgnoreCase))
+                continue;
+
             var parameterName = $"p{index}";
             setClauses.Add($@"""{item.Key}"" = @{parameterName}");
             parameters.Add(new NpgsqlParameter(parameterName, item.Value ?? ""));
             index++;
         }
 
+        var whereClauses = new List<string>
+        {
+            $@"""{primaryKeyColumn}"" = @id"
+        };
+
+        AddTenantFilter(tableName, whereClauses, parameters);
+
         var sql = $@"
             update ""{schemaName}"".""{tableName}""
             set {string.Join(", ", setClauses)}
-            where ""{primaryKeyColumn}"" = @id";
+            where {string.Join(" and ", whereClauses)}";
 
         await using var command = new NpgsqlCommand(sql, connection);
 
         foreach (var parameter in parameters)
-        {
             command.Parameters.Add(parameter);
-        }
 
         command.Parameters.AddWithValue("id", id);
 
@@ -245,8 +270,18 @@ public class DynamicDataService
         parameterNames.Add("@createdDate");
         parameters.Add(new NpgsqlParameter("createdDate", DateTime.UtcNow));
 
+        if (IsTenantIsolatedTable(tableName))
+        {
+            columns.Add(@"""TenantId""");
+            parameterNames.Add("@tenantId");
+            parameters.Add(new NpgsqlParameter("tenantId", CurrentTenantId));
+        }
+
         foreach (var item in values)
         {
+            if (item.Key.Equals("TenantId", StringComparison.OrdinalIgnoreCase))
+                continue;
+
             columns.Add($@"""{item.Key}""");
 
             var parameterName = $"p{index}";
@@ -266,35 +301,67 @@ public class DynamicDataService
         await using var command = new NpgsqlCommand(sql, connection);
 
         foreach (var parameter in parameters)
-        {
             command.Parameters.Add(parameter);
-        }
 
         await command.ExecuteNonQueryAsync();
     }
 
-public async Task DeleteRecordAsync(
-    DataSource dataSource,
-    string schemaName,
-    string tableName,
-    string primaryKeyColumn,
-    Guid id)
-{
-    var connectionString = BuildConnectionString(dataSource);
+    public async Task DeleteRecordAsync(
+        DataSource dataSource,
+        string schemaName,
+        string tableName,
+        string primaryKeyColumn,
+        Guid id)
+    {
+        var connectionString = BuildConnectionString(dataSource);
 
-    await using var connection = new Npgsql.NpgsqlConnection(connectionString);
-    await connection.OpenAsync();
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
 
-    var sql = $@"
-        delete from ""{schemaName}"".""{tableName}""
-        where ""{primaryKeyColumn}"" = @id;
-    ";
+        var whereClauses = new List<string>
+        {
+            $@"""{primaryKeyColumn}"" = @id"
+        };
 
-    await using var command = new Npgsql.NpgsqlCommand(sql, connection);
-    command.Parameters.AddWithValue("@id", id);
+        var parameters = new List<NpgsqlParameter>
+        {
+            new("id", id)
+        };
 
-    await command.ExecuteNonQueryAsync();
-}
+        AddTenantFilter(tableName, whereClauses, parameters);
+
+        var sql = $@"
+            delete from ""{schemaName}"".""{tableName}""
+            where {string.Join(" and ", whereClauses)}";
+
+        await using var command = new NpgsqlCommand(sql, connection);
+
+        foreach (var parameter in parameters)
+            command.Parameters.Add(parameter);
+
+        await command.ExecuteNonQueryAsync();
+    }
+
+    private static void AddTenantFilter(
+        string tableName,
+        List<string> whereClauses,
+        List<NpgsqlParameter> parameters)
+    {
+        if (!IsTenantIsolatedTable(tableName))
+            return;
+
+        whereClauses.Add(@"""TenantId"" = @tenantId");
+
+        if (!parameters.Any(x => x.ParameterName == "tenantId"))
+        {
+            parameters.Add(new NpgsqlParameter("tenantId", CurrentTenantId));
+        }
+    }
+
+    private static bool IsTenantIsolatedTable(string tableName)
+    {
+        return tableName.Equals("Employees", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static string BuildConnectionString(DataSource dataSource)
     {
