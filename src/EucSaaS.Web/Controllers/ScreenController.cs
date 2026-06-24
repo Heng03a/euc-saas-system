@@ -210,9 +210,24 @@ public ScreenController(
 
         await LoadDynamicLookupOptionsAsync(screen);
 
-        var model = BuildEditViewModel(screen, id, record);
+var model = BuildEditViewModel(screen, id, record);
 
-        return View(model);
+model.AuditLogs = await _context.AuditLogs
+ .Where(x =>
+    x.RecordId == id.ToString())
+    .OrderByDescending(x => x.ChangedAt)
+    .Select(x => new AuditLogViewModel
+    {
+        ChangedAt = x.ChangedAt,
+        ActionType = x.ActionType,
+        FieldName = x.FieldName,
+        OldValue = x.OldValue,
+        NewValue = x.NewValue,
+        ChangedBy = x.ChangedBy
+    })
+    .ToListAsync();
+
+return View(model);
     }
 
     [HttpPost("/Screen/{screenCode}/Edit/{id}")]
@@ -425,6 +440,46 @@ public ScreenController(
 
         return Redirect($"/Screen/{screenCode}");
     }
+
+
+[HttpGet("/Screen/{screenCode}/Audit/{id}")]
+public async Task<IActionResult> Audit(
+    string screenCode,
+    Guid id,
+    string? returnUrl = null)
+{
+    ViewBag.ReturnUrl = returnUrl;
+
+    var screen = await _context.ScreenDefinitions
+        .FirstOrDefaultAsync(x => x.ScreenCode == screenCode);
+
+    if (screen == null)
+        return Content($"Screen definition '{screenCode}' was not found.");
+
+    var auditLogs = await _context.AuditLogs
+        .Where(x => x.RecordId == id.ToString())
+        .OrderByDescending(x => x.ChangedAt)
+        .Select(x => new AuditLogViewModel
+        {
+            ChangedAt = x.ChangedAt,
+            ActionType = x.ActionType,
+            FieldName = x.FieldName,
+            OldValue = x.OldValue,
+            NewValue = x.NewValue,
+            ChangedBy = x.ChangedBy
+        })
+        .ToListAsync();
+
+    var model = new DynamicEditViewModel
+    {
+        ScreenCode = screen.ScreenCode,
+        ScreenName = screen.ScreenName,
+        RecordId = id,
+        AuditLogs = auditLogs
+    };
+
+    return View(model);
+}
 
     [HttpGet("/Screen/{screenCode}/Export")]
     public async Task<IActionResult> Export(string screenCode)

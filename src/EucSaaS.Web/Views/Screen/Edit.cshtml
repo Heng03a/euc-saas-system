@@ -81,3 +81,35 @@
     Back
 </a>
 </form>
+@if (Model.AuditLogs.Any())
+{
+    <hr />
+
+    <h4>Audit Trail</h4>
+
+    <table class="table table-bordered table-sm">
+        <thead>
+            <tr>
+                <th>Changed At</th>
+                <th>Action</th>
+                <th>Field</th>
+                <th>Old Value</th>
+                <th>New Value</th>
+                <th>Changed By</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var log in Model.AuditLogs)
+            {
+                <tr>
+                    <td>@log.ChangedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td>@log.ActionType</td>
+                    <td>@log.FieldName</td>
+                    <td>@log.OldValue</td>
+                    <td>@log.NewValue</td>
+                    <td>@log.ChangedBy</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

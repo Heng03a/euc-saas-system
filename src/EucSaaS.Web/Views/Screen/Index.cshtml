@@ -213,6 +213,11 @@
     Edit
 </a>
 
+<a class="btn btn-info"
+   href="/Screen/@Model.ScreenCode/Audit/@row["Id"]?returnUrl=@Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString)">
+    Audit
+</a>
+
 <form method="post"
       action="/Screen/@Model.ScreenCode/Delete/@row["Id"]"
       style="display:inline;"
