@@ -7,12 +7,12 @@ namespace EucSaaS.Application.Services;
 
 public class DynamicDataService
 {
-private readonly ICurrentUserService _currentUserService;
+    private readonly ICurrentUserService _currentUserService;
 
-public DynamicDataService(ICurrentUserService currentUserService)
-{
-    _currentUserService = currentUserService;
-}
+    public DynamicDataService(ICurrentUserService currentUserService)
+    {
+        _currentUserService = currentUserService;
+    }
 
     public async Task<DataTable> GetTableDataAsync(
         DataSource dataSource,
@@ -204,6 +204,13 @@ public DynamicDataService(ICurrentUserService currentUserService)
         Guid id,
         Dictionary<string, string?> values)
     {
+        var oldRow = await GetRecordAsync(
+            dataSource,
+            schemaName,
+            tableName,
+            primaryKeyColumn,
+            id);
+
         var connectionString = BuildConnectionString(dataSource);
 
         await using var connection = new NpgsqlConnection(connectionString);
@@ -228,6 +235,9 @@ public DynamicDataService(ICurrentUserService currentUserService)
             index++;
         }
 
+        if (setClauses.Count == 0)
+            return;
+
         var whereClauses = new List<string>
         {
             $@"""{primaryKeyColumn}"" = @id"
@@ -248,6 +258,36 @@ public DynamicDataService(ICurrentUserService currentUserService)
         command.Parameters.AddWithValue("id", id);
 
         await command.ExecuteNonQueryAsync();
+
+        if (oldRow != null)
+        {
+            foreach (var item in values)
+            {
+                if (item.Key.Equals(primaryKeyColumn, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (item.Key.Equals("TenantId", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var oldValue = oldRow.ContainsKey(item.Key)
+                    ? oldRow[item.Key]?.ToString() ?? ""
+                    : "";
+
+                var newValue = item.Value ?? "";
+
+                if (oldValue != newValue)
+                {
+                    await InsertAuditLogAsync(
+                        dataSource,
+                        tableName,
+                        id.ToString(),
+                        "UPDATE",
+                        item.Key,
+                        oldValue,
+                        newValue);
+                }
+            }
+        }
     }
 
     public async Task InsertRecordAsync(
@@ -261,6 +301,8 @@ public DynamicDataService(ICurrentUserService currentUserService)
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
 
+        var newId = Guid.NewGuid();
+
         var columns = new List<string>();
         var parameterNames = new List<string>();
         var parameters = new List<NpgsqlParameter>();
@@ -269,7 +311,7 @@ public DynamicDataService(ICurrentUserService currentUserService)
 
         columns.Add(@"""Id""");
         parameterNames.Add("@id");
-        parameters.Add(new NpgsqlParameter("id", Guid.NewGuid()));
+        parameters.Add(new NpgsqlParameter("id", newId));
 
         columns.Add(@"""CreatedDate""");
         parameterNames.Add("@createdDate");
@@ -279,10 +321,11 @@ public DynamicDataService(ICurrentUserService currentUserService)
         {
             columns.Add(@"""TenantId""");
             parameterNames.Add("@tenantId");
-if (_currentUserService.TenantId == Guid.Empty)
-    throw new InvalidOperationException("TenantId was not found for current user.");
 
-parameters.Add(new NpgsqlParameter("tenantId", _currentUserService.TenantId));
+            if (_currentUserService.TenantId == Guid.Empty)
+                throw new InvalidOperationException("TenantId was not found for current user.");
+
+            parameters.Add(new NpgsqlParameter("tenantId", _currentUserService.TenantId));
         }
 
         foreach (var item in values)
@@ -312,6 +355,21 @@ parameters.Add(new NpgsqlParameter("tenantId", _currentUserService.TenantId));
             command.Parameters.Add(parameter);
 
         await command.ExecuteNonQueryAsync();
+
+        foreach (var item in values)
+        {
+            if (item.Key.Equals("TenantId", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            await InsertAuditLogAsync(
+                dataSource,
+                tableName,
+                newId.ToString(),
+                "CREATE",
+                item.Key,
+                "",
+                item.Value ?? "");
+        }
     }
 
     public async Task DeleteRecordAsync(
@@ -321,6 +379,13 @@ parameters.Add(new NpgsqlParameter("tenantId", _currentUserService.TenantId));
         string primaryKeyColumn,
         Guid id)
     {
+        var oldRow = await GetRecordAsync(
+            dataSource,
+            schemaName,
+            tableName,
+            primaryKeyColumn,
+            id);
+
         var connectionString = BuildConnectionString(dataSource);
 
         await using var connection = new NpgsqlConnection(connectionString);
@@ -348,39 +413,114 @@ parameters.Add(new NpgsqlParameter("tenantId", _currentUserService.TenantId));
             command.Parameters.Add(parameter);
 
         await command.ExecuteNonQueryAsync();
+
+        if (oldRow != null)
+        {
+            foreach (var item in oldRow)
+            {
+                await InsertAuditLogAsync(
+                    dataSource,
+                    tableName,
+                    id.ToString(),
+                    "DELETE",
+                    item.Key,
+                    item.Value?.ToString() ?? "",
+                    "");
+            }
+        }
     }
 
-private void AddTenantFilter(
-    string tableName,
-    List<string> whereClauses,
-    List<NpgsqlParameter> parameters)
-{
-    if (!IsTenantIsolatedTable(tableName))
-        return;
-
-    if (_currentUserService.TenantId == Guid.Empty)
-        throw new InvalidOperationException("TenantId was not found for current user.");
-
-    whereClauses.Add(@"""TenantId"" = @tenantId");
-
-    if (!parameters.Any(x => x.ParameterName == "tenantId"))
+    private async Task InsertAuditLogAsync(
+        DataSource dataSource,
+        string screenCode,
+        string recordId,
+        string actionType,
+        string fieldName,
+        string oldValue,
+        string newValue)
     {
-        parameters.Add(new NpgsqlParameter("tenantId", _currentUserService.TenantId));
+        var connectionString = BuildConnectionString(dataSource);
+
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        var sql = @"
+            insert into ""AuditLogs""
+            (
+                ""Id"",
+                ""ScreenCode"",
+                ""RecordId"",
+                ""ActionType"",
+                ""FieldName"",
+                ""OldValue"",
+                ""NewValue"",
+                ""ChangedBy"",
+                ""ChangedAt""
+            )
+            values
+            (
+                @id,
+                @screenCode,
+                @recordId,
+                @actionType,
+                @fieldName,
+                @oldValue,
+                @newValue,
+                @changedBy,
+                @changedAt
+            )";
+
+        await using var command = new NpgsqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("id", Guid.NewGuid());
+        command.Parameters.AddWithValue("screenCode", screenCode);
+        command.Parameters.AddWithValue("recordId", recordId);
+        command.Parameters.AddWithValue("actionType", actionType);
+        command.Parameters.AddWithValue("fieldName", fieldName);
+        command.Parameters.AddWithValue("oldValue", oldValue);
+        command.Parameters.AddWithValue("newValue", newValue);
+        command.Parameters.AddWithValue("changedBy", GetChangedBy());
+        command.Parameters.AddWithValue("changedAt", DateTime.UtcNow);
+
+        await command.ExecuteNonQueryAsync();
     }
-}
 
-private static bool IsTenantIsolatedTable(string tableName)
-{
-    var tenantTables = new[]
+    private static string GetChangedBy()
     {
-        "Employees",
-        "Departments"
-    };
+        return "SYSTEM";
+    }
 
-    return tenantTables.Contains(
-        tableName,
-        StringComparer.OrdinalIgnoreCase);
-}
+    private void AddTenantFilter(
+        string tableName,
+        List<string> whereClauses,
+        List<NpgsqlParameter> parameters)
+    {
+        if (!IsTenantIsolatedTable(tableName))
+            return;
+
+        if (_currentUserService.TenantId == Guid.Empty)
+            throw new InvalidOperationException("TenantId was not found for current user.");
+
+        whereClauses.Add(@"""TenantId"" = @tenantId");
+
+        if (!parameters.Any(x => x.ParameterName == "tenantId"))
+        {
+            parameters.Add(new NpgsqlParameter("tenantId", _currentUserService.TenantId));
+        }
+    }
+
+    private static bool IsTenantIsolatedTable(string tableName)
+    {
+        var tenantTables = new[]
+        {
+            "Employees",
+            "Departments"
+        };
+
+        return tenantTables.Contains(
+            tableName,
+            StringComparer.OrdinalIgnoreCase);
+    }
 
     private static string BuildConnectionString(DataSource dataSource)
     {
