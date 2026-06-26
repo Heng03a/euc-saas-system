@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
       public DbSet<DataSource> DataSources { get; set; }
       
 public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+public DbSet<DashboardWidgetDefinition> DashboardWidgetDefinitions => Set<DashboardWidgetDefinition>();
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Department> Departments => Set<Department>();

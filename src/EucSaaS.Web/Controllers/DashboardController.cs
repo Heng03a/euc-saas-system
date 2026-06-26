@@ -1,14 +1,24 @@
+using EucSaaS.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using EucSaaS.Web.Security;
 
 namespace EucSaaS.Web.Controllers;
 
-[Authorize(Policy = AppPolicies.ReadAccess)]
+[Authorize]
 public class DashboardController : Controller
 {
-    public IActionResult Index()
+    private readonly DashboardService _dashboardService;
+
+    public DashboardController(DashboardService dashboardService)
     {
-        return View();
+        _dashboardService = dashboardService;
+    }
+
+    [HttpGet("/Dashboard")]
+    public async Task<IActionResult> Index()
+    {
+        var model = await _dashboardService.GetDashboardAsync();
+
+        return View(model);
     }
 }
