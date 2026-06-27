@@ -20,3 +20,30 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+.dashboard-card{
+    transition:all .2s ease;
+}
+
+.dashboard-card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 .5rem 1rem rgba(0,0,0,.15)!important;
+}
+
+.dashboard-card {
+    position: relative;
+    transition: all .2s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+}
+
+.dashboard-icon{
+    position:absolute;
+    right:20px;
+    top:18px;
+    font-size:3rem;
+    opacity:.15;
+}
