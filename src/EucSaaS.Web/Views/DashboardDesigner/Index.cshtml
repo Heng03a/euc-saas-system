@@ -1,0 +1,129 @@
+@model List<EucSaaS.Web.ViewModels.Dashboard.DashboardWidgetDefinitionViewModel>
+
+@{
+    ViewData["Title"] = "Dashboard Designer";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2>Dashboard Designer</h2>
+        <p class="text-muted mb-0">
+            Manage dashboard widgets metadata.
+        </p>
+    </div>
+
+    <a asp-controller="DashboardDesigner"
+       asp-action="Create"
+       class="btn btn-success">
+        + Create Widget
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Widget Code</th>
+                <th>Widget Title</th>
+                <th class="text-center">Type</th>
+                <th class="text-center">Width</th>
+                <th class="text-center">Order</th>
+                <th class="text-center">Active</th>
+                <th style="width: 180px;" class="text-center">Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var widget in Model)
+            {
+                var typeBadge = widget.WidgetType switch
+                {
+                    "Card" => "bg-primary",
+                    "Table" => "bg-success",
+                    "Pie" => "bg-warning text-dark",
+                    "Chart" => "bg-info text-dark",
+                    _ => "bg-secondary"
+                };
+
+                var typeIcon = widget.WidgetType switch
+                {
+                    "Card" => "bi bi-grid",
+                    "Table" => "bi bi-table",
+                    "Pie" => "bi bi-pie-chart",
+                    "Chart" => "bi bi-bar-chart",
+                    _ => "bi bi-box"
+                };
+
+                <tr>
+                    <td>
+                        <strong>@widget.WidgetCode</strong>
+                    </td>
+
+                    <td>
+                        @widget.WidgetName
+                    </td>
+
+                    <td class="text-center">
+                        <span class="badge @typeBadge">
+                            <i class="@typeIcon"></i> @widget.WidgetType
+                        </span>
+                    </td>
+
+                    <td class="text-center">
+                        <span class="badge bg-light text-dark border">
+                            @widget.WidgetWidth / 12
+                        </span>
+                    </td>
+
+                    <td class="text-center">
+                        @widget.DisplayOrder
+                    </td>
+
+                    <td class="text-center">
+                        @if (widget.IsActive)
+                        {
+                            <span class="badge bg-success">
+                                ✓ Active
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">
+                                ✕ Inactive
+                            </span>
+                        }
+                    </td>
+
+                    <td class="text-center">
+                        <a asp-controller="DashboardDesigner"
+                           asp-action="Edit"
+                           asp-route-id="@widget.Id"
+                           class="btn btn-sm btn-primary">
+                            Edit
+                        </a>
+
+                        <form asp-controller="DashboardDesigner"
+                              asp-action="Delete"
+                              asp-route-id="@widget.Id"
+                              method="post"
+                              class="d-inline"
+                              onsubmit="return confirm('Delete widget @widget.WidgetName?');">
+                            @Html.AntiForgeryToken()
+
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

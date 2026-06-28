@@ -1,0 +1,90 @@
+@model EucSaaS.Web.ViewModels.Dashboard.DashboardWidgetDefinitionViewModel
+
+@{
+    ViewData["Title"] = "Edit Dashboard Widget";
+}
+
+<h2>Edit Dashboard Widget</h2>
+
+<form asp-action="Edit" method="post">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+        <label class="form-label">Widget Code</label>
+        <input asp-for="WidgetCode" class="form-control" readonly />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Widget Title</label>
+        <input asp-for="WidgetName" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Widget Type</label>
+<select asp-for="WidgetType" class="form-select">
+    <option value="Card">Card</option>
+    <option value="Table">Table</option>
+    <option value="Pie">Pie</option>
+    <option value="Chart">Chart</option>
+</select>
+    </div>
+
+
+
+
+    <div class="mb-3">
+        <label class="form-label">SQL Query</label>
+        <textarea asp-for="SqlQuery" class="form-control" rows="6"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Display Order</label>
+        <input asp-for="DisplayOrder" class="form-control" type="number" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Widget Width</label>
+        <input asp-for="WidgetWidth" class="form-control" type="number" min="1" max="12" />
+        <div class="form-text">
+            Bootstrap width from 1 to 12. Example: 6 means half row, 12 means full row.
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Icon</label>
+        <input asp-for="Icon" class="form-control" />
+        <div class="form-text">
+            Example: bi bi-people, bi bi-bar-chart, bi bi-table
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Color</label>
+        <select asp-for="Color" class="form-select">
+            <option value="primary">primary</option>
+            <option value="secondary">secondary</option>
+            <option value="success">success</option>
+            <option value="danger">danger</option>
+            <option value="warning">warning</option>
+            <option value="info">info</option>
+            <option value="dark">dark</option>
+        </select>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="IsActive" class="form-check-input" />
+        <label asp-for="IsActive" class="form-check-label">Active</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        Save
+    </button>
+
+    <a asp-controller="DashboardDesigner"
+       asp-action="Index"
+       class="btn btn-secondary">
+        Cancel
+    </a>
+</form>
