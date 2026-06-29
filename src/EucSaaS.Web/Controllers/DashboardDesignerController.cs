@@ -156,6 +156,53 @@ public class DashboardDesignerController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+[HttpPost("/DashboardDesigner/Clone/{id}")]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> Clone(Guid id)
+{
+    var sourceWidget = await _context.DashboardWidgetDefinitions
+        .FirstOrDefaultAsync(x => x.Id == id);
+
+    if (sourceWidget == null)
+        return NotFound();
+
+    var baseCode = sourceWidget.WidgetCode + "_COPY";
+    var newCode = baseCode;
+    var counter = 1;
+
+    while (await _context.DashboardWidgetDefinitions
+        .AnyAsync(x => x.WidgetCode == newCode))
+    {
+        counter++;
+        newCode = $"{baseCode}_{counter}";
+    }
+
+    var maxOrder = await _context.DashboardWidgetDefinitions
+        .MaxAsync(x => (int?)x.DisplayOrder) ?? 0;
+
+    var clonedWidget = new DashboardWidgetDefinition
+    {
+        Id = Guid.NewGuid(),
+        WidgetCode = newCode,
+        WidgetTitle = sourceWidget.WidgetTitle + " Copy",
+        WidgetType = sourceWidget.WidgetType,
+        SqlQuery = sourceWidget.SqlQuery,
+        DisplayOrder = maxOrder + 1,
+        WidgetWidth = sourceWidget.WidgetWidth,
+        Icon = sourceWidget.Icon,
+        Color = sourceWidget.Color,
+        IsActive = false
+    };
+
+    _context.DashboardWidgetDefinitions.Add(clonedWidget);
+    await _context.SaveChangesAsync();
+
+    TempData["SuccessMessage"] = "Dashboard widget cloned successfully. Please review and activate it.";
+
+    return RedirectToAction(nameof(Edit), new { id = clonedWidget.Id });
+}
+
+
     [HttpPost("/DashboardDesigner/Delete/{id}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(Guid id)

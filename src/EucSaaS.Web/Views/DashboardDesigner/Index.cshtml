@@ -109,6 +109,20 @@
                             Edit
                         </a>
 
+<form asp-controller="DashboardDesigner"
+      asp-action="Clone"
+      asp-route-id="@widget.Id"
+      method="post"
+      class="d-inline">
+    @Html.AntiForgeryToken()
+
+    <button type="submit"
+            class="btn btn-warning btn-sm">
+        Clone
+    </button>
+</form>
+
+
                         <form asp-controller="DashboardDesigner"
                               asp-action="Delete"
                               asp-route-id="@widget.Id"
