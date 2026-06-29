@@ -1,18 +1,26 @@
+using EucSaaS.Application.Services;
 using EucSaaS.Domain.Entities;
 using EucSaaS.Infrastructure.Data;
 using EucSaaS.Web.ViewModels.Dashboard;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace EucSaaS.Web.Controllers;
 
+[Authorize]
 public class DashboardDesignerController : Controller
 {
     private readonly AppDbContext _context;
+    private readonly DashboardQueryService _dashboardQueryService;
 
-    public DashboardDesignerController(AppDbContext context)
+    public DashboardDesignerController(
+        AppDbContext context,
+        DashboardQueryService dashboardQueryService)
     {
         _context = context;
+        _dashboardQueryService = dashboardQueryService;
     }
 
     [HttpGet("/DashboardDesigner")]
@@ -60,20 +68,7 @@ public class DashboardDesignerController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(DashboardWidgetDefinitionViewModel model)
     {
-        if (string.IsNullOrWhiteSpace(model.WidgetCode))
-            ModelState.AddModelError(nameof(model.WidgetCode), "Widget Code is required.");
-
-        if (string.IsNullOrWhiteSpace(model.WidgetName))
-            ModelState.AddModelError(nameof(model.WidgetName), "Widget Title is required.");
-
-        if (string.IsNullOrWhiteSpace(model.SqlQuery))
-            ModelState.AddModelError(nameof(model.SqlQuery), "SQL Query is required.");
-
-        var exists = await _context.DashboardWidgetDefinitions
-            .AnyAsync(x => x.WidgetCode == model.WidgetCode);
-
-        if (exists)
-            ModelState.AddModelError(nameof(model.WidgetCode), "Widget Code already exists.");
+        ValidateWidgetModel(model, isCreate: true);
 
         if (!ModelState.IsValid)
             return View(model);
@@ -127,10 +122,15 @@ public class DashboardDesignerController : Controller
         return View(model);
     }
 
-    [HttpPost("/DashboardDesigner/Edit")]
+    [HttpPost("/DashboardDesigner/Edit/{id?}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(DashboardWidgetDefinitionViewModel model)
+    public async Task<IActionResult> Edit(Guid? id, DashboardWidgetDefinitionViewModel model)
     {
+        if (model.Id == Guid.Empty && id.HasValue)
+            model.Id = id.Value;
+
+        ValidateWidgetModel(model, isCreate: false);
+
         if (!ModelState.IsValid)
             return View(model);
 
@@ -172,5 +172,83 @@ public class DashboardDesignerController : Controller
         TempData["SuccessMessage"] = "Dashboard widget deleted successfully.";
 
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost("/DashboardDesigner/TestSql")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> TestSql(string sqlQuery)
+    {
+        var preview = new DashboardSqlPreviewViewModel();
+
+        try
+        {
+            var dataSource = await _context.DataSources
+                .FirstOrDefaultAsync(x => x.IsActive);
+
+            if (dataSource == null)
+            {
+                preview.IsSuccess = false;
+                preview.Message = "No active data source was found.";
+                return PartialView("_SqlPreview", preview);
+            }
+
+            var table = await _dashboardQueryService.TestSqlAsync(
+                dataSource,
+                sqlQuery,
+                20);
+
+            preview.IsSuccess = true;
+            preview.Message = $"SQL executed successfully. Showing {table.Rows.Count} row(s).";
+
+            foreach (DataColumn column in table.Columns)
+                preview.Columns.Add(column.ColumnName);
+
+            foreach (DataRow dataRow in table.Rows)
+            {
+                var row = new Dictionary<string, string>();
+
+                foreach (DataColumn column in table.Columns)
+                {
+                    row[column.ColumnName] =
+                        dataRow[column] == DBNull.Value
+                            ? ""
+                            : dataRow[column]?.ToString() ?? "";
+                }
+
+                preview.Rows.Add(row);
+            }
+        }
+        catch (Exception ex)
+        {
+            preview.IsSuccess = false;
+            preview.Message = ex.Message;
+        }
+
+        return PartialView("_SqlPreview", preview);
+    }
+
+    private void ValidateWidgetModel(
+        DashboardWidgetDefinitionViewModel model,
+        bool isCreate)
+    {
+        if (string.IsNullOrWhiteSpace(model.WidgetCode))
+            ModelState.AddModelError(nameof(model.WidgetCode), "Widget Code is required.");
+
+        if (string.IsNullOrWhiteSpace(model.WidgetName))
+            ModelState.AddModelError(nameof(model.WidgetName), "Widget Title is required.");
+
+        if (string.IsNullOrWhiteSpace(model.SqlQuery))
+            ModelState.AddModelError(nameof(model.SqlQuery), "SQL Query is required.");
+
+        if (isCreate)
+        {
+            var code = model.WidgetCode?.Trim().ToUpper() ?? "";
+
+            var exists = _context.DashboardWidgetDefinitions
+                .Any(x => x.WidgetCode == code);
+
+            if (exists)
+                ModelState.AddModelError(nameof(model.WidgetCode), "Widget Code already exists.");
+        }
     }
 }

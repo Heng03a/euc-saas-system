@@ -11,6 +11,8 @@
 
     <input type="hidden" asp-for="Id" />
 
+    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
     <div class="mb-3">
         <label class="form-label">Widget Code</label>
         <input asp-for="WidgetCode" class="form-control" readonly />
@@ -23,20 +25,29 @@
 
     <div class="mb-3">
         <label class="form-label">Widget Type</label>
-<select asp-for="WidgetType" class="form-select">
-    <option value="Card">Card</option>
-    <option value="Table">Table</option>
-    <option value="Pie">Pie</option>
-    <option value="Chart">Chart</option>
-</select>
+        <select asp-for="WidgetType" class="form-select">
+            <option value="Card">Card</option>
+            <option value="Table">Table</option>
+            <option value="Pie">Pie</option>
+            <option value="Chart">Chart</option>
+        </select>
     </div>
-
-
-
 
     <div class="mb-3">
         <label class="form-label">SQL Query</label>
-        <textarea asp-for="SqlQuery" class="form-control" rows="6"></textarea>
+
+        <textarea asp-for="SqlQuery"
+                  id="SqlQuery"
+                  class="form-control"
+                  rows="6"></textarea>
+
+        <button type="button"
+                class="btn btn-outline-primary mt-2"
+                onclick="testSql()">
+            Test SQL
+        </button>
+
+        <div id="sqlPreviewContainer" class="mt-3"></div>
     </div>
 
     <div class="mb-3">
@@ -88,3 +99,33 @@
         Cancel
     </a>
 </form>
+
+@section Scripts
+{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        async function testSql() {
+            const sql = document.getElementById("SqlQuery").value;
+
+            const token = document.querySelector(
+                'input[name="__RequestVerificationToken"]'
+            ).value;
+
+            const response = await fetch('/DashboardDesigner/TestSql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': token
+                },
+                body: 'sqlQuery=' + encodeURIComponent(sql)
+            });
+
+            const html = await response.text();
+
+            document.getElementById("sqlPreviewContainer").innerHTML = html;
+        }
+    </script>
+}
