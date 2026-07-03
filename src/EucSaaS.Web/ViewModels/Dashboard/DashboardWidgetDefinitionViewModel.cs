@@ -18,6 +18,12 @@ public class DashboardWidgetDefinitionViewModel
 
     public int WidgetWidth { get; set; } = 6;
 
+public int RowPosition { get; set; } = 1;
+
+public int ColumnPosition { get; set; } = 1;
+
+public int Height { get; set; } = 300;
+
     public string Icon { get; set; } = string.Empty;
 
     public string Color { get; set; } = "primary";

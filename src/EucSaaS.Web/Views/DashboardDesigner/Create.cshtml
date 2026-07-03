@@ -50,18 +50,57 @@
         <div id="sqlPreviewContainer" class="mt-3"></div>
     </div>
 
+    <hr />
+
+    <h5>Layout Settings</h5>
+
+    <div class="row">
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Row Position</label>
+            <input asp-for="RowPosition"
+                   class="form-control"
+                   type="number"
+                   min="1" />
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Column Position</label>
+            <input asp-for="ColumnPosition"
+                   class="form-control"
+                   type="number"
+                   min="1" />
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Widget Width</label>
+            <input asp-for="WidgetWidth"
+                   class="form-control"
+                   type="number"
+                   min="1"
+                   max="12" />
+            <div class="form-text">
+                3 = quarter, 4 = one-third, 6 = half, 12 = full row.
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Height</label>
+            <input asp-for="Height"
+                   class="form-control"
+                   type="number"
+                   min="100" />
+            <div class="form-text">
+                Example: 180 for card, 300 for chart/table.
+            </div>
+        </div>
+    </div>
+
     <div class="mb-3">
         <label class="form-label">Display Order</label>
         <input asp-for="DisplayOrder" class="form-control" type="number" />
     </div>
 
-    <div class="mb-3">
-        <label class="form-label">Widget Width</label>
-        <input asp-for="WidgetWidth" class="form-control" type="number" min="1" max="12" />
-        <div class="form-text">
-            Bootstrap width from 1 to 12. Example: 4 means one-third row, 6 means half row, 12 means full row.
-        </div>
-    </div>
+    <hr />
 
     <div class="mb-3">
         <label class="form-label">Icon</label>

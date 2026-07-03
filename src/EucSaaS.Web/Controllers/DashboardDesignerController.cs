@@ -27,7 +27,9 @@ public class DashboardDesignerController : Controller
     public async Task<IActionResult> Index()
     {
         var model = await _context.DashboardWidgetDefinitions
-            .OrderBy(x => x.DisplayOrder)
+            .OrderBy(x => x.RowPosition)
+            .ThenBy(x => x.ColumnPosition)
+            .ThenBy(x => x.DisplayOrder)
             .Select(x => new DashboardWidgetDefinitionViewModel
             {
                 Id = x.Id,
@@ -38,6 +40,9 @@ public class DashboardDesignerController : Controller
                 SqlQuery = x.SqlQuery,
                 DisplayOrder = x.DisplayOrder,
                 WidgetWidth = x.WidgetWidth,
+                RowPosition = x.RowPosition,
+                ColumnPosition = x.ColumnPosition,
+                Height = x.Height,
                 Icon = x.Icon ?? "",
                 Color = x.Color ?? "primary",
                 IsActive = x.IsActive
@@ -55,6 +60,9 @@ public class DashboardDesignerController : Controller
             Id = Guid.NewGuid(),
             WidgetType = "Card",
             WidgetWidth = 4,
+            RowPosition = 1,
+            ColumnPosition = 1,
+            Height = 300,
             DisplayOrder = 99,
             Color = "primary",
             Icon = "bi bi-grid",
@@ -82,6 +90,9 @@ public class DashboardDesignerController : Controller
             SqlQuery = model.SqlQuery.Trim(),
             DisplayOrder = model.DisplayOrder,
             WidgetWidth = model.WidgetWidth,
+            RowPosition = model.RowPosition,
+            ColumnPosition = model.ColumnPosition,
+            Height = model.Height,
             Icon = model.Icon,
             Color = model.Color,
             IsActive = model.IsActive
@@ -114,6 +125,9 @@ public class DashboardDesignerController : Controller
             SqlQuery = widget.SqlQuery,
             DisplayOrder = widget.DisplayOrder,
             WidgetWidth = widget.WidgetWidth,
+            RowPosition = widget.RowPosition,
+            ColumnPosition = widget.ColumnPosition,
+            Height = widget.Height,
             Icon = widget.Icon ?? "",
             Color = widget.Color ?? "primary",
             IsActive = widget.IsActive
@@ -145,6 +159,9 @@ public class DashboardDesignerController : Controller
         widget.SqlQuery = model.SqlQuery.Trim();
         widget.DisplayOrder = model.DisplayOrder;
         widget.WidgetWidth = model.WidgetWidth;
+        widget.RowPosition = model.RowPosition;
+        widget.ColumnPosition = model.ColumnPosition;
+        widget.Height = model.Height;
         widget.Icon = model.Icon;
         widget.Color = model.Color;
         widget.IsActive = model.IsActive;
@@ -156,52 +173,53 @@ public class DashboardDesignerController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-[HttpPost("/DashboardDesigner/Clone/{id}")]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> Clone(Guid id)
-{
-    var sourceWidget = await _context.DashboardWidgetDefinitions
-        .FirstOrDefaultAsync(x => x.Id == id);
-
-    if (sourceWidget == null)
-        return NotFound();
-
-    var baseCode = sourceWidget.WidgetCode + "_COPY";
-    var newCode = baseCode;
-    var counter = 1;
-
-    while (await _context.DashboardWidgetDefinitions
-        .AnyAsync(x => x.WidgetCode == newCode))
+    [HttpPost("/DashboardDesigner/Clone/{id}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Clone(Guid id)
     {
-        counter++;
-        newCode = $"{baseCode}_{counter}";
+        var sourceWidget = await _context.DashboardWidgetDefinitions
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (sourceWidget == null)
+            return NotFound();
+
+        var baseCode = sourceWidget.WidgetCode + "_COPY";
+        var newCode = baseCode;
+        var counter = 1;
+
+        while (await _context.DashboardWidgetDefinitions.AnyAsync(x => x.WidgetCode == newCode))
+        {
+            counter++;
+            newCode = $"{baseCode}_{counter}";
+        }
+
+        var maxOrder = await _context.DashboardWidgetDefinitions
+            .MaxAsync(x => (int?)x.DisplayOrder) ?? 0;
+
+        var clonedWidget = new DashboardWidgetDefinition
+        {
+            Id = Guid.NewGuid(),
+            WidgetCode = newCode,
+            WidgetTitle = sourceWidget.WidgetTitle + " Copy",
+            WidgetType = sourceWidget.WidgetType,
+            SqlQuery = sourceWidget.SqlQuery,
+            DisplayOrder = maxOrder + 1,
+            WidgetWidth = sourceWidget.WidgetWidth,
+            RowPosition = sourceWidget.RowPosition,
+            ColumnPosition = sourceWidget.ColumnPosition,
+            Height = sourceWidget.Height,
+            Icon = sourceWidget.Icon,
+            Color = sourceWidget.Color,
+            IsActive = false
+        };
+
+        _context.DashboardWidgetDefinitions.Add(clonedWidget);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Dashboard widget cloned successfully. Please review and activate it.";
+
+        return RedirectToAction(nameof(Edit), new { id = clonedWidget.Id });
     }
-
-    var maxOrder = await _context.DashboardWidgetDefinitions
-        .MaxAsync(x => (int?)x.DisplayOrder) ?? 0;
-
-    var clonedWidget = new DashboardWidgetDefinition
-    {
-        Id = Guid.NewGuid(),
-        WidgetCode = newCode,
-        WidgetTitle = sourceWidget.WidgetTitle + " Copy",
-        WidgetType = sourceWidget.WidgetType,
-        SqlQuery = sourceWidget.SqlQuery,
-        DisplayOrder = maxOrder + 1,
-        WidgetWidth = sourceWidget.WidgetWidth,
-        Icon = sourceWidget.Icon,
-        Color = sourceWidget.Color,
-        IsActive = false
-    };
-
-    _context.DashboardWidgetDefinitions.Add(clonedWidget);
-    await _context.SaveChangesAsync();
-
-    TempData["SuccessMessage"] = "Dashboard widget cloned successfully. Please review and activate it.";
-
-    return RedirectToAction(nameof(Edit), new { id = clonedWidget.Id });
-}
-
 
     [HttpPost("/DashboardDesigner/Delete/{id}")]
     [ValidateAntiForgeryToken]
@@ -286,6 +304,18 @@ public async Task<IActionResult> Clone(Guid id)
 
         if (string.IsNullOrWhiteSpace(model.SqlQuery))
             ModelState.AddModelError(nameof(model.SqlQuery), "SQL Query is required.");
+
+        if (model.WidgetWidth <= 0 || model.WidgetWidth > 12)
+            ModelState.AddModelError(nameof(model.WidgetWidth), "Widget Width must be between 1 and 12.");
+
+        if (model.RowPosition <= 0)
+            ModelState.AddModelError(nameof(model.RowPosition), "Row Position must be greater than 0.");
+
+        if (model.ColumnPosition <= 0)
+            ModelState.AddModelError(nameof(model.ColumnPosition), "Column Position must be greater than 0.");
+
+        if (model.Height <= 0)
+            ModelState.AddModelError(nameof(model.Height), "Height must be greater than 0.");
 
         if (isCreate)
         {

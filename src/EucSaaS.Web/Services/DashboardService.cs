@@ -21,36 +21,42 @@ public class DashboardService
 
         var widgets = await _context.DashboardWidgetDefinitions
             .Where(x => x.IsActive)
-            .OrderBy(x => x.DisplayOrder)
+            .OrderBy(x => x.RowPosition)
+            .ThenBy(x => x.ColumnPosition)
+            .ThenBy(x => x.DisplayOrder)
             .ToListAsync();
 
         foreach (var widget in widgets)
         {
-var vm = new DashboardWidgetViewModel
-{
-    WidgetCode = widget.WidgetCode,
-    WidgetTitle = widget.WidgetTitle,
-    WidgetType = widget.WidgetType,
-    DisplayOrder = widget.DisplayOrder,
-    WidgetWidth = widget.WidgetWidth,
-    Icon = widget.Icon,
-    Color = widget.Color
-};
+            var vm = new DashboardWidgetViewModel
+            {
+                WidgetCode = widget.WidgetCode,
+                WidgetTitle = widget.WidgetTitle,
+                WidgetType = widget.WidgetType,
+                DisplayOrder = widget.DisplayOrder,
+                WidgetWidth = widget.WidgetWidth,
+                RowPosition = widget.RowPosition,
+                ColumnPosition = widget.ColumnPosition,
+                Height = widget.Height,
+                Icon = widget.Icon,
+                Color = widget.Color
+            };
 
-if (widget.WidgetType.Equals("Table", StringComparison.OrdinalIgnoreCase)
-    || widget.WidgetType.Equals("Bar", StringComparison.OrdinalIgnoreCase)
-    || widget.WidgetType.Equals("Pie", StringComparison.OrdinalIgnoreCase)
-    || widget.WidgetType.Equals("Line", StringComparison.OrdinalIgnoreCase))
-{
-    var tableResult = await ExecuteTableAsync(widget.SqlQuery);
+            if (widget.WidgetType.Equals("Table", StringComparison.OrdinalIgnoreCase)
+                || widget.WidgetType.Equals("Bar", StringComparison.OrdinalIgnoreCase)
+                || widget.WidgetType.Equals("Pie", StringComparison.OrdinalIgnoreCase)
+                || widget.WidgetType.Equals("Chart", StringComparison.OrdinalIgnoreCase)
+                || widget.WidgetType.Equals("Line", StringComparison.OrdinalIgnoreCase))
+            {
+                var tableResult = await ExecuteTableAsync(widget.SqlQuery);
 
-    vm.Columns = tableResult.Columns;
-    vm.Rows = tableResult.Rows;
-}
-else
-{
-    vm.Value = await ExecuteScalarAsync(widget.SqlQuery);
-}
+                vm.Columns = tableResult.Columns;
+                vm.Rows = tableResult.Rows;
+            }
+            else
+            {
+                vm.Value = await ExecuteScalarAsync(widget.SqlQuery);
+            }
 
             model.Widgets.Add(vm);
         }

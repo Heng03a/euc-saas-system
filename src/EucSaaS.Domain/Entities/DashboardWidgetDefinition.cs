@@ -10,6 +10,9 @@ public string? Icon { get; set; }
 
 public string? Color { get; set; } = "primary";
 
+public int RowPosition { get; set; } = 1;
+public int ColumnPosition { get; set; } = 1;
+public int Height { get; set; } = 300;
 
     public string WidgetCode { get; set; } = "";
     public string WidgetTitle { get; set; } = "";
