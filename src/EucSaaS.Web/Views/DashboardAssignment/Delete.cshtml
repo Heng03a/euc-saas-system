@@ -1,0 +1,59 @@
+@model EucSaaS.Web.ViewModels.Dashboard.RoleDashboardTemplateAssignmentViewModel
+
+@{
+    ViewData["Title"] = "Delete Dashboard Assignment";
+}
+
+<h2>Delete Dashboard Assignment</h2>
+
+<div class="alert alert-warning">
+    <strong>Warning!</strong> Are you sure you want to delete this dashboard assignment?
+</div>
+
+<table class="table table-bordered">
+    <tr>
+        <th style="width:220px;">Role</th>
+        <td>@Model.AppRoleName</td>
+    </tr>
+
+    <tr>
+        <th>Dashboard Template</th>
+        <td>@Model.DashboardTemplateName</td>
+    </tr>
+
+    <tr>
+        <th>Status</th>
+        <td>
+            @if (Model.IsActive)
+            {
+                <span class="badge bg-success">
+                    ✓ Active
+                </span>
+            }
+            else
+            {
+                <span class="badge bg-secondary">
+                    ✕ Inactive
+                </span>
+            }
+        </td>
+    </tr>
+</table>
+
+<form asp-action="Delete"
+      asp-route-id="@Model.Id"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <button type="submit"
+            class="btn btn-danger">
+        Confirm Delete
+    </button>
+
+    <a asp-action="Index"
+       class="btn btn-secondary">
+        Cancel
+    </a>
+
+</form>

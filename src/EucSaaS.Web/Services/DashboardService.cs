@@ -15,12 +15,27 @@ public class DashboardService
         _context = context;
     }
 
-    public async Task<DashboardViewModel> GetDashboardAsync()
+    public async Task<DashboardViewModel> GetDashboardAsync(Guid? appRoleId)
     {
         var model = new DashboardViewModel();
 
-        var widgets = await _context.DashboardWidgetDefinitions
-            .Where(x => x.IsActive)
+        var dashboardTemplateId = appRoleId.HasValue
+            ? await _context.RoleDashboardTemplateAssignments
+                .Where(x => x.AppRoleId == appRoleId.Value && x.IsActive)
+                .Select(x => (Guid?)x.DashboardTemplateDefinitionId)
+                .FirstOrDefaultAsync()
+            : null;
+
+        var widgetsQuery = _context.DashboardWidgetDefinitions
+            .Where(x => x.IsActive);
+
+        if (dashboardTemplateId.HasValue)
+        {
+            widgetsQuery = widgetsQuery
+                .Where(x => x.DashboardTemplateDefinitionId == dashboardTemplateId.Value);
+        }
+
+        var widgets = await widgetsQuery
             .OrderBy(x => x.RowPosition)
             .ThenBy(x => x.ColumnPosition)
             .ThenBy(x => x.DisplayOrder)

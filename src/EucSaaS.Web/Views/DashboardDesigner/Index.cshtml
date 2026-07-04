@@ -30,6 +30,7 @@
     <table class="table table-bordered table-hover align-middle">
         <thead class="table-light">
             <tr>
+                <th>Template</th>
                 <th>Widget Code</th>
                 <th>Widget Title</th>
                 <th class="text-center">Type</th>
@@ -65,6 +66,19 @@
                 };
 
                 <tr>
+                    <td>
+                        @if (string.IsNullOrWhiteSpace(widget.DashboardTemplateName))
+                        {
+                            <span class="text-muted">-</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-dark">
+                                @widget.DashboardTemplateName
+                            </span>
+                        }
+                    </td>
+
                     <td>
                         <strong>@widget.WidgetCode</strong>
                     </td>

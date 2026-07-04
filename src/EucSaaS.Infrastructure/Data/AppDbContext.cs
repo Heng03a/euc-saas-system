@@ -16,6 +16,10 @@ public class AppDbContext : DbContext
 public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 public DbSet<DashboardWidgetDefinition> DashboardWidgetDefinitions => Set<DashboardWidgetDefinition>();
 
+public DbSet<RoleDashboardTemplateAssignment> RoleDashboardTemplateAssignments { get; set; }
+
+public DbSet<DashboardTemplateDefinition> DashboardTemplateDefinitions { get; set; }
+
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<AppRole> AppRoles => Set<AppRole>();

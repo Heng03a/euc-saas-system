@@ -11,6 +11,15 @@
 
     <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
+<div class="mb-3">
+    <label class="form-label">Dashboard Template</label>
+    <select asp-for="DashboardTemplateDefinitionId"
+            asp-items="ViewBag.DashboardTemplates"
+            class="form-select">
+        <option value="">-- No Template --</option>
+    </select>
+</div>
+
     <div class="mb-3">
         <label class="form-label">Widget Code</label>
         <input asp-for="WidgetCode" class="form-control" />

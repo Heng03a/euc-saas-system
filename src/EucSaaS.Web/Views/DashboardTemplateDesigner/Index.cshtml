@@ -1,0 +1,72 @@
+@model List<EucSaaS.Web.ViewModels.Dashboard.DashboardTemplateDefinitionViewModel>
+
+@{
+    ViewData["Title"] = "Dashboard Templates";
+}
+
+<h2>Dashboard Templates</h2>
+
+<p class="text-muted">
+    Manage reusable dashboard template definitions.
+</p>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">
+        Create Dashboard Template
+    </a>
+</p>
+
+<table class="table table-bordered table-hover align-middle">
+    <thead class="table-light">
+        <tr>
+            <th>Template Code</th>
+            <th>Template Name</th>
+            <th>Description</th>
+            <th class="text-center">Order</th>
+            <th class="text-center">Active</th>
+            <th style="width:160px;" class="text-center">Actions</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.TemplateCode</td>
+                <td>@item.TemplateName</td>
+                <td>@item.Description</td>
+                <td class="text-center">@item.DisplayOrder</td>
+                <td class="text-center">
+                    @if (item.IsActive)
+                    {
+                        <span class="badge bg-success">Yes</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">No</span>
+                    }
+                </td>
+                <td class="text-center">
+                    <a asp-action="Edit"
+                       asp-route-id="@item.Id"
+                       class="btn btn-sm btn-outline-primary">
+                        Edit
+                    </a>
+
+                    <a asp-action="Delete"
+                       asp-route-id="@item.Id"
+                       class="btn btn-sm btn-outline-danger">
+                        Delete
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

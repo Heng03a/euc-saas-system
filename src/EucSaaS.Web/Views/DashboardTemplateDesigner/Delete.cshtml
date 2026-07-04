@@ -1,0 +1,49 @@
+@model EucSaaS.Web.ViewModels.Dashboard.DashboardTemplateDefinitionViewModel
+
+@{
+    ViewData["Title"] = "Delete Dashboard Template";
+}
+
+<h2>Delete Dashboard Template</h2>
+
+<div class="alert alert-warning">
+    Are you sure you want to delete this dashboard template?
+</div>
+
+<table class="table table-bordered">
+    <tr>
+        <th style="width:200px;">Template Code</th>
+        <td>@Model.TemplateCode</td>
+    </tr>
+    <tr>
+        <th>Template Name</th>
+        <td>@Model.TemplateName</td>
+    </tr>
+    <tr>
+        <th>Description</th>
+        <td>@Model.Description</td>
+    </tr>
+    <tr>
+        <th>Display Order</th>
+        <td>@Model.DisplayOrder</td>
+    </tr>
+    <tr>
+        <th>Active</th>
+        <td>@(Model.IsActive ? "Yes" : "No")</td>
+    </tr>
+</table>
+
+<form asp-action="Delete" method="post">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="Id" />
+
+    <button class="btn btn-danger">
+        Confirm Delete
+    </button>
+
+    <a asp-action="Index"
+       class="btn btn-secondary">
+        Cancel
+    </a>
+</form>

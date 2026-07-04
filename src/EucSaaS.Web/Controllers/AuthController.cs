@@ -51,6 +51,8 @@ public class AuthController : Controller
             new Claim("FullName", user.FullName),
             new Claim("TenantId", user.TenantId.ToString()),
             new Claim("DepartmentId", user.DepartmentId.ToString()),
+new Claim("AppRoleId", user.RoleId.ToString()),
+
             new Claim(ClaimTypes.Role, user.Role?.Code ?? string.Empty)
         };
 

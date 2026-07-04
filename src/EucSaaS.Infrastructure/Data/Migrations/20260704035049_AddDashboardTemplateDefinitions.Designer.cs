@@ -3,6 +3,7 @@ using System;
 using EucSaaS.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EucSaaS.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260704035049_AddDashboardTemplateDefinitions")]
+    partial class AddDashboardTemplateDefinitions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -286,9 +289,6 @@ namespace EucSaaS.Infrastructure.Data.Migrations
                     b.Property<int>("ColumnPosition")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("DashboardTemplateDefinitionId")
-                        .HasColumnType("uuid");
-
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("integer");
 
@@ -324,8 +324,6 @@ namespace EucSaaS.Infrastructure.Data.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("DashboardTemplateDefinitionId");
 
                     b.ToTable("DashboardWidgetDefinitions");
                 });
@@ -586,36 +584,6 @@ namespace EucSaaS.Infrastructure.Data.Migrations
                     b.ToTable("LookupDefinitions");
                 });
 
-            modelBuilder.Entity("EucSaaS.Domain.Entities.RoleDashboardTemplateAssignment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AppRoleId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("DashboardTemplateDefinitionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AppRoleId");
-
-                    b.HasIndex("DashboardTemplateDefinitionId");
-
-                    b.ToTable("RoleDashboardTemplateAssignments");
-                });
-
             modelBuilder.Entity("EucSaaS.Domain.Entities.ScreenDefinition", b =>
                 {
                     b.Property<Guid>("Id")
@@ -821,15 +789,6 @@ namespace EucSaaS.Infrastructure.Data.Migrations
                     b.Navigation("ScreenDefinition");
                 });
 
-            modelBuilder.Entity("EucSaaS.Domain.Entities.DashboardWidgetDefinition", b =>
-                {
-                    b.HasOne("EucSaaS.Domain.Entities.DashboardTemplateDefinition", "DashboardTemplateDefinition")
-                        .WithMany()
-                        .HasForeignKey("DashboardTemplateDefinitionId");
-
-                    b.Navigation("DashboardTemplateDefinition");
-                });
-
             modelBuilder.Entity("EucSaaS.Domain.Entities.Department", b =>
                 {
                     b.HasOne("EucSaaS.Domain.Entities.Tenant", "Tenant")
@@ -872,25 +831,6 @@ namespace EucSaaS.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("FormFieldDefinition");
-                });
-
-            modelBuilder.Entity("EucSaaS.Domain.Entities.RoleDashboardTemplateAssignment", b =>
-                {
-                    b.HasOne("EucSaaS.Domain.Entities.AppRole", "AppRole")
-                        .WithMany()
-                        .HasForeignKey("AppRoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EucSaaS.Domain.Entities.DashboardTemplateDefinition", "DashboardTemplateDefinition")
-                        .WithMany()
-                        .HasForeignKey("DashboardTemplateDefinitionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AppRole");
-
-                    b.Navigation("DashboardTemplateDefinition");
                 });
 
             modelBuilder.Entity("EucSaaS.Domain.Entities.ScreenDefinition", b =>

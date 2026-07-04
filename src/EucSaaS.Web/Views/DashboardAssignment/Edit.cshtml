@@ -1,0 +1,58 @@
+@model EucSaaS.Web.ViewModels.Dashboard.RoleDashboardTemplateAssignmentViewModel
+
+@{
+    ViewData["Title"] = "Edit Dashboard Assignment";
+}
+
+<h2>Edit Dashboard Assignment</h2>
+
+<form asp-action="Edit" method="post">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="Id" />
+
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="mb-3">
+        <label class="form-label">Role</label>
+        <select asp-for="AppRoleId"
+                asp-items="ViewBag.AppRoles"
+                class="form-select">
+            <option value="">-- Select Role --</option>
+        </select>
+        <span asp-validation-for="AppRoleId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Dashboard Template</label>
+        <select asp-for="DashboardTemplateDefinitionId"
+                asp-items="ViewBag.DashboardTemplates"
+                class="form-select">
+            <option value="">-- Select Dashboard Template --</option>
+        </select>
+        <span asp-validation-for="DashboardTemplateDefinitionId" class="text-danger"></span>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="IsActive"
+               class="form-check-input" />
+        <label asp-for="IsActive"
+               class="form-check-label">
+            Active
+        </label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        Save Changes
+    </button>
+
+    <a asp-action="Index"
+       class="btn btn-secondary">
+        Cancel
+    </a>
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -4,6 +4,10 @@ public class DashboardWidgetDefinition
 {
     public Guid Id { get; set; }
 
+public Guid? DashboardTemplateDefinitionId { get; set; }
+
+public DashboardTemplateDefinition? DashboardTemplateDefinition { get; set; }
+
 public int WidgetWidth { get; set; } = 6;
 
 public string? Icon { get; set; }

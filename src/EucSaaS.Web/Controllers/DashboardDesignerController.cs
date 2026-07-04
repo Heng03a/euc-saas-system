@@ -4,6 +4,7 @@ using EucSaaS.Infrastructure.Data;
 using EucSaaS.Web.ViewModels.Dashboard;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 
@@ -27,12 +28,18 @@ public class DashboardDesignerController : Controller
     public async Task<IActionResult> Index()
     {
         var model = await _context.DashboardWidgetDefinitions
-            .OrderBy(x => x.RowPosition)
+            .Include(x => x.DashboardTemplateDefinition)
+            .OrderBy(x => x.DashboardTemplateDefinition!.DisplayOrder)
+            .ThenBy(x => x.RowPosition)
             .ThenBy(x => x.ColumnPosition)
             .ThenBy(x => x.DisplayOrder)
             .Select(x => new DashboardWidgetDefinitionViewModel
             {
                 Id = x.Id,
+                DashboardTemplateDefinitionId = x.DashboardTemplateDefinitionId,
+                DashboardTemplateName = x.DashboardTemplateDefinition == null
+                    ? ""
+                    : x.DashboardTemplateDefinition.TemplateName,
                 WidgetCode = x.WidgetCode,
                 WidgetName = x.WidgetTitle,
                 WidgetType = x.WidgetType,
@@ -53,8 +60,10 @@ public class DashboardDesignerController : Controller
     }
 
     [HttpGet("/DashboardDesigner/Create")]
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
+        await LoadDashboardTemplatesAsync();
+
         var model = new DashboardWidgetDefinitionViewModel
         {
             Id = Guid.NewGuid(),
@@ -79,11 +88,15 @@ public class DashboardDesignerController : Controller
         ValidateWidgetModel(model, isCreate: true);
 
         if (!ModelState.IsValid)
+        {
+            await LoadDashboardTemplatesAsync();
             return View(model);
+        }
 
         var widget = new DashboardWidgetDefinition
         {
             Id = Guid.NewGuid(),
+            DashboardTemplateDefinitionId = model.DashboardTemplateDefinitionId,
             WidgetCode = model.WidgetCode.Trim().ToUpper(),
             WidgetTitle = model.WidgetName.Trim(),
             WidgetType = model.WidgetType,
@@ -109,6 +122,8 @@ public class DashboardDesignerController : Controller
     [HttpGet("/DashboardDesigner/Edit/{id}")]
     public async Task<IActionResult> Edit(Guid id)
     {
+        await LoadDashboardTemplatesAsync();
+
         var widget = await _context.DashboardWidgetDefinitions
             .FirstOrDefaultAsync(x => x.Id == id);
 
@@ -118,6 +133,7 @@ public class DashboardDesignerController : Controller
         var model = new DashboardWidgetDefinitionViewModel
         {
             Id = widget.Id,
+            DashboardTemplateDefinitionId = widget.DashboardTemplateDefinitionId,
             WidgetCode = widget.WidgetCode,
             WidgetName = widget.WidgetTitle,
             WidgetType = widget.WidgetType,
@@ -146,7 +162,10 @@ public class DashboardDesignerController : Controller
         ValidateWidgetModel(model, isCreate: false);
 
         if (!ModelState.IsValid)
+        {
+            await LoadDashboardTemplatesAsync();
             return View(model);
+        }
 
         var widget = await _context.DashboardWidgetDefinitions
             .FirstOrDefaultAsync(x => x.Id == model.Id);
@@ -154,6 +173,7 @@ public class DashboardDesignerController : Controller
         if (widget == null)
             return NotFound();
 
+        widget.DashboardTemplateDefinitionId = model.DashboardTemplateDefinitionId;
         widget.WidgetTitle = model.WidgetName.Trim();
         widget.WidgetType = model.WidgetType;
         widget.SqlQuery = model.SqlQuery.Trim();
@@ -199,6 +219,7 @@ public class DashboardDesignerController : Controller
         var clonedWidget = new DashboardWidgetDefinition
         {
             Id = Guid.NewGuid(),
+            DashboardTemplateDefinitionId = sourceWidget.DashboardTemplateDefinitionId,
             WidgetCode = newCode,
             WidgetTitle = sourceWidget.WidgetTitle + " Copy",
             WidgetType = sourceWidget.WidgetType,
@@ -292,6 +313,20 @@ public class DashboardDesignerController : Controller
         return PartialView("_SqlPreview", preview);
     }
 
+    private async Task LoadDashboardTemplatesAsync()
+    {
+        ViewBag.DashboardTemplates = await _context.DashboardTemplateDefinitions
+            .Where(x => x.IsActive)
+            .OrderBy(x => x.DisplayOrder)
+            .ThenBy(x => x.TemplateName)
+            .Select(x => new SelectListItem
+            {
+                Value = x.Id.ToString(),
+                Text = x.TemplateName
+            })
+            .ToListAsync();
+    }
+
     private void ValidateWidgetModel(
         DashboardWidgetDefinitionViewModel model,
         bool isCreate)
@@ -307,6 +342,7 @@ public class DashboardDesignerController : Controller
 
         if (model.WidgetWidth <= 0 || model.WidgetWidth > 12)
             ModelState.AddModelError(nameof(model.WidgetWidth), "Widget Width must be between 1 and 12.");
+
 
         if (model.RowPosition <= 0)
             ModelState.AddModelError(nameof(model.RowPosition), "Row Position must be greater than 0.");

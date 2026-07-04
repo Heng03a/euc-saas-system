@@ -1,6 +1,7 @@
 using EucSaaS.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace EucSaaS.Web.Controllers;
 
@@ -15,10 +16,19 @@ public class DashboardController : Controller
     }
 
     [HttpGet("/Dashboard")]
-    public async Task<IActionResult> Index()
-    {
-        var model = await _dashboardService.GetDashboardAsync();
+public async Task<IActionResult> Index()
+{
+    Guid? appRoleId = null;
 
-        return View(model);
+    var appRoleIdValue = User.FindFirst("AppRoleId")?.Value;
+
+    if (Guid.TryParse(appRoleIdValue, out var parsedAppRoleId))
+    {
+        appRoleId = parsedAppRoleId;
     }
+
+    var model = await _dashboardService.GetDashboardAsync(appRoleId);
+
+    return View(model);
+}
 }

@@ -1,0 +1,85 @@
+@model List<EucSaaS.Web.ViewModels.Dashboard.RoleDashboardTemplateAssignmentViewModel>
+
+@{
+    ViewData["Title"] = "Dashboard Assignment";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2>Dashboard Assignment</h2>
+        <p class="text-muted mb-0">
+            Assign dashboard templates to application roles.
+        </p>
+    </div>
+
+    <a asp-controller="DashboardAssignment"
+       asp-action="Create"
+       class="btn btn-success">
+        + Create Assignment
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Role</th>
+                <th>Dashboard Template</th>
+                <th class="text-center">Active</th>
+                <th style="width:160px;" class="text-center">Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        <strong>@item.AppRoleName</strong>
+                    </td>
+
+                    <td>
+                        <span class="badge bg-dark">
+                            @item.DashboardTemplateName
+                        </span>
+                    </td>
+
+                    <td class="text-center">
+                        @if (item.IsActive)
+                        {
+                            <span class="badge bg-success">✓ Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">✕ Inactive</span>
+                        }
+                    </td>
+
+                    <td class="text-center">
+                        <a asp-controller="DashboardAssignment"
+                           asp-action="Edit"
+                           asp-route-id="@item.Id"
+                           class="btn btn-sm btn-primary">
+                            Edit
+                        </a>
+
+                        <a asp-controller="DashboardAssignment"
+                           asp-action="Delete"
+                           asp-route-id="@item.Id"
+                           class="btn btn-sm btn-danger">
+                            Delete
+
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

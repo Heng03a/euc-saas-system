@@ -24,6 +24,10 @@ public int ColumnPosition { get; set; } = 1;
 
 public int Height { get; set; } = 300;
 
+public Guid? DashboardTemplateDefinitionId { get; set; }
+
+public string? DashboardTemplateName { get; set; }
+
     public string Icon { get; set; } = string.Empty;
 
     public string Color { get; set; } = "primary";
