@@ -193,6 +193,43 @@ public class DashboardDesignerController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> SaveLayout(
+    [FromBody] List<DashboardWidgetLayoutItemViewModel> items)
+{
+    if (items == null || items.Count == 0)
+    {
+        return BadRequest("No layout data received.");
+    }
+
+    var ids = items.Select(x => x.Id).ToList();
+
+    var widgets = await _context.DashboardWidgetDefinitions
+        .Where(x => ids.Contains(x.Id))
+        .ToListAsync();
+
+    foreach (var item in items)
+    {
+        var widget = widgets.FirstOrDefault(x => x.Id == item.Id);
+
+        if (widget != null)
+        {
+            widget.DisplayOrder = item.DisplayOrder;
+        }
+    }
+
+    await _context.SaveChangesAsync();
+
+    return Json(new
+    {
+        success = true,
+        message = "Dashboard layout saved successfully."
+    });
+}
+
+
     [HttpPost("/DashboardDesigner/Clone/{id}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Clone(Guid id)

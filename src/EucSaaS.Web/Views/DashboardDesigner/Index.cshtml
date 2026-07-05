@@ -4,20 +4,11 @@
     ViewData["Title"] = "Dashboard Designer";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h2>Dashboard Designer</h2>
-        <p class="text-muted mb-0">
-            Manage dashboard widgets metadata and layout.
-        </p>
-    </div>
+<h2>Dashboard Designer</h2>
 
-    <a asp-controller="DashboardDesigner"
-       asp-action="Create"
-       class="btn btn-success">
-        + Create Widget
-    </a>
-</div>
+<p class="text-muted">
+    Drag widgets to reorder dashboard layout.
+</p>
 
 @if (TempData["SuccessMessage"] != null)
 {
@@ -26,152 +17,134 @@
     </div>
 }
 
-<div class="table-responsive">
-    <table class="table table-bordered table-hover align-middle">
-        <thead class="table-light">
-            <tr>
-                <th>Template</th>
-                <th>Widget Code</th>
-                <th>Widget Title</th>
-                <th class="text-center">Type</th>
-                <th class="text-center">Row</th>
-                <th class="text-center">Column</th>
-                <th class="text-center">Width</th>
-                <th class="text-center">Height</th>
-                <th class="text-center">Order</th>
-                <th class="text-center">Active</th>
-                <th style="width: 220px;" class="text-center">Actions</th>
-            </tr>
-        </thead>
+<div id="saveMessage" class="alert alert-success d-none"></div>
 
-        <tbody>
-            @foreach (var widget in Model)
-            {
-                var typeBadge = widget.WidgetType switch
-                {
-                    "Card" => "bg-primary",
-                    "Table" => "bg-success",
-                    "Pie" => "bg-warning text-dark",
-                    "Chart" => "bg-info text-dark",
-                    _ => "bg-secondary"
-                };
+<div class="mb-3">
+    <button type="button" id="saveLayoutBtn" class="btn btn-primary">
+        Save Layout
+    </button>
 
-                var typeIcon = widget.WidgetType switch
-                {
-                    "Card" => "bi bi-grid",
-                    "Table" => "bi bi-table",
-                    "Pie" => "bi bi-pie-chart",
-                    "Chart" => "bi bi-bar-chart",
-                    _ => "bi bi-box"
-                };
-
-                <tr>
-                    <td>
-                        @if (string.IsNullOrWhiteSpace(widget.DashboardTemplateName))
-                        {
-                            <span class="text-muted">-</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-dark">
-                                @widget.DashboardTemplateName
-                            </span>
-                        }
-                    </td>
-
-                    <td>
-                        <strong>@widget.WidgetCode</strong>
-                    </td>
-
-                    <td>
-                        @widget.WidgetName
-                    </td>
-
-                    <td class="text-center">
-                        <span class="badge @typeBadge">
-                            <i class="@typeIcon"></i> @widget.WidgetType
-                        </span>
-                    </td>
-
-                    <td class="text-center">
-                        <span class="badge bg-light text-dark border">
-                            Row @widget.RowPosition
-                        </span>
-                    </td>
-
-                    <td class="text-center">
-                        <span class="badge bg-light text-dark border">
-                            Col @widget.ColumnPosition
-                        </span>
-                    </td>
-
-                    <td class="text-center">
-                        <span class="badge bg-light text-dark border">
-                            @widget.WidgetWidth / 12
-                        </span>
-                    </td>
-
-                    <td class="text-center">
-                        <span class="badge bg-light text-dark border">
-                            @widget.Height px
-                        </span>
-                    </td>
-
-                    <td class="text-center">
-                        @widget.DisplayOrder
-                    </td>
-
-                    <td class="text-center">
-                        @if (widget.IsActive)
-                        {
-                            <span class="badge bg-success">
-                                ✓ Active
-                            </span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary">
-                                ✕ Inactive
-                            </span>
-                        }
-                    </td>
-
-                    <td class="text-center">
-                        <a asp-controller="DashboardDesigner"
-                           asp-action="Edit"
-                           asp-route-id="@widget.Id"
-                           class="btn btn-sm btn-primary">
-                            Edit
-                        </a>
-
-                        <form asp-controller="DashboardDesigner"
-                              asp-action="Clone"
-                              asp-route-id="@widget.Id"
-                              method="post"
-                              class="d-inline">
-                            @Html.AntiForgeryToken()
-
-                            <button type="submit"
-                                    class="btn btn-warning btn-sm">
-                                Clone
-                            </button>
-                        </form>
-
-                        <form asp-controller="DashboardDesigner"
-                              asp-action="Delete"
-                              asp-route-id="@widget.Id"
-                              method="post"
-                              class="d-inline"
-                              onsubmit="return confirm('Delete widget @widget.WidgetName?');">
-                            @Html.AntiForgeryToken()
-
-                            <button type="submit" class="btn btn-sm btn-danger">
-                                Delete
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <a asp-action="Create" class="btn btn-success">
+        Create Widget
+    </a>
 </div>
+
+@Html.AntiForgeryToken()
+
+<div id="dashboardDesignerList" class="row g-3">
+
+@foreach (var widget in Model.OrderBy(x => x.DisplayOrder))
+{
+    <div class="col-md-4 dashboard-widget-item"
+         data-widget-id="@widget.Id">
+
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+<strong>@widget.WidgetCode</strong>
+                <span class="badge bg-secondary">Drag</span>
+            </div>
+
+            <div class="card-body">
+                <p class="mb-1">
+                    <strong>Code:</strong> @widget.WidgetCode
+                </p>
+
+                <p class="mb-1">
+                    <strong>Type:</strong> @widget.WidgetType
+                </p>
+
+                <p class="mb-1">
+                    <strong>Width:</strong> @widget.WidgetWidth
+                </p>
+
+                <p class="mb-1">
+                    <strong>Order:</strong> @widget.DisplayOrder
+                </p>
+
+                <p class="mb-0">
+                    <strong>Active:</strong> @(widget.IsActive ? "Yes" : "No")
+                </p>
+            </div>
+
+            <div class="card-footer text-end">
+                <a asp-action="Edit"
+                   asp-route-id="@widget.Id"
+                   class="btn btn-sm btn-primary">
+                    Edit
+                </a>
+
+                <a asp-action="Clone"
+                   asp-route-id="@widget.Id"
+                   class="btn btn-sm btn-warning">
+                    Clone
+                </a>
+
+                <a asp-action="Delete"
+                   asp-route-id="@widget.Id"
+                   class="btn btn-sm btn-danger">
+                    Delete
+                </a>
+            </div>
+        </div>
+    </div>
+}
+
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+    <script>
+        const designerList = document.getElementById("dashboardDesignerList");
+
+        new Sortable(designerList, {
+            animation: 150,
+            ghostClass: "bg-warning"
+        });
+
+        document.getElementById("saveLayoutBtn").addEventListener("click", function () {
+
+            const widgets = document.querySelectorAll(".dashboard-widget-item");
+
+            const layoutItems = [];
+
+            widgets.forEach(function (item, index) {
+                layoutItems.push({
+                    id: item.getAttribute("data-widget-id"),
+                    displayOrder: index + 1
+                });
+            });
+
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            fetch("/DashboardDesigner/SaveLayout", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "RequestVerificationToken": token
+                },
+                body: JSON.stringify(layoutItems)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Save layout failed.");
+                }
+
+                return response.json();
+            })
+  .then(data => {
+    const messageBox = document.getElementById("saveMessage");
+    messageBox.innerText = data.message;
+    messageBox.classList.remove("d-none");
+
+    setTimeout(function () {
+        window.location.reload();
+    }, 800);
+})
+
+            .catch(error => {
+                alert(error.message);
+            });
+        });
+    </script>
+}
