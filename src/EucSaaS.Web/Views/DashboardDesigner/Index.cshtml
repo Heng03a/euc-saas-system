@@ -59,27 +59,39 @@
 
             </div>
 
-            <div class="card-body">
-                <p class="mb-1">
-                    <strong>Code:</strong> @widget.WidgetCode
-                </p>
+<div class="card-body">
+    <p class="mb-1">
+        <strong>Code:</strong> @widget.WidgetCode
+    </p>
 
-                <p class="mb-1">
-                    <strong>Type:</strong> @widget.WidgetType
-                </p>
+    <p class="mb-1">
+        <strong>Type:</strong> @widget.WidgetType
+    </p>
 
-                <p class="mb-1">
-                    <strong>Width:</strong> @widget.WidgetWidth
-                </p>
+    <p class="mb-1">
+        <strong>Width:</strong> @widget.WidgetWidth
+    </p>
 
-                <p class="mb-1">
-                    <strong>Order:</strong> @widget.DisplayOrder
-                </p>
+    <p class="mb-1">
+        <strong>Row:</strong> @widget.RowPosition
+    </p>
 
-                <p class="mb-0">
-                    <strong>Active:</strong> @(widget.IsActive ? "Yes" : "No")
-                </p>
-            </div>
+    <p class="mb-1">
+        <strong>Column:</strong> @widget.ColumnPosition
+    </p>
+
+    <p class="mb-1">
+        <strong>Height:</strong> @widget.Height
+    </p>
+
+    <p class="mb-1">
+        <strong>Order:</strong> @widget.DisplayOrder
+    </p>
+
+    <p class="mb-0">
+<strong>Active:</strong> @(widget.IsActive ? "Yes" : "No")
+    </p>
+</div>
 
             <div class="card-footer text-end">
                 <a asp-action="Edit"
@@ -171,35 +183,36 @@ new Sortable(designerList, {
 
             const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
-            fetch("/DashboardDesigner/SaveLayout", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "RequestVerificationToken": token
-                },
-                body: JSON.stringify(layoutItems)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Save layout failed.");
-                }
+fetch("/DashboardDesigner/SaveLayout", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        "RequestVerificationToken": token
+    },
+    body: JSON.stringify(layoutItems)
+})
+.then(async response => {
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Save layout failed.");
+    }
 
-                return response.json();
-            })
-            .then(data => {
-      messageBox.innerText = data.message;
-messageBox.classList.remove("d-none", "alert-warning");
-messageBox.classList.add("alert-success");
+    return response.json();
+})
+.then(data => {
+    messageBox.innerText = data.message;
+    messageBox.classList.remove("d-none", "alert-warning");
+    messageBox.classList.add("alert-success");
 
-saveButton.disabled = true;
+    saveButton.disabled = true;
 
-                setTimeout(function () {
-                    window.location.reload();
-                }, 800);
-            })
-            .catch(error => {
-                alert(error.message);
-            });
+    setTimeout(function () {
+        window.location.reload();
+    }, 800);
+})
+.catch(error => {
+    alert(error.message);
+});
         });
     </script>
 }
