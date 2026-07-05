@@ -7,7 +7,7 @@
 <h2>Dashboard Designer</h2>
 
 <p class="text-muted">
-    Drag widgets to reorder dashboard layout.
+    Drag widgets by using the handle icon to reorder dashboard layout.
 </p>
 
 @if (TempData["SuccessMessage"] != null)
@@ -39,9 +39,24 @@
          data-widget-id="@widget.Id">
 
         <div class="card shadow-sm h-100">
+
             <div class="card-header bg-light d-flex justify-content-between align-items-center">
-<strong>@widget.WidgetCode</strong>
-                <span class="badge bg-secondary">Drag</span>
+
+                <div class="d-flex align-items-center">
+
+                    <span class="drag-handle me-2"
+                          title="Drag widget">
+                        ☰
+                    </span>
+
+                    <strong>@widget.WidgetCode</strong>
+
+                </div>
+
+                <span class="badge bg-secondary">
+                    Drag
+                </span>
+
             </div>
 
             <div class="card-body">
@@ -85,11 +100,34 @@
                     Delete
                 </a>
             </div>
+
         </div>
     </div>
 }
 
 </div>
+
+<style>
+    .drag-handle {
+        cursor: grab;
+        user-select: none;
+        font-size: 22px;
+        line-height: 1;
+        color: #6c757d;
+    }
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .dashboard-widget-item.sortable-chosen .card {
+        border: 2px solid #0d6efd;
+    }
+
+    .dashboard-widget-item.sortable-ghost {
+        opacity: 0.5;
+    }
+</style>
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
@@ -99,7 +137,10 @@
 
         new Sortable(designerList, {
             animation: 150,
-            ghostClass: "bg-warning"
+            handle: ".drag-handle",
+            ghostClass: "sortable-ghost",
+            chosenClass: "sortable-chosen",
+            dragClass: "shadow-lg"
         });
 
         document.getElementById("saveLayoutBtn").addEventListener("click", function () {
@@ -132,16 +173,15 @@
 
                 return response.json();
             })
-  .then(data => {
-    const messageBox = document.getElementById("saveMessage");
-    messageBox.innerText = data.message;
-    messageBox.classList.remove("d-none");
+            .then(data => {
+                const messageBox = document.getElementById("saveMessage");
+                messageBox.innerText = data.message;
+                messageBox.classList.remove("d-none");
 
-    setTimeout(function () {
-        window.location.reload();
-    }, 800);
-})
-
+                setTimeout(function () {
+                    window.location.reload();
+                }, 800);
+            })
             .catch(error => {
                 alert(error.message);
             });
