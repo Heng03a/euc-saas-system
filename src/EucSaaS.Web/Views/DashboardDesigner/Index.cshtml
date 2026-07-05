@@ -135,13 +135,26 @@
     <script>
         const designerList = document.getElementById("dashboardDesignerList");
 
-        new Sortable(designerList, {
-            animation: 150,
-            handle: ".drag-handle",
-            ghostClass: "sortable-ghost",
-            chosenClass: "sortable-chosen",
-            dragClass: "shadow-lg"
-        });
+const saveButton = document.getElementById("saveLayoutBtn");
+const messageBox = document.getElementById("saveMessage");
+
+saveButton.disabled = true;
+
+new Sortable(designerList, {
+    animation: 150,
+    handle: ".drag-handle",
+    ghostClass: "sortable-ghost",
+    chosenClass: "sortable-chosen",
+    dragClass: "shadow-lg",
+
+    onEnd: function () {
+        saveButton.disabled = false;
+
+        messageBox.innerText = "Layout has unsaved changes.";
+        messageBox.classList.remove("d-none", "alert-success");
+        messageBox.classList.add("alert-warning");
+    }
+});
 
         document.getElementById("saveLayoutBtn").addEventListener("click", function () {
 
@@ -174,9 +187,11 @@
                 return response.json();
             })
             .then(data => {
-                const messageBox = document.getElementById("saveMessage");
-                messageBox.innerText = data.message;
-                messageBox.classList.remove("d-none");
+      messageBox.innerText = data.message;
+messageBox.classList.remove("d-none", "alert-warning");
+messageBox.classList.add("alert-success");
+
+saveButton.disabled = true;
 
                 setTimeout(function () {
                     window.location.reload();
