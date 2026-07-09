@@ -18,15 +18,17 @@ public class DashboardWidgetDefinitionViewModel
 
     public int WidgetWidth { get; set; } = 6;
 
-public int RowPosition { get; set; } = 1;
+    public int RowPosition { get; set; } = 1;
 
-public int ColumnPosition { get; set; } = 1;
+    public int ColumnPosition { get; set; } = 1;
 
-public int Height { get; set; } = 300;
+    public int Height { get; set; } = 300;
 
-public Guid? DashboardTemplateDefinitionId { get; set; }
+    public int GridWidth { get; set; } = 6;
 
-public string? DashboardTemplateName { get; set; }
+    public Guid? DashboardTemplateDefinitionId { get; set; }
+
+    public string? DashboardTemplateName { get; set; }
 
     public string Icon { get; set; } = string.Empty;
 

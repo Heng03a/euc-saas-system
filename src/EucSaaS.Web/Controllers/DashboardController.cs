@@ -15,8 +15,8 @@ public class DashboardController : Controller
         _dashboardService = dashboardService;
     }
 
-    [HttpGet("/Dashboard")]
-public async Task<IActionResult> Index()
+[HttpGet("/Dashboard")]
+public async Task<IActionResult> Index(string? department, string? status)
 {
     Guid? appRoleId = null;
 
@@ -27,7 +27,11 @@ public async Task<IActionResult> Index()
         appRoleId = parsedAppRoleId;
     }
 
-    var model = await _dashboardService.GetDashboardAsync(appRoleId);
+    var model = await _dashboardService.GetDashboardAsync(
+        appRoleId,
+        department,
+        status
+    );
 
     return View(model);
 }

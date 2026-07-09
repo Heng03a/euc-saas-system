@@ -9,15 +9,29 @@ namespace EucSaaS.Web.Services;
 public class DashboardService
 {
     private readonly AppDbContext _context;
+    private readonly DashboardSqlBuilder _sqlBuilder;
+    private readonly DashboardFilterService _filterService;
 
-    public DashboardService(AppDbContext context)
+    public DashboardService(
+        AppDbContext context,
+        DashboardSqlBuilder sqlBuilder,
+        DashboardFilterService filterService)
     {
         _context = context;
+        _sqlBuilder = sqlBuilder;
+        _filterService = filterService;
     }
 
-    public async Task<DashboardViewModel> GetDashboardAsync(Guid? appRoleId)
+    public async Task<DashboardViewModel> GetDashboardAsync(
+        Guid? appRoleId,
+        string? department,
+        string? status)
     {
         var model = new DashboardViewModel();
+
+        model.Filter = await _filterService.GetFiltersAsync(
+            department,
+            status);
 
         var dashboardTemplateId = appRoleId.HasValue
             ? await _context.RoleDashboardTemplateAssignments
@@ -63,14 +77,20 @@ public class DashboardService
                 || widget.WidgetType.Equals("Chart", StringComparison.OrdinalIgnoreCase)
                 || widget.WidgetType.Equals("Line", StringComparison.OrdinalIgnoreCase))
             {
-                var tableResult = await ExecuteTableAsync(widget.SqlQuery);
+                var tableResult = await ExecuteTableAsync(
+                    widget.SqlQuery,
+                    department,
+                    status);
 
                 vm.Columns = tableResult.Columns;
                 vm.Rows = tableResult.Rows;
             }
             else
             {
-                vm.Value = await ExecuteScalarAsync(widget.SqlQuery);
+                vm.Value = await ExecuteScalarAsync(
+                    widget.SqlQuery,
+                    department,
+                    status);
             }
 
             model.Widgets.Add(vm);
@@ -79,7 +99,10 @@ public class DashboardService
         return model;
     }
 
-    private async Task<string> ExecuteScalarAsync(string sql)
+    private async Task<string> ExecuteScalarAsync(
+        string sql,
+        string? department,
+        string? status)
     {
         var connection = (NpgsqlConnection)_context.Database.GetDbConnection();
 
@@ -88,12 +111,17 @@ public class DashboardService
 
         await using var command = new NpgsqlCommand(sql, connection);
 
+        _sqlBuilder.AddFilterParameters(command, sql, department, status);
+
         var result = await command.ExecuteScalarAsync();
 
         return result?.ToString() ?? "0";
     }
 
-    private async Task<(List<string> Columns, List<Dictionary<string, string>> Rows)> ExecuteTableAsync(string sql)
+    private async Task<(List<string> Columns, List<Dictionary<string, string>> Rows)> ExecuteTableAsync(
+        string sql,
+        string? department,
+        string? status)
     {
         var columns = new List<string>();
         var rows = new List<Dictionary<string, string>>();
@@ -104,6 +132,9 @@ public class DashboardService
             await connection.OpenAsync();
 
         await using var command = new NpgsqlCommand(sql, connection);
+
+        _sqlBuilder.AddFilterParameters(command, sql, department, status);
+
         await using var reader = await command.ExecuteReaderAsync();
 
         for (var i = 0; i < reader.FieldCount; i++)

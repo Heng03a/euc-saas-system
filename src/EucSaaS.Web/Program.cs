@@ -23,6 +23,9 @@ builder.Services.AddScoped<MenuService>();
 
 builder.Services.AddScoped<DashboardService>();
 
+builder.Services.AddScoped<DashboardSqlBuilder>();
+builder.Services.AddScoped<DashboardFilterService>();
+
 builder.Services.AddScoped<IDataSourceDiscoveryService, DataSourceDiscoveryService>();
 builder.Services.AddScoped<IDataSourceSchemaReader, PostgreSqlSchemaReader>();
 

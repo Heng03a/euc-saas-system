@@ -194,42 +194,6 @@ public class DashboardDesignerController : Controller
     }
 
 
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> SaveLayout(
-    [FromBody] List<DashboardWidgetLayoutItemViewModel> items)
-{
-    if (items == null || items.Count == 0)
-    {
-        return BadRequest("No layout data received.");
-    }
-
-    var ids = items.Select(x => x.Id).ToList();
-
-    var widgets = await _context.DashboardWidgetDefinitions
-        .Where(x => ids.Contains(x.Id))
-        .ToListAsync();
-
-    foreach (var item in items)
-    {
-        var widget = widgets.FirstOrDefault(x => x.Id == item.Id);
-
-        if (widget != null)
-        {
-            widget.DisplayOrder = item.DisplayOrder;
-        }
-    }
-
-    await _context.SaveChangesAsync();
-
-    return Json(new
-    {
-        success = true,
-        message = "Dashboard layout saved successfully."
-    });
-}
-
-
     [HttpPost("/DashboardDesigner/Clone/{id}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Clone(Guid id)
@@ -296,6 +260,48 @@ public async Task<IActionResult> SaveLayout(
 
         return RedirectToAction(nameof(Index));
     }
+
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> SaveLayout(
+    [FromBody] List<DashboardLayoutUpdateItemViewModel> items)
+{
+    if (items == null || items.Count == 0)
+    {
+        return BadRequest(new
+        {
+            success = false,
+            message = "No layout data received."
+        });
+    }
+
+    foreach (var item in items)
+    {
+        var widget = await _context.DashboardWidgetDefinitions
+            .FirstOrDefaultAsync(x => x.Id == item.WidgetId);
+
+        if (widget == null)
+        {
+            continue;
+        }
+
+        widget.RowPosition = item.RowPosition <= 0 ? 1 : item.RowPosition;
+        widget.ColumnPosition = item.ColumnPosition <= 0 ? 1 : item.ColumnPosition;
+        widget.WidgetWidth = item.WidgetWidth <= 0 ? 6 : item.WidgetWidth;
+        widget.Height = item.Height <= 0 ? 300 : item.Height;
+        widget.DisplayOrder = item.DisplayOrder <= 0 ? 1 : item.DisplayOrder;
+    }
+
+    await _context.SaveChangesAsync();
+
+    return Json(new
+    {
+        success = true,
+        message = "Dashboard layout saved successfully."
+    });
+}
+
 
     [HttpPost("/DashboardDesigner/TestSql")]
     [ValidateAntiForgeryToken]

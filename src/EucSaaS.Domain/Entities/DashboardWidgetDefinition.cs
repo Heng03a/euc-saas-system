@@ -18,6 +18,15 @@ public int RowPosition { get; set; } = 1;
 public int ColumnPosition { get; set; } = 1;
 public int Height { get; set; } = 300;
 
+
+public int GridRow { get; set; } = 1;
+
+public int GridColumn { get; set; } = 1;
+
+public int GridWidth { get; set; } = 4;
+
+public int GridHeight { get; set; } = 1;
+
     public string WidgetCode { get; set; } = "";
     public string WidgetTitle { get; set; } = "";
 

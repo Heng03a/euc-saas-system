@@ -33,10 +33,20 @@
 
 <div id="dashboardDesignerList" class="row g-3">
 
-@foreach (var widget in Model.OrderBy(x => x.DisplayOrder))
+@foreach (var widget in Model
+    .OrderBy(x => x.RowPosition)
+    .ThenBy(x => x.ColumnPosition)
+    .ThenBy(x => x.DisplayOrder))
 {
-    <div class="col-md-4 dashboard-widget-item"
-         data-widget-id="@widget.Id">
+    var width = widget.WidgetWidth <= 0 ? 4 : widget.WidgetWidth;
+    var height = widget.Height <= 0 ? 300 : widget.Height;
+
+    <div class="col-md-@width dashboard-widget-item"
+         data-widget-id="@widget.Id"
+         data-row-position="@widget.RowPosition"
+         data-column-position="@widget.ColumnPosition"
+         data-widget-width="@width"
+         data-height="@height">
 
         <div class="card shadow-sm h-100">
 
@@ -59,39 +69,39 @@
 
             </div>
 
-<div class="card-body">
-    <p class="mb-1">
-        <strong>Code:</strong> @widget.WidgetCode
-    </p>
+            <div class="card-body">
+                <p class="mb-1">
+                    <strong>Code:</strong> @widget.WidgetCode
+                </p>
 
-    <p class="mb-1">
-        <strong>Type:</strong> @widget.WidgetType
-    </p>
+                <p class="mb-1">
+                    <strong>Type:</strong> @widget.WidgetType
+                </p>
 
-    <p class="mb-1">
-        <strong>Width:</strong> @widget.WidgetWidth
-    </p>
+                <p class="mb-1">
+                    <strong>Width:</strong> @widget.WidgetWidth
+                </p>
 
-    <p class="mb-1">
-        <strong>Row:</strong> @widget.RowPosition
-    </p>
+                <p class="mb-1">
+                    <strong>Row:</strong> @widget.RowPosition
+                </p>
 
-    <p class="mb-1">
-        <strong>Column:</strong> @widget.ColumnPosition
-    </p>
+                <p class="mb-1">
+                    <strong>Column:</strong> @widget.ColumnPosition
+                </p>
 
-    <p class="mb-1">
-        <strong>Height:</strong> @widget.Height
-    </p>
+                <p class="mb-1">
+                    <strong>Height:</strong> @widget.Height
+                </p>
 
-    <p class="mb-1">
-        <strong>Order:</strong> @widget.DisplayOrder
-    </p>
+                <p class="mb-1">
+                    <strong>Order:</strong> @widget.DisplayOrder
+                </p>
 
-    <p class="mb-0">
-<strong>Active:</strong> @(widget.IsActive ? "Yes" : "No")
-    </p>
-</div>
+                <p class="mb-0">
+                    <strong>Active:</strong> @(widget.IsActive ? "Yes" : "No")
+                </p>
+            </div>
 
             <div class="card-footer text-end">
                 <a asp-action="Edit"
@@ -146,73 +156,77 @@
 
     <script>
         const designerList = document.getElementById("dashboardDesignerList");
+        const saveButton = document.getElementById("saveLayoutBtn");
+        const messageBox = document.getElementById("saveMessage");
 
-const saveButton = document.getElementById("saveLayoutBtn");
-const messageBox = document.getElementById("saveMessage");
+        saveButton.disabled = true;
 
-saveButton.disabled = true;
+        new Sortable(designerList, {
+            animation: 150,
+            handle: ".drag-handle",
+            ghostClass: "sortable-ghost",
+            chosenClass: "sortable-chosen",
+            dragClass: "shadow-lg",
 
-new Sortable(designerList, {
-    animation: 150,
-    handle: ".drag-handle",
-    ghostClass: "sortable-ghost",
-    chosenClass: "sortable-chosen",
-    dragClass: "shadow-lg",
+            onEnd: function () {
+                saveButton.disabled = false;
 
-    onEnd: function () {
-        saveButton.disabled = false;
+                messageBox.innerText = "Layout has unsaved changes.";
+                messageBox.classList.remove("d-none", "alert-success");
+                messageBox.classList.add("alert-warning");
+            }
+        });
 
-        messageBox.innerText = "Layout has unsaved changes.";
-        messageBox.classList.remove("d-none", "alert-success");
-        messageBox.classList.add("alert-warning");
-    }
-});
-
-        document.getElementById("saveLayoutBtn").addEventListener("click", function () {
+        saveButton.addEventListener("click", function () {
 
             const widgets = document.querySelectorAll(".dashboard-widget-item");
-
             const layoutItems = [];
 
             widgets.forEach(function (item, index) {
+
                 layoutItems.push({
-                    id: item.getAttribute("data-widget-id"),
+                    widgetId: item.getAttribute("data-widget-id"),
+                    rowPosition: 1,
+                    columnPosition: index + 1,
+                    widgetWidth: parseInt(item.getAttribute("data-widget-width")) || 4,
+                    height: parseInt(item.getAttribute("data-height")) || 300,
                     displayOrder: index + 1
                 });
+
             });
 
             const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
-fetch("/DashboardDesigner/SaveLayout", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-        "RequestVerificationToken": token
-    },
-    body: JSON.stringify(layoutItems)
-})
-.then(async response => {
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Save layout failed.");
-    }
+            fetch("/DashboardDesigner/SaveLayout", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "RequestVerificationToken": token
+                },
+                body: JSON.stringify(layoutItems)
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || "Save layout failed.");
+                }
 
-    return response.json();
-})
-.then(data => {
-    messageBox.innerText = data.message;
-    messageBox.classList.remove("d-none", "alert-warning");
-    messageBox.classList.add("alert-success");
+                return response.json();
+            })
+            .then(data => {
+                messageBox.innerText = data.message;
+                messageBox.classList.remove("d-none", "alert-warning");
+                messageBox.classList.add("alert-success");
 
-    saveButton.disabled = true;
+                saveButton.disabled = true;
 
-    setTimeout(function () {
-        window.location.reload();
-    }, 800);
-})
-.catch(error => {
-    alert(error.message);
-});
+                setTimeout(function () {
+                    window.location.reload();
+                }, 800);
+            })
+            .catch(error => {
+                alert(error.message);
+            });
         });
     </script>
 }
