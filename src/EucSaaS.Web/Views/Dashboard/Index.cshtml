@@ -60,28 +60,69 @@
                     </select>
                 </div>
 
-                <div class="col-md-4 d-flex gap-2">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">
+                        Auto Refresh
+                    </label>
 
-                    <button id="refreshDashboardButton"
-                            type="submit"
-                            class="btn btn-primary">
+                    <div class="d-flex gap-2">
 
-                        <i class="bi bi-arrow-clockwise me-1"></i>
-                        Refresh
-                    </button>
+                        <select id="autoRefreshInterval"
+                                class="form-select">
 
-                    <button id="clearDashboardButton"
-                            type="button"
-                            class="btn btn-outline-secondary">
+                            <option value="0">
+                                Off
+                            </option>
 
-                        Clear
-                    </button>
+                            <option value="30">
+                                30 Seconds
+                            </option>
 
+                            <option value="60">
+                                1 Minute
+                            </option>
+
+                            <option value="300">
+                                5 Minutes
+                            </option>
+
+                            <option value="600">
+                                10 Minutes
+                            </option>
+
+                        </select>
+
+                        <button id="refreshDashboardButton"
+                                type="submit"
+                                class="btn btn-primary"
+                                title="Refresh dashboard">
+
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+
+                        <button id="clearDashboardButton"
+                                type="button"
+                                class="btn btn-outline-secondary">
+
+                            Clear
+                        </button>
+
+                    </div>
                 </div>
 
             </div>
         </form>
     </div>
+</div>
+
+<div class="d-flex justify-content-end mb-3">
+    <small class="text-muted">
+        Last refreshed:
+
+        <span id="lastRefreshedTime">
+            @DateTime.Now.ToString("dd MMM yyyy HH:mm:ss")
+        </span>
+    </small>
 </div>
 
 <div id="dashboardLoading"
@@ -117,16 +158,60 @@
     <script>
         $(document).ready(function () {
 
-            const filterForm = $("#dashboardFilterForm");
-            const departmentFilter = $("#departmentFilter");
-            const statusFilter = $("#statusFilter");
+            const filterForm =
+                $("#dashboardFilterForm");
 
-            const dashboardContent = $("#dashboardContent");
-            const dashboardLoading = $("#dashboardLoading");
-            const dashboardError = $("#dashboardError");
+            const departmentFilter =
+                $("#departmentFilter");
 
-            const refreshButton = $("#refreshDashboardButton");
-            const clearButton = $("#clearDashboardButton");
+            const statusFilter =
+                $("#statusFilter");
+
+            const dashboardContent =
+                $("#dashboardContent");
+
+            const dashboardLoading =
+                $("#dashboardLoading");
+
+            const dashboardError =
+                $("#dashboardError");
+
+            const refreshButton =
+                $("#refreshDashboardButton");
+
+            const clearButton =
+                $("#clearDashboardButton");
+
+            const autoRefreshInterval =
+                $("#autoRefreshInterval");
+
+            const lastRefreshedTime =
+                $("#lastRefreshedTime");
+
+            let autoRefreshTimer = null;
+
+            function updateLastRefreshedTime() {
+
+                const now = new Date();
+
+                const formattedTime =
+                    now.toLocaleString(
+                        "en-SG",
+                        {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                            hour12: false
+                        }
+                    );
+
+                lastRefreshedTime.text(
+                    formattedTime
+                );
+            }
 
             function refreshDashboard() {
 
@@ -154,6 +239,11 @@
                     true
                 );
 
+                autoRefreshInterval.prop(
+                    "disabled",
+                    true
+                );
+
                 $.ajax({
                     url: "@Url.Action("Refresh", "Dashboard")",
 
@@ -174,6 +264,8 @@
                             department,
                             status
                         );
+
+                        updateLastRefreshedTime();
                     },
 
                     error: function (xhr) {
@@ -204,6 +296,11 @@
                             "disabled",
                             false
                         );
+
+                        autoRefreshInterval.prop(
+                            "disabled",
+                            false
+                        );
                     }
                 });
             }
@@ -216,7 +313,6 @@
                     new URLSearchParams();
 
                 if (department) {
-
                     queryString.set(
                         "department",
                         department
@@ -224,7 +320,6 @@
                 }
 
                 if (status) {
-
                     queryString.set(
                         "status",
                         status
@@ -238,7 +333,6 @@
                     queryString.toString();
 
                 if (query) {
-
                     newUrl +=
                         "?" + query;
                 }
@@ -248,6 +342,45 @@
                     "",
                     newUrl
                 );
+            }
+
+            function stopAutoRefresh() {
+
+                if (autoRefreshTimer !== null) {
+
+                    clearInterval(
+                        autoRefreshTimer
+                    );
+
+                    autoRefreshTimer = null;
+                }
+            }
+
+            function startAutoRefresh() {
+
+                stopAutoRefresh();
+
+                const intervalSeconds =
+                    parseInt(
+                        autoRefreshInterval.val(),
+                        10
+                    );
+
+                if (!intervalSeconds ||
+                    intervalSeconds <= 0) {
+
+                    return;
+                }
+
+                autoRefreshTimer =
+                    setInterval(
+                        function () {
+
+                            refreshDashboard();
+
+                        },
+                        intervalSeconds * 1000
+                    );
             }
 
             filterForm.on(
@@ -276,6 +409,14 @@
                 }
             );
 
+            autoRefreshInterval.on(
+                "change",
+                function () {
+
+                    startAutoRefresh();
+                }
+            );
+
             clearButton.on(
                 "click",
                 function () {
@@ -289,19 +430,21 @@
 
             /*
              * Widget-level AJAX refresh.
-             *
-             * Event delegation is required because widgets are
-             * dynamically replaced after an AJAX refresh.
+             * Event delegation is required because widgets
+             * are replaced dynamically after AJAX requests.
              */
             $(document).on(
                 "click",
                 ".refresh-widget-button",
                 function () {
 
-                    const button = $(this);
+                    const button =
+                        $(this);
 
                     const widgetId =
-                        button.attr("data-widget-id");
+                        button.attr(
+                            "data-widget-id"
+                        );
 
                     if (!widgetId) {
 
@@ -369,6 +512,8 @@
                             widgetContainer.replaceWith(
                                 html
                             );
+
+                            updateLastRefreshedTime();
                         },
 
                         error: function (xhr) {
@@ -422,6 +567,17 @@
                             );
                         }
                     });
+                }
+            );
+
+            /*
+             * Stop the timer when the user leaves the page.
+             */
+            $(window).on(
+                "beforeunload",
+                function () {
+
+                    stopAutoRefresh();
                 }
             );
         });
