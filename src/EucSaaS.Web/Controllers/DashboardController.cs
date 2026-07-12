@@ -115,11 +115,17 @@ public class DashboardController : Controller
         using var workbook =
             new XLWorkbook();
 
-        AddDashboardSummaryWorksheet(
-            workbook,
-            dashboard,
-            department,
-            status);
+var exportedBy =
+    User.Identity?.Name
+    ?? User.FindFirstValue(ClaimTypes.Name)
+    ?? "Unknown User";
+
+AddDashboardSummaryWorksheet(
+    workbook,
+    dashboard,
+    department,
+    status,
+    exportedBy);
 
         AddDashboardDataWorksheets(
             workbook,
@@ -155,140 +161,233 @@ public class DashboardController : Controller
         return null;
     }
 
-    private static void AddDashboardSummaryWorksheet(
-        XLWorkbook workbook,
-        DashboardViewModel dashboard,
-        string? department,
-        string? status)
-    {
-        var worksheet =
-            workbook.Worksheets.Add(
-                "Dashboard Summary");
+private static void AddDashboardSummaryWorksheet(
+    XLWorkbook workbook,
+    DashboardViewModel dashboard,
+    string? department,
+    string? status,
+    string exportedBy)
+{
+    var worksheet =
+        workbook.Worksheets.Add(
+            "Dashboard Summary");
 
-        worksheet.Cell(1, 1).Value =
-            "EUC SaaS Dashboard Export";
+    worksheet.Cell(1, 1).Value =
+        "EUC SaaS Dashboard Export";
 
+    worksheet.Range(
+            1,
+            1,
+            1,
+            8)
+        .Merge();
+
+    worksheet.Cell(1, 1)
+        .Style.Font.Bold = true;
+
+    worksheet.Cell(1, 1)
+        .Style.Font.FontSize = 18;
+
+    worksheet.Cell(1, 1)
+        .Style.Alignment.Horizontal =
+        XLAlignmentHorizontalValues.Center;
+
+    worksheet.Cell(1, 1)
+        .Style.Fill.BackgroundColor =
+        XLColor.DarkBlue;
+
+    worksheet.Cell(1, 1)
+        .Style.Font.FontColor =
+        XLColor.White;
+
+    worksheet.Row(1).Height = 28;
+
+    worksheet.Cell(3, 1).Value =
+        "Generated At";
+
+    worksheet.Cell(3, 2).Value =
+        DateTime.Now;
+
+    worksheet.Cell(3, 2)
+        .Style.DateFormat.Format =
+        "dd MMM yyyy HH:mm:ss";
+
+    worksheet.Cell(4, 1).Value =
+        "Exported By";
+
+    worksheet.Cell(4, 2).Value =
+        exportedBy;
+
+    worksheet.Cell(5, 1).Value =
+        "Department";
+
+    worksheet.Cell(5, 2).Value =
+        string.IsNullOrWhiteSpace(
+            department)
+            ? "All Departments"
+            : department;
+
+    worksheet.Cell(6, 1).Value =
+        "Status";
+
+    worksheet.Cell(6, 2).Value =
+        string.IsNullOrWhiteSpace(
+            status)
+            ? "All Statuses"
+            : status;
+
+    worksheet.Range(3, 1, 6, 1)
+        .Style.Font.Bold = true;
+
+    worksheet.Range(3, 1, 6, 1)
+        .Style.Fill.BackgroundColor =
+        XLColor.LightBlue;
+
+    const int headerRow = 8;
+
+    worksheet.Cell(headerRow, 1).Value =
+        "Widget";
+
+    worksheet.Cell(headerRow, 2).Value =
+        "Type";
+
+    worksheet.Cell(headerRow, 3).Value =
+        "Value";
+
+    worksheet.Cell(headerRow, 4).Value =
+        "Data Rows";
+
+    worksheet.Cell(headerRow, 5).Value =
+        "Display Order";
+
+    worksheet.Cell(headerRow, 6).Value =
+        "Width";
+
+    worksheet.Cell(headerRow, 7).Value =
+        "Row";
+
+    worksheet.Cell(headerRow, 8).Value =
+        "Column";
+
+    var headerRange =
         worksheet.Range(
-                1,
-                1,
-                1,
+            headerRow,
+            1,
+            headerRow,
+            8);
+
+    headerRange.Style.Font.Bold =
+        true;
+
+    headerRange.Style.Font.FontColor =
+        XLColor.White;
+
+headerRange.Style.Fill.BackgroundColor =
+    XLColor.DarkBlue;
+
+headerRange.Style.Font.FontColor =
+    XLColor.White;
+
+headerRange.Style.Alignment.Horizontal =
+    XLAlignmentHorizontalValues.Center;
+
+
+    var currentRow =
+        headerRow + 1;
+
+    foreach (var widget in
+             dashboard.Widgets ??
+             Enumerable.Empty<
+                 DashboardWidgetViewModel>())
+    {
+        worksheet.Cell(
+                currentRow,
+                1)
+            .Value =
+            widget.WidgetTitle;
+
+        worksheet.Cell(
+                currentRow,
+                2)
+            .Value =
+            widget.WidgetType;
+
+        worksheet.Cell(
+                currentRow,
+                3)
+            .Value =
+            widget.Value ??
+            string.Empty;
+
+        worksheet.Cell(
+                currentRow,
                 4)
-            .Merge();
+            .Value =
+            widget.Rows?.Count ??
+            0;
 
-        worksheet.Cell(1, 1)
-            .Style.Font.Bold = true;
+        worksheet.Cell(
+                currentRow,
+                5)
+            .Value =
+            widget.DisplayOrder;
 
-        worksheet.Cell(1, 1)
-            .Style.Font.FontSize = 16;
+        worksheet.Cell(
+                currentRow,
+                6)
+            .Value =
+            widget.WidgetWidth;
 
-        worksheet.Cell(3, 1).Value =
-            "Generated At";
+        worksheet.Cell(
+                currentRow,
+                7)
+            .Value =
+            widget.RowPosition;
 
-        worksheet.Cell(3, 2).Value =
-            DateTime.Now;
+        worksheet.Cell(
+                currentRow,
+                8)
+            .Value =
+            widget.ColumnPosition;
 
-        worksheet.Cell(3, 2)
-            .Style.DateFormat.Format =
-            "dd MMM yyyy HH:mm:ss";
-
-        worksheet.Cell(4, 1).Value =
-            "Department";
-
-        worksheet.Cell(4, 2).Value =
-            string.IsNullOrWhiteSpace(
-                department)
-                ? "All Departments"
-                : department;
-
-        worksheet.Cell(5, 1).Value =
-            "Status";
-
-        worksheet.Cell(5, 2).Value =
-            string.IsNullOrWhiteSpace(
-                status)
-                ? "All Statuses"
-                : status;
-
-        worksheet.Cell(7, 1).Value =
-            "Widget";
-
-        worksheet.Cell(7, 2).Value =
-            "Type";
-
-        worksheet.Cell(7, 3).Value =
-            "Value";
-
-        worksheet.Cell(7, 4).Value =
-            "Data Rows";
-
-        var headerRange =
-            worksheet.Range(
-                7,
-                1,
-                7,
-                4);
-
-        headerRange.Style.Font.Bold =
-            true;
-
-        headerRange.Style.Fill
-            .BackgroundColor =
-            XLColor.LightGray;
-
-        var currentRow = 8;
-
-        foreach (var widget in
-                 dashboard.Widgets ??
-                 Enumerable.Empty<
-                     DashboardWidgetViewModel>())
-        {
-            worksheet.Cell(
-                    currentRow,
-                    1)
-                .Value =
-                widget.WidgetTitle;
-
-            worksheet.Cell(
-                    currentRow,
-                    2)
-                .Value =
-                widget.WidgetType;
-
-            worksheet.Cell(
-                    currentRow,
-                    3)
-                .Value =
-                widget.Value ??
-                string.Empty;
-
-            worksheet.Cell(
-                    currentRow,
-                    4)
-                .Value =
-                widget.Rows?.Count ??
-                0;
-
-            currentRow++;
-        }
-
-        if (currentRow > 8)
-        {
-            var summaryTableRange =
-                worksheet.Range(
-                    7,
-                    1,
-                    currentRow - 1,
-                    4);
-
-            summaryTableRange.CreateTable();
-        }
-
-        worksheet.Columns()
-            .AdjustToContents();
-
-        worksheet.SheetView
-            .FreezeRows(7);
+        currentRow++;
     }
+
+    if (currentRow >
+        headerRow + 1)
+    {
+        var summaryTableRange =
+            worksheet.Range(
+                headerRow,
+                1,
+                currentRow - 1,
+                8);
+
+        var table =
+            summaryTableRange.CreateTable();
+
+        table.Theme =
+            XLTableTheme.TableStyleMedium2;
+    }
+
+    worksheet.Columns()
+        .AdjustToContents();
+
+    worksheet.Column(1).Width =
+        Math.Max(
+            worksheet.Column(1).Width,
+            24);
+
+    worksheet.SheetView
+        .FreezeRows(headerRow);
+
+    worksheet.PageSetup
+        .PageOrientation =
+        XLPageOrientation.Landscape;
+
+    worksheet.PageSetup
+        .FitToPages(1, 0);
+}
 
     private static void AddDashboardDataWorksheets(
         XLWorkbook workbook,
@@ -314,17 +413,20 @@ public class DashboardController : Controller
                 continue;
             }
 
-            var worksheetName =
-                CreateUniqueWorksheetName(
-                    widget.WidgetTitle,
-                    usedWorksheetNames);
+var worksheetDisplayName =
+    $"{widget.WidgetTitle} - {widget.WidgetType}";
+
+var worksheetName =
+    CreateUniqueWorksheetName(
+        worksheetDisplayName,
+        usedWorksheetNames);
 
             var worksheet =
                 workbook.Worksheets.Add(
                     worksheetName);
 
-            worksheet.Cell(1, 1).Value =
-                widget.WidgetTitle;
+worksheet.Cell(1, 1).Value =
+    $"{widget.WidgetTitle} ({widget.WidgetType})";
 
             worksheet.Range(
                     1,
@@ -340,6 +442,21 @@ public class DashboardController : Controller
 
             worksheet.Cell(1, 1)
                 .Style.Font.FontSize = 14;
+
+worksheet.Cell(1, 1)
+    .Style.Font.FontColor =
+    XLColor.White;
+
+worksheet.Cell(1, 1)
+    .Style.Fill.BackgroundColor =
+    XLColor.DarkBlue;
+
+worksheet.Cell(1, 1)
+    .Style.Alignment.Horizontal =
+    XLAlignmentHorizontalValues.Center;
+
+worksheet.Row(1).Height = 24;
+
 
             for (var columnIndex = 0;
                  columnIndex <
