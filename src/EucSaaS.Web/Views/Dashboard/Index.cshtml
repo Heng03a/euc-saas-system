@@ -1,5 +1,4 @@
 @model EucSaaS.Web.ViewModels.Dashboard.DashboardViewModel
-@using System.Text.Json
 
 @{
     ViewData["Title"] = "Dashboard";
@@ -9,47 +8,75 @@
 
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body">
-        <form method="get" asp-controller="Dashboard" asp-action="Index">
+
+        <form id="dashboardFilterForm"
+              method="get"
+              asp-controller="Dashboard"
+              asp-action="Index">
+
             <div class="row g-3 align-items-end">
 
                 <div class="col-md-4">
-                    <label class="form-label fw-semibold">Department</label>
-                    <select name="department" class="form-select">
+                    <label class="form-label fw-semibold">
+                        Department
+                    </label>
+
+                    <select id="departmentFilter"
+                            name="department"
+                            class="form-select">
+
                         <option value="">All Departments</option>
 
                         @foreach (var dept in Model.Filter.Departments)
                         {
-                            <option value="@dept" selected="@(Model.Filter.Department == dept)">
+                            <option value="@dept"
+                                    selected="@(Model.Filter.Department == dept)">
                                 @dept
                             </option>
                         }
+
                     </select>
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label fw-semibold">Status</label>
-                    <select name="status" class="form-select">
+                    <label class="form-label fw-semibold">
+                        Status
+                    </label>
+
+                    <select id="statusFilter"
+                            name="status"
+                            class="form-select">
+
                         <option value="">All Statuses</option>
 
                         @foreach (var status in Model.Filter.Statuses)
                         {
-                            <option value="@status" selected="@(Model.Filter.Status == status)">
+                            <option value="@status"
+                                    selected="@(Model.Filter.Status == status)">
                                 @status
                             </option>
                         }
+
                     </select>
                 </div>
 
                 <div class="col-md-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
+
+                    <button id="refreshDashboardButton"
+                            type="submit"
+                            class="btn btn-primary">
+
+                        <i class="bi bi-arrow-clockwise me-1"></i>
                         Refresh
                     </button>
 
-                    <a asp-controller="Dashboard"
-                       asp-action="Index"
-                       class="btn btn-outline-secondary">
+                    <button id="clearDashboardButton"
+                            type="button"
+                            class="btn btn-outline-secondary">
+
                         Clear
-                    </a>
+                    </button>
+
                 </div>
 
             </div>
@@ -57,220 +84,154 @@
     </div>
 </div>
 
+<div id="dashboardLoading"
+     class="text-center my-5"
+     style="display:none;">
 
-@if (Model.Widgets == null || !Model.Widgets.Any())
-{
-    <div class="alert alert-info">
-        No dashboard widgets configured.
+    <div class="spinner-border text-primary"
+         role="status">
+
+        <span class="visually-hidden">
+            Loading...
+        </span>
     </div>
-}
-else
+
+    <div class="mt-2 text-muted">
+        Loading dashboard...
+    </div>
+</div>
+
+<div id="dashboardError"
+     class="alert alert-danger"
+     style="display:none;">
+
+    Dashboard could not be refreshed. Please try again.
+</div>
+
+<div id="dashboardContent">
+    <partial name="_DashboardContent" model="Model" />
+</div>
+
+@section Scripts
 {
-    var groupedRows = Model.Widgets
-        .OrderBy(x => x.RowPosition)
-        .ThenBy(x => x.ColumnPosition)
-        .ThenBy(x => x.DisplayOrder)
-        .GroupBy(x => x.RowPosition);
+    <script>
+        $(document).ready(function () {
 
-    foreach (var rowGroup in groupedRows)
-    {
-        <div class="row g-3 mb-3">
-            @foreach (var widget in rowGroup)
-            {
-                var width = widget.WidgetWidth <= 0 ? 4 : widget.WidgetWidth;
-                var height = widget.Height <= 0 ? 260 : widget.Height;
-                var color = string.IsNullOrWhiteSpace(widget.Color) ? "primary" : widget.Color;
-                var icon = widget.Icon ?? "";
+            const filterForm = $("#dashboardFilterForm");
+            const departmentFilter = $("#departmentFilter");
+            const statusFilter = $("#statusFilter");
 
-                if (widget.WidgetType.Equals("Card", StringComparison.OrdinalIgnoreCase))
-                {
-                    <div class="col-md-@width">
-                        <div class="card dashboard-card shadow-sm border-0 border-top border-4 border-@color h-100">
-                            <div class="card-body py-4" style="min-height:@(height)px;">
-                                <div class="d-flex justify-content-between align-items-center gap-3 h-100">
-                                    <div>
-                                        <div class="text-muted fw-semibold">
-                                            @widget.WidgetTitle
-                                        </div>
+            const dashboardContent = $("#dashboardContent");
+            const dashboardLoading = $("#dashboardLoading");
+            const dashboardError = $("#dashboardError");
 
-                                        <div class="fs-2 fw-bold text-@color">
-                                            @widget.Value
-                                        </div>
-                                    </div>
+            const refreshButton = $("#refreshDashboardButton");
+            const clearButton = $("#clearDashboardButton");
 
-                                    @if (!string.IsNullOrWhiteSpace(icon))
-                                    {
-                                        <div class="display-4 text-@color opacity-25">
-                                            <i class="@icon"></i>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
-                else if (widget.WidgetType.Equals("Table", StringComparison.OrdinalIgnoreCase))
-                {
-                    <div class="col-md-@width">
-                        <div class="card dashboard-card shadow-sm border-0 h-100">
-                            <div class="card-header bg-@color text-white fw-bold">
-                                @if (!string.IsNullOrWhiteSpace(icon))
-                                {
-                                    <i class="@icon me-2"></i>
-                                }
+            function refreshDashboard() {
 
-                                @widget.WidgetTitle
-                            </div>
+                const department = departmentFilter.val() || "";
+                const status = statusFilter.val() || "";
 
-                            <div class="card-body" style="height:@(height)px; overflow:auto;">
-                                @if (widget.Columns == null || !widget.Columns.Any())
-                                {
-                                    <div class="text-muted">
-                                        No columns returned.
-                                    </div>
-                                }
-                                else if (widget.Rows == null || !widget.Rows.Any())
-                                {
-                                    <div class="text-muted">
-                                        No data found.
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="table-responsive">
-                                        <table class="table table-striped table-hover table-sm align-middle mb-0">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    @foreach (var column in widget.Columns)
-                                                    {
-                                                        <th>@column</th>
-                                                    }
-                                                </tr>
-                                            </thead>
+                dashboardError.hide();
+                dashboardLoading.show();
+                dashboardContent.css("opacity", "0.4");
 
-                                            <tbody>
-                                                @foreach (var row in widget.Rows)
-                                                {
-                                                    <tr>
-                                                        @foreach (var column in widget.Columns)
-                                                        {
-                                                            var value = row.ContainsKey(column) ? row[column] : "";
-                                                            var isNumber = decimal.TryParse(value, out _);
+                refreshButton.prop("disabled", true);
+                clearButton.prop("disabled", true);
 
-                                                            <td class="@(isNumber ? "text-end" : "")">
-                                                                @value
-                                                            </td>
-                                                        }
-                                                    </tr>
-                                                }
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                }
-                else if (
-                    widget.WidgetType.Equals("Bar", StringComparison.OrdinalIgnoreCase) ||
-                    widget.WidgetType.Equals("Pie", StringComparison.OrdinalIgnoreCase) ||
-                    widget.WidgetType.Equals("Chart", StringComparison.OrdinalIgnoreCase) ||
-                    widget.WidgetType.Equals("Line", StringComparison.OrdinalIgnoreCase))
-                {
-                    var chartId = $"chart_{widget.WidgetCode}";
-                    var labelColumn = widget.Columns?.FirstOrDefault() ?? "";
-                    var valueColumn = widget.Columns?.Skip(1).FirstOrDefault() ?? "";
+                $.ajax({
+                    url: "@Url.Action("Refresh", "Dashboard")",
+                    type: "GET",
+                    data: {
+                        department: department,
+                        status: status
+                    },
+                    cache: false,
+                    success: function (html) {
 
-                    var labels = new List<string>();
-                    var values = new List<decimal>();
+                        dashboardContent.html(html);
 
-                    if (!string.IsNullOrWhiteSpace(labelColumn) &&
-                        !string.IsNullOrWhiteSpace(valueColumn))
-                    {
-                        foreach (var row in widget.Rows ?? Enumerable.Empty<Dictionary<string, string>>())
-                        {
-                            labels.Add(row.ContainsKey(labelColumn) ? row[labelColumn] : "");
+                        updateBrowserUrl(
+                            department,
+                            status
+                        );
+                    },
+                    error: function () {
 
-                            var rawValue = row.ContainsKey(valueColumn) ? row[valueColumn] : "0";
-                            values.Add(decimal.TryParse(rawValue, out var number) ? number : 0);
-                        }
+                        dashboardError.show();
+                    },
+                    complete: function () {
+
+                        dashboardLoading.hide();
+                        dashboardContent.css("opacity", "1");
+
+                        refreshButton.prop("disabled", false);
+                        clearButton.prop("disabled", false);
                     }
-
-                    var chartType =
-                        widget.WidgetType.Equals("Bar", StringComparison.OrdinalIgnoreCase) ||
-                        widget.WidgetType.Equals("Chart", StringComparison.OrdinalIgnoreCase)
-                            ? "bar"
-                            : widget.WidgetType.Equals("Line", StringComparison.OrdinalIgnoreCase)
-                                ? "line"
-                                : "pie";
-
-                    <div class="col-md-@width">
-                        <div class="card dashboard-card shadow-sm border-0 h-100">
-                            <div class="card-header bg-@color text-white fw-bold">
-                                @if (!string.IsNullOrWhiteSpace(icon))
-                                {
-                                    <i class="@icon me-2"></i>
-                                }
-
-                                @widget.WidgetTitle
-                            </div>
-
-                            <div class="card-body">
-                                @if (labels.Any() && values.Any())
-                                {
-                                    <div style="height:@(height)px;">
-                                        <canvas id="@chartId"></canvas>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="text-muted">
-                                        No chart data found.
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </div>
-
-                    @if (labels.Any() && values.Any())
-                    {
-                        <script>
-                            document.addEventListener("DOMContentLoaded", function () {
-                                const chartElement = document.getElementById("@chartId");
-
-                                if (chartElement) {
-                                    new Chart(chartElement, {
-                                        type: "@chartType",
-                                        data: {
-                                            labels: @Html.Raw(JsonSerializer.Serialize(labels)),
-                                            datasets: [{
-                                                label: @Html.Raw(JsonSerializer.Serialize(widget.WidgetTitle)),
-                                                data: @Html.Raw(JsonSerializer.Serialize(values))
-                                            }]
-                                        },
-                                        options: {
-                                            responsive: true,
-                                            maintainAspectRatio: false,
-                                            plugins: {
-                                                legend: {
-                                                    display: true
-                                                }
-                                            },
-                                            scales: "@chartType" === "pie"
-                                                ? {}
-                                                : {
-                                                    y: {
-                                                        beginAtZero: true
-                                                    }
-                                                }
-                                        }
-                                    });
-                                }
-                            });
-                        </script>
-                    }
-                }
+                });
             }
-        </div>
-    }
+
+            function updateBrowserUrl(
+                department,
+                status) {
+
+                const queryString =
+                    new URLSearchParams();
+
+                if (department) {
+                    queryString.set(
+                        "department",
+                        department
+                    );
+                }
+
+                if (status) {
+                    queryString.set(
+                        "status",
+                        status
+                    );
+                }
+
+                let newUrl = "@Url.Action("Index", "Dashboard")";
+
+                const query = queryString.toString();
+
+                if (query) {
+                    newUrl += "?" + query;
+                }
+
+                window.history.replaceState(
+                    {},
+                    "",
+                    newUrl
+                );
+            }
+
+            filterForm.on("submit", function (event) {
+
+                event.preventDefault();
+
+                refreshDashboard();
+            });
+
+            departmentFilter.on("change", function () {
+
+                refreshDashboard();
+            });
+
+            statusFilter.on("change", function () {
+
+                refreshDashboard();
+            });
+
+            clearButton.on("click", function () {
+
+                departmentFilter.val("");
+                statusFilter.val("");
+
+                refreshDashboard();
+            });
+        });
+    </script>
 }

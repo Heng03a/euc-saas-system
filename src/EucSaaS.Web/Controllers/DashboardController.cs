@@ -15,24 +15,51 @@ public class DashboardController : Controller
         _dashboardService = dashboardService;
     }
 
-[HttpGet("/Dashboard")]
-public async Task<IActionResult> Index(string? department, string? status)
-{
-    Guid? appRoleId = null;
-
-    var appRoleIdValue = User.FindFirst("AppRoleId")?.Value;
-
-    if (Guid.TryParse(appRoleIdValue, out var parsedAppRoleId))
+    /// <summary>
+    /// Loads the complete Dashboard page.
+    /// </summary>
+    [HttpGet("/Dashboard")]
+    public async Task<IActionResult> Index(
+        string? department,
+        string? status)
     {
-        appRoleId = parsedAppRoleId;
+        var appRoleId = GetCurrentAppRoleId();
+
+        var model = await _dashboardService.GetDashboardAsync(
+            appRoleId,
+            department,
+            status);
+
+        return View(model);
     }
 
-    var model = await _dashboardService.GetDashboardAsync(
-        appRoleId,
-        department,
-        status
-    );
+    /// <summary>
+    /// Reloads only the dashboard widget area through AJAX.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Refresh(
+        string? department,
+        string? status)
+    {
+        var appRoleId = GetCurrentAppRoleId();
 
-    return View(model);
-}
+        var model = await _dashboardService.GetDashboardAsync(
+            appRoleId,
+            department,
+            status);
+
+        return PartialView("_DashboardContent", model);
+    }
+
+    private Guid? GetCurrentAppRoleId()
+    {
+        var appRoleIdValue = User.FindFirstValue("AppRoleId");
+
+        if (Guid.TryParse(appRoleIdValue, out var appRoleId))
+        {
+            return appRoleId;
+        }
+
+        return null;
+    }
 }
