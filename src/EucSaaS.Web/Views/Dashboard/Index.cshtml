@@ -9,185 +9,250 @@
 <div id="dashboardFullscreenArea"
      class="dashboard-fullscreen-area">
 
+    <div class="card shadow-sm border-0 mb-4">
 
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-body">
+        <div class="card-body">
 
-        <form id="dashboardFilterForm"
-              method="get"
-              asp-controller="Dashboard"
-              asp-action="Index">
+            <form id="dashboardFilterForm"
+                  method="get"
+                  asp-controller="Dashboard"
+                  asp-action="Index">
 
-            <div class="row g-3 align-items-end">
+                <div class="row g-3 align-items-end">
 
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold">
-                        Department
-                    </label>
+                    <!-- Department -->
 
-                    <select id="departmentFilter"
-                            name="department"
-                            class="form-select">
+                    <div class="col-md-4">
 
-                        <option value="">All Departments</option>
+                        <label class="form-label fw-semibold">
+                            Department
+                        </label>
 
-                        @foreach (var dept in Model.Filter.Departments)
-                        {
-                            <option value="@dept"
-                                    selected="@(Model.Filter.Department == dept)">
-                                @dept
-                            </option>
-                        }
-
-                    </select>
-                </div>
-
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold">
-                        Status
-                    </label>
-
-                    <select id="statusFilter"
-                            name="status"
-                            class="form-select">
-
-                        <option value="">All Statuses</option>
-
-                        @foreach (var status in Model.Filter.Statuses)
-                        {
-                            <option value="@status"
-                                    selected="@(Model.Filter.Status == status)">
-                                @status
-                            </option>
-                        }
-
-                    </select>
-                </div>
-
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold">
-                        Auto Refresh
-                    </label>
-
-                    <div class="d-flex gap-2">
-
-                        <select id="autoRefreshInterval"
+                        <select id="departmentFilter"
+                                name="department"
                                 class="form-select">
 
-                            <option value="0">
-                                Off
+                            <option value="">
+                                All Departments
                             </option>
 
-                            <option value="30">
-                                30 Seconds
-                            </option>
-
-                            <option value="60">
-                                1 Minute
-                            </option>
-
-                            <option value="300">
-                                5 Minutes
-                            </option>
-
-                            <option value="600">
-                                10 Minutes
-                            </option>
+                            @foreach (var dept in Model.Filter.Departments)
+                            {
+                                <option value="@dept"
+                                        selected="@(Model.Filter.Department == dept)">
+                                    @dept
+                                </option>
+                            }
 
                         </select>
 
-                        <button id="refreshDashboardButton"
-                                type="submit"
-                                class="btn btn-primary"
-                                title="Refresh dashboard">
+                    </div>
 
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
+                    <!-- Status -->
 
-                        <button id="clearDashboardButton"
-                                type="button"
-                                class="btn btn-outline-secondary">
+                    <div class="col-md-4">
 
-                            Clear
-                        </button>
+                        <label class="form-label fw-semibold">
+                            Status
+                        </label>
 
-<button id="fullscreenDashboardButton"
-        type="button"
-        class="btn btn-outline-dark"
-        title="Open dashboard in fullscreen">
+                        <select id="statusFilter"
+                                name="status"
+                                class="form-select">
 
-    <i id="fullscreenDashboardIcon"
-       class="bi bi-arrows-fullscreen"></i>
-</button>
+                            <option value="">
+                                All Statuses
+                            </option>
 
+                            @foreach (var status in Model.Filter.Statuses)
+                            {
+                                <option value="@status"
+                                        selected="@(Model.Filter.Status == status)">
+                                    @status
+                                </option>
+                            }
+
+                        </select>
 
                     </div>
+
+                    <!-- Buttons -->
+
+                    <div class="col-md-4">
+
+                        <label class="form-label fw-semibold">
+
+                            Auto Refresh
+
+                        </label>
+
+                        <div class="d-flex gap-2 flex-wrap">
+
+                            <select id="autoRefreshInterval"
+                                    class="form-select"
+                                    style="max-width:180px;">
+
+                                <option value="0">
+                                    Off
+                                </option>
+
+                                <option value="30">
+                                    30 Seconds
+                                </option>
+
+                                <option value="60">
+                                    1 Minute
+                                </option>
+
+                                <option value="300">
+                                    5 Minutes
+                                </option>
+
+                                <option value="600">
+                                    10 Minutes
+                                </option>
+
+                            </select>
+
+                            <!-- Refresh -->
+
+                            <button id="refreshDashboardButton"
+                                    type="submit"
+                                    class="btn btn-primary"
+                                    title="Refresh Dashboard">
+
+                                <i class="bi bi-arrow-clockwise"></i>
+
+                            </button>
+
+                            <!-- Clear -->
+
+                            <button id="clearDashboardButton"
+                                    type="button"
+                                    class="btn btn-outline-secondary">
+
+                                Clear
+
+                            </button>
+
+                            <!-- Fullscreen -->
+
+                            <button id="fullscreenDashboardButton"
+                                    type="button"
+                                    class="btn btn-outline-dark"
+                                    title="Fullscreen">
+
+                                <i id="fullscreenDashboardIcon"
+                                   class="bi bi-arrows-fullscreen"></i>
+
+                            </button>
+
+                            <!-- Export Excel -->
+
+                            <a id="exportExcelButton"
+                               class="btn btn-success"
+                               href="#"
+                               title="Export Dashboard to Excel">
+
+                                <i class="bi bi-file-earmark-excel"></i>
+
+                                Export
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
                 </div>
 
-            </div>
-        </form>
-    </div>
-</div>
+            </form>
 
-<div class="d-flex justify-content-end mb-3">
-    <small class="text-muted">
-        Last refreshed:
+        </div>
 
-        <span id="lastRefreshedTime">
-            @DateTime.Now.ToString("dd MMM yyyy HH:mm:ss")
-        </span>
-    </small>
-</div>
-
-<div id="dashboardLoading"
-     class="text-center my-5"
-     style="display:none;">
-
-    <div class="spinner-border text-primary"
-         role="status">
-
-        <span class="visually-hidden">
-            Loading...
-        </span>
     </div>
 
-    <div class="mt-2 text-muted">
-        Loading dashboard...
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <div>
+
+            <span class="badge bg-success">
+
+                Dashboard Ready
+
+            </span>
+
+        </div>
+
+        <small class="text-muted">
+
+            Last Refreshed :
+
+            <span id="lastRefreshedTime">
+
+                @DateTime.Now.ToString("dd MMM yyyy HH:mm:ss")
+
+            </span>
+
+        </small>
+
     </div>
-</div>
 
-<div id="dashboardError"
-     class="alert alert-danger"
-     style="display:none;">
+    <div id="dashboardLoading"
+         class="text-center my-5"
+         style="display:none;">
 
-    Dashboard could not be refreshed. Please try again.
-</div>
+        <div class="spinner-border text-primary">
 
-<div id="dashboardContent">
-    <partial name="_DashboardContent" model="Model" />
-</div>
+        </div>
+
+        <div class="mt-2">
+
+            Loading dashboard...
+
+        </div>
+
+    </div>
+
+    <div id="dashboardError"
+         class="alert alert-danger"
+         style="display:none;">
+
+        Dashboard could not be refreshed.
+
+    </div>
+
+    <div id="dashboardContent">
+
+        <partial name="_DashboardContent"
+                 model="Model" />
+
+    </div>
+
 </div>
 
 <style>
-    .dashboard-fullscreen-area:fullscreen {
-        background-color: var(--bs-body-bg);
-        padding: 24px;
-        overflow-y: auto;
-    }
 
-    .dashboard-fullscreen-area:-webkit-full-screen {
-        background-color: var(--bs-body-bg);
-        padding: 24px;
-        overflow-y: auto;
-    }
+.dashboard-fullscreen-area:fullscreen{
 
-    .dashboard-fullscreen-area:fullscreen .dashboard-card {
-        min-height: 100%;
-    }
+    background:var(--bs-body-bg);
 
-    .dashboard-fullscreen-area:-webkit-full-screen .dashboard-card {
-        min-height: 100%;
-    }
+    padding:24px;
+
+    overflow:auto;
+
+}
+
+.dashboard-fullscreen-area:-webkit-full-screen{
+
+    background:var(--bs-body-bg);
+
+    padding:24px;
+
+    overflow:auto;
+
+}
+
 </style>
 
 @section Scripts
@@ -219,29 +284,32 @@
             const clearButton =
                 $("#clearDashboardButton");
 
-const fullscreenButton =
-    $("#fullscreenDashboardButton");
-
-const fullscreenIcon =
-    $("#fullscreenDashboardIcon");
-
-const fullscreenArea =
-    document.getElementById(
-        "dashboardFullscreenArea"
-    );
-
-
             const autoRefreshInterval =
                 $("#autoRefreshInterval");
 
             const lastRefreshedTime =
                 $("#lastRefreshedTime");
 
+            const exportExcelButton =
+                $("#exportExcelButton");
+
+            const fullscreenButton =
+                $("#fullscreenDashboardButton");
+
+            const fullscreenIcon =
+                $("#fullscreenDashboardIcon");
+
+            const fullscreenArea =
+                document.getElementById(
+                    "dashboardFullscreenArea"
+                );
+
             let autoRefreshTimer = null;
 
             function updateLastRefreshedTime() {
 
-                const now = new Date();
+                const now =
+                    new Date();
 
                 const formattedTime =
                     now.toLocaleString(
@@ -262,6 +330,31 @@ const fullscreenArea =
                 );
             }
 
+            function updateExportUrl() {
+
+                const department =
+                    departmentFilter.val() || "";
+
+                const status =
+                    statusFilter.val() || "";
+
+                const exportUrl =
+                    "@Url.Action("ExportExcel", "Dashboard")"
+                    + "?department="
+                    + encodeURIComponent(
+                        department
+                    )
+                    + "&status="
+                    + encodeURIComponent(
+                        status
+                    );
+
+                exportExcelButton.attr(
+                    "href",
+                    exportUrl
+                );
+            }
+
             function refreshDashboard() {
 
                 const department =
@@ -271,6 +364,7 @@ const fullscreenArea =
                     statusFilter.val() || "";
 
                 dashboardError.hide();
+
                 dashboardLoading.show();
 
                 dashboardContent.css(
@@ -293,64 +387,85 @@ const fullscreenArea =
                     true
                 );
 
-                $.ajax({
-                    url: "@Url.Action("Refresh", "Dashboard")",
+                exportExcelButton.addClass(
+                    "disabled"
+                );
 
-                    type: "GET",
+                $.ajax({
+                    url:
+                        "@Url.Action("Refresh", "Dashboard")",
+
+                    type:
+                        "GET",
 
                     data: {
-                        department: department,
-                        status: status
-                    },
-
-                    cache: false,
-
-                    success: function (html) {
-
-                        dashboardContent.html(html);
-
-                        updateBrowserUrl(
+                        department:
                             department,
+
+                        status:
                             status
-                        );
-
-                        updateLastRefreshedTime();
                     },
 
-                    error: function (xhr) {
+                    cache:
+                        false,
 
-                        console.error(
-                            "Dashboard refresh failed:",
-                            xhr.responseText
-                        );
+                    success:
+                        function (html) {
 
-                        dashboardError.show();
-                    },
+                            dashboardContent.html(
+                                html
+                            );
 
-                    complete: function () {
+                            updateBrowserUrl(
+                                department,
+                                status
+                            );
 
-                        dashboardLoading.hide();
+                            updateExportUrl();
 
-                        dashboardContent.css(
-                            "opacity",
-                            "1"
-                        );
+                            updateLastRefreshedTime();
+                        },
 
-                        refreshButton.prop(
-                            "disabled",
-                            false
-                        );
+                    error:
+                        function (xhr) {
 
-                        clearButton.prop(
-                            "disabled",
-                            false
-                        );
+                            console.error(
+                                "Dashboard refresh failed:",
+                                xhr.responseText
+                            );
 
-                        autoRefreshInterval.prop(
-                            "disabled",
-                            false
-                        );
-                    }
+                            dashboardError.show();
+                        },
+
+                    complete:
+                        function () {
+
+                            dashboardLoading.hide();
+
+                            dashboardContent.css(
+                                "opacity",
+                                "1"
+                            );
+
+                            refreshButton.prop(
+                                "disabled",
+                                false
+                            );
+
+                            clearButton.prop(
+                                "disabled",
+                                false
+                            );
+
+                            autoRefreshInterval.prop(
+                                "disabled",
+                                false
+                            );
+
+                            exportExcelButton.removeClass(
+                                "disabled"
+                            );
+                        }
                 });
             }
 
@@ -362,6 +477,7 @@ const fullscreenArea =
                     new URLSearchParams();
 
                 if (department) {
+
                     queryString.set(
                         "department",
                         department
@@ -369,6 +485,7 @@ const fullscreenArea =
                 }
 
                 if (status) {
+
                     queryString.set(
                         "status",
                         status
@@ -382,6 +499,7 @@ const fullscreenArea =
                     queryString.toString();
 
                 if (query) {
+
                     newUrl +=
                         "?" + query;
                 }
@@ -395,13 +513,16 @@ const fullscreenArea =
 
             function stopAutoRefresh() {
 
-                if (autoRefreshTimer !== null) {
+                if (
+                    autoRefreshTimer !== null
+                ) {
 
                     clearInterval(
                         autoRefreshTimer
                     );
 
-                    autoRefreshTimer = null;
+                    autoRefreshTimer =
+                        null;
                 }
             }
 
@@ -415,12 +536,13 @@ const fullscreenArea =
                         10
                     );
 
-                if (!intervalSeconds ||
-                    intervalSeconds <= 0) {
+                if (
+                    !intervalSeconds ||
+                    intervalSeconds <= 0
+                ) {
 
                     return;
                 }
-
 
                 autoRefreshTimer =
                     setInterval(
@@ -433,93 +555,109 @@ const fullscreenArea =
                     );
             }
 
+            function isDashboardFullscreen() {
 
-
-function isDashboardFullscreen() {
-
-    return document.fullscreenElement ===
-        fullscreenArea ||
-        document.webkitFullscreenElement ===
-        fullscreenArea;
-}
-
-function updateFullscreenButton() {
-
-    if (isDashboardFullscreen()) {
-
-        fullscreenIcon
-            .removeClass(
-                "bi-arrows-fullscreen"
-            )
-            .addClass(
-                "bi-fullscreen-exit"
-            );
-
-        fullscreenButton.attr(
-            "title",
-            "Exit fullscreen"
-        );
-    }
-    else {
-
-        fullscreenIcon
-            .removeClass(
-                "bi-fullscreen-exit"
-            )
-            .addClass(
-                "bi-arrows-fullscreen"
-            );
-
-        fullscreenButton.attr(
-            "title",
-            "Open dashboard in fullscreen"
-        );
-    }
-}
-
-async function toggleDashboardFullscreen() {
-
-    try {
-
-        if (!isDashboardFullscreen()) {
-
-            if (fullscreenArea.requestFullscreen) {
-
-                await fullscreenArea.requestFullscreen();
+                return (
+                    document.fullscreenElement ===
+                    fullscreenArea
+                ) ||
+                (
+                    document.webkitFullscreenElement ===
+                    fullscreenArea
+                );
             }
-            else if (
-                fullscreenArea.webkitRequestFullscreen
-            ) {
 
-                fullscreenArea.webkitRequestFullscreen();
+            function updateFullscreenButton() {
+
+                if (
+                    isDashboardFullscreen()
+                ) {
+
+                    fullscreenIcon
+                        .removeClass(
+                            "bi-arrows-fullscreen"
+                        )
+                        .addClass(
+                            "bi-fullscreen-exit"
+                        );
+
+                    fullscreenButton.attr(
+                        "title",
+                        "Exit fullscreen"
+                    );
+                }
+                else {
+
+                    fullscreenIcon
+                        .removeClass(
+                            "bi-fullscreen-exit"
+                        )
+                        .addClass(
+                            "bi-arrows-fullscreen"
+                        );
+
+                    fullscreenButton.attr(
+                        "title",
+                        "Open dashboard in fullscreen"
+                    );
+                }
             }
-        }
-        else {
 
-            if (document.exitFullscreen) {
+            async function toggleDashboardFullscreen() {
 
-                await document.exitFullscreen();
+                try {
+
+                    if (
+                        !isDashboardFullscreen()
+                    ) {
+
+                        if (
+                            fullscreenArea.requestFullscreen
+                        ) {
+
+                            await fullscreenArea
+                                .requestFullscreen();
+                        }
+                        else if (
+                            fullscreenArea
+                                .webkitRequestFullscreen
+                        ) {
+
+                            fullscreenArea
+                                .webkitRequestFullscreen();
+                        }
+                    }
+                    else {
+
+                        if (
+                            document.exitFullscreen
+                        ) {
+
+                            await document
+                                .exitFullscreen();
+                        }
+                        else if (
+                            document
+                                .webkitExitFullscreen
+                        ) {
+
+                            document
+                                .webkitExitFullscreen();
+                        }
+                    }
+                }
+                catch (error) {
+
+                    console.error(
+                        "Fullscreen operation failed:",
+                        error
+                    );
+
+                    alert(
+                        "Fullscreen mode is not available in this browser."
+                    );
+                }
             }
-            else if (
-                document.webkitExitFullscreen
-            ) {
-
-                document.webkitExitFullscreen();
-            }
-        }
-    }
-    catch (error) {
-
-        console.error(
-            "Fullscreen operation failed:",
-            error
-        );
-
-        alert(
-            "Fullscreen mode is not available in this browser."
-        );
-    }
-}
 
 fullscreenButton.on(
     "click",
@@ -528,24 +666,6 @@ fullscreenButton.on(
         toggleDashboardFullscreen();
     }
 );
-
-document.addEventListener(
-    "fullscreenchange",
-    function () {
-
-        updateFullscreenButton();
-    }
-);
-
-document.addEventListener(
-    "webkitfullscreenchange",
-    function () {
-
-        updateFullscreenButton();
-    }
-);
-
-
             filterForm.on(
                 "submit",
                 function (event) {
@@ -587,14 +707,40 @@ document.addEventListener(
                     departmentFilter.val("");
                     statusFilter.val("");
 
+                    updateExportUrl();
+
                     refreshDashboard();
+                }
+            );
+
+            fullscreenButton.on(
+                "click",
+                function () {
+
+                    toggleDashboardFullscreen();
+                }
+            );
+
+            document.addEventListener(
+                "fullscreenchange",
+                function () {
+
+                    updateFullscreenButton();
+                }
+            );
+
+            document.addEventListener(
+                "webkitfullscreenchange",
+                function () {
+
+                    updateFullscreenButton();
                 }
             );
 
             /*
              * Widget-level AJAX refresh.
              * Event delegation is required because widgets
-             * are replaced dynamically after AJAX requests.
+             * are dynamically replaced after AJAX requests.
              */
             $(document).on(
                 "click",
@@ -658,83 +804,115 @@ document.addEventListener(
                     );
 
                     $.ajax({
-                        url: "@Url.Action("RefreshWidget", "Dashboard")",
+                        url:
+                            "@Url.Action("RefreshWidget", "Dashboard")",
 
-                        type: "GET",
+                        type:
+                            "GET",
 
                         data: {
-                            id: widgetId,
-                            department: department,
-                            status: status
+                            id:
+                                widgetId,
+
+                            department:
+                                department,
+
+                            status:
+                                status
                         },
 
-                        cache: false,
+                        cache:
+                            false,
 
-                        success: function (html) {
+                        success:
+                            function (html) {
 
-                            widgetContainer.replaceWith(
-                                html
-                            );
-
-                            updateLastRefreshedTime();
-                        },
-
-                        error: function (xhr) {
-
-                            console.error(
-                                "Widget refresh failed:",
-                                xhr.responseText
-                            );
-
-                            widgetContainer.css(
-                                "opacity",
-                                "1"
-                            );
-
-                            button.prop(
-                                "disabled",
-                                false
-                            );
-
-                            button.html(
-                                originalButtonHtml
-                            );
-
-                            alert(
-                                "The widget could not be refreshed."
-                            );
-                        },
-
-                        complete: function () {
-
-                            const currentContainer =
-                                $("#dashboardWidget_" + widgetId);
-
-                            if (currentContainer.length === 0) {
-                                return;
-                            }
-
-                            currentContainer.css(
-                                "opacity",
-                                "1"
-                            );
-
-                            const currentButton =
-                                currentContainer.find(
-                                    ".refresh-widget-button"
+                                widgetContainer.replaceWith(
+                                    html
                                 );
 
-                            currentButton.prop(
-                                "disabled",
-                                false
-                            );
-                        }
+                                updateLastRefreshedTime();
+                            },
+
+                        error:
+                            function (xhr) {
+
+                                console.error(
+                                    "Widget refresh failed:",
+                                    xhr.responseText
+                                );
+
+                                widgetContainer.css(
+                                    "opacity",
+                                    "1"
+                                );
+
+                                button.prop(
+                                    "disabled",
+                                    false
+                                );
+
+                                button.html(
+                                    originalButtonHtml
+                                );
+
+                                alert(
+                                    "The widget could not be refreshed."
+                                );
+                            },
+
+                        complete:
+                            function () {
+
+                                const currentContainer =
+                                    $("#dashboardWidget_" + widgetId);
+
+                                if (
+                                    currentContainer.length === 0
+                                ) {
+
+                                    return;
+                                }
+
+                                currentContainer.css(
+                                    "opacity",
+                                    "1"
+                                );
+
+                                const currentButton =
+                                    currentContainer.find(
+                                        ".refresh-widget-button"
+                                    );
+
+                                currentButton.prop(
+                                    "disabled",
+                                    false
+                                );
+                            }
                     });
                 }
             );
 
             /*
-             * Stop the timer when the user leaves the page.
+             * Prevent export when the button is temporarily disabled.
+             */
+            exportExcelButton.on(
+                "click",
+                function (event) {
+
+                    if (
+                        exportExcelButton.hasClass(
+                            "disabled"
+                        )
+                    ) {
+
+                        event.preventDefault();
+                    }
+                }
+            );
+
+            /*
+             * Stop auto refresh when leaving the page.
              */
             $(window).on(
                 "beforeunload",
@@ -743,6 +921,14 @@ document.addEventListener(
                     stopAutoRefresh();
                 }
             );
+
+            /*
+             * Initial setup.
+             */
+            updateExportUrl();
+
+            updateFullscreenButton();
         });
     </script>
 }
+
