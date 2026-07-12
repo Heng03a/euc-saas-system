@@ -6,6 +6,10 @@
 
 <h2 class="mb-4">Dashboard</h2>
 
+<div id="dashboardFullscreenArea"
+     class="dashboard-fullscreen-area">
+
+
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body">
 
@@ -107,6 +111,16 @@
                             Clear
                         </button>
 
+<button id="fullscreenDashboardButton"
+        type="button"
+        class="btn btn-outline-dark"
+        title="Open dashboard in fullscreen">
+
+    <i id="fullscreenDashboardIcon"
+       class="bi bi-arrows-fullscreen"></i>
+</button>
+
+
                     </div>
                 </div>
 
@@ -152,6 +166,29 @@
 <div id="dashboardContent">
     <partial name="_DashboardContent" model="Model" />
 </div>
+</div>
+
+<style>
+    .dashboard-fullscreen-area:fullscreen {
+        background-color: var(--bs-body-bg);
+        padding: 24px;
+        overflow-y: auto;
+    }
+
+    .dashboard-fullscreen-area:-webkit-full-screen {
+        background-color: var(--bs-body-bg);
+        padding: 24px;
+        overflow-y: auto;
+    }
+
+    .dashboard-fullscreen-area:fullscreen .dashboard-card {
+        min-height: 100%;
+    }
+
+    .dashboard-fullscreen-area:-webkit-full-screen .dashboard-card {
+        min-height: 100%;
+    }
+</style>
 
 @section Scripts
 {
@@ -181,6 +218,18 @@
 
             const clearButton =
                 $("#clearDashboardButton");
+
+const fullscreenButton =
+    $("#fullscreenDashboardButton");
+
+const fullscreenIcon =
+    $("#fullscreenDashboardIcon");
+
+const fullscreenArea =
+    document.getElementById(
+        "dashboardFullscreenArea"
+    );
+
 
             const autoRefreshInterval =
                 $("#autoRefreshInterval");
@@ -372,6 +421,7 @@
                     return;
                 }
 
+
                 autoRefreshTimer =
                     setInterval(
                         function () {
@@ -382,6 +432,119 @@
                         intervalSeconds * 1000
                     );
             }
+
+
+
+function isDashboardFullscreen() {
+
+    return document.fullscreenElement ===
+        fullscreenArea ||
+        document.webkitFullscreenElement ===
+        fullscreenArea;
+}
+
+function updateFullscreenButton() {
+
+    if (isDashboardFullscreen()) {
+
+        fullscreenIcon
+            .removeClass(
+                "bi-arrows-fullscreen"
+            )
+            .addClass(
+                "bi-fullscreen-exit"
+            );
+
+        fullscreenButton.attr(
+            "title",
+            "Exit fullscreen"
+        );
+    }
+    else {
+
+        fullscreenIcon
+            .removeClass(
+                "bi-fullscreen-exit"
+            )
+            .addClass(
+                "bi-arrows-fullscreen"
+            );
+
+        fullscreenButton.attr(
+            "title",
+            "Open dashboard in fullscreen"
+        );
+    }
+}
+
+async function toggleDashboardFullscreen() {
+
+    try {
+
+        if (!isDashboardFullscreen()) {
+
+            if (fullscreenArea.requestFullscreen) {
+
+                await fullscreenArea.requestFullscreen();
+            }
+            else if (
+                fullscreenArea.webkitRequestFullscreen
+            ) {
+
+                fullscreenArea.webkitRequestFullscreen();
+            }
+        }
+        else {
+
+            if (document.exitFullscreen) {
+
+                await document.exitFullscreen();
+            }
+            else if (
+                document.webkitExitFullscreen
+            ) {
+
+                document.webkitExitFullscreen();
+            }
+        }
+    }
+    catch (error) {
+
+        console.error(
+            "Fullscreen operation failed:",
+            error
+        );
+
+        alert(
+            "Fullscreen mode is not available in this browser."
+        );
+    }
+}
+
+fullscreenButton.on(
+    "click",
+    function () {
+
+        toggleDashboardFullscreen();
+    }
+);
+
+document.addEventListener(
+    "fullscreenchange",
+    function () {
+
+        updateFullscreenButton();
+    }
+);
+
+document.addEventListener(
+    "webkitfullscreenchange",
+    function () {
+
+        updateFullscreenButton();
+    }
+);
+
 
             filterForm.on(
                 "submit",
