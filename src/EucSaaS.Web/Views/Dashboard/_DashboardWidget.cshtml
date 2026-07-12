@@ -1,0 +1,342 @@
+@model EucSaaS.Web.ViewModels.Dashboard.DashboardWidgetViewModel
+@using System.Text.Json
+
+@{
+    var widget = Model;
+
+    var width = widget.WidgetWidth <= 0
+        ? 4
+        : widget.WidgetWidth;
+
+    var height = widget.Height <= 0
+        ? 260
+        : widget.Height;
+
+    var color = string.IsNullOrWhiteSpace(widget.Color)
+        ? "primary"
+        : widget.Color;
+
+    var icon = widget.Icon ?? "";
+}
+
+@if (widget.WidgetType.Equals(
+        "Card",
+        StringComparison.OrdinalIgnoreCase))
+{
+    <div id="dashboardWidget_@widget.Id"
+         class="col-md-@width dashboard-widget-container"
+         data-widget-id="@widget.Id">
+
+        <div class="card dashboard-card shadow-sm border-0 border-top border-4 border-@color h-100">
+
+            <div class="card-body py-4"
+                 style="min-height:@(height)px;">
+
+                <div class="d-flex justify-content-between align-items-center gap-3 h-100">
+
+                    <div>
+                        <div class="text-muted fw-semibold">
+                            @widget.WidgetTitle
+                        </div>
+
+                        <div class="fs-2 fw-bold text-@color">
+                            @widget.Value
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3">
+
+                        @if (!string.IsNullOrWhiteSpace(icon))
+                        {
+                            <div class="display-4 text-@color opacity-25">
+                                <i class="@icon"></i>
+                            </div>
+                        }
+
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary refresh-widget-button"
+                                data-widget-id="@widget.Id"
+                                title="Refresh widget">
+
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else if (widget.WidgetType.Equals(
+             "Table",
+             StringComparison.OrdinalIgnoreCase))
+{
+    <div id="dashboardWidget_@widget.Id"
+         class="col-md-@width dashboard-widget-container"
+         data-widget-id="@widget.Id">
+
+        <div class="card dashboard-card shadow-sm border-0 h-100">
+
+            <div class="card-header bg-@color text-white fw-bold d-flex justify-content-between align-items-center">
+
+                <div>
+                    @if (!string.IsNullOrWhiteSpace(icon))
+                    {
+                        <i class="@icon me-2"></i>
+                    }
+
+                    @widget.WidgetTitle
+                </div>
+
+                <button type="button"
+                        class="btn btn-sm btn-light refresh-widget-button"
+                        data-widget-id="@widget.Id"
+                        title="Refresh widget">
+
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+
+            </div>
+
+            <div class="card-body"
+                 style="height:@(height)px; overflow:auto;">
+
+                @if (widget.Columns == null ||
+                     !widget.Columns.Any())
+                {
+                    <div class="text-muted">
+                        No columns returned.
+                    </div>
+                }
+                else if (widget.Rows == null ||
+                         !widget.Rows.Any())
+                {
+                    <div class="text-muted">
+                        No data found.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+
+                        <table class="table table-striped table-hover table-sm align-middle mb-0">
+
+                            <thead class="table-light">
+                                <tr>
+                                    @foreach (var column in widget.Columns)
+                                    {
+                                        <th>@column</th>
+                                    }
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach (var row in widget.Rows)
+                                {
+                                    <tr>
+                                        @foreach (var column in widget.Columns)
+                                        {
+                                            var value = row.ContainsKey(column)
+                                                ? row[column]
+                                                : "";
+
+                                            var isNumber = decimal.TryParse(
+                                                value,
+                                                out _);
+
+                                            <td class="@(isNumber ? "text-end" : "")">
+                                                @value
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+}
+else if (
+    widget.WidgetType.Equals(
+        "Bar",
+        StringComparison.OrdinalIgnoreCase) ||
+    widget.WidgetType.Equals(
+        "Pie",
+        StringComparison.OrdinalIgnoreCase) ||
+    widget.WidgetType.Equals(
+        "Chart",
+        StringComparison.OrdinalIgnoreCase) ||
+    widget.WidgetType.Equals(
+        "Line",
+        StringComparison.OrdinalIgnoreCase))
+{
+    var chartId = $"chart_{widget.Id:N}";
+
+    var labelColumn =
+        widget.Columns?.FirstOrDefault() ?? "";
+
+    var valueColumn =
+        widget.Columns?.Skip(1).FirstOrDefault() ?? "";
+
+    var labels = new List<string>();
+    var values = new List<decimal>();
+
+    if (!string.IsNullOrWhiteSpace(labelColumn) &&
+        !string.IsNullOrWhiteSpace(valueColumn))
+    {
+        foreach (var row in
+                 widget.Rows ??
+                 Enumerable.Empty<Dictionary<string, string>>())
+        {
+            labels.Add(
+                row.ContainsKey(labelColumn)
+                    ? row[labelColumn]
+                    : "");
+
+            var rawValue =
+                row.ContainsKey(valueColumn)
+                    ? row[valueColumn]
+                    : "0";
+
+            values.Add(
+                decimal.TryParse(
+                    rawValue,
+                    out var number)
+                    ? number
+                    : 0);
+        }
+    }
+
+    var chartType =
+        widget.WidgetType.Equals(
+            "Bar",
+            StringComparison.OrdinalIgnoreCase) ||
+        widget.WidgetType.Equals(
+            "Chart",
+            StringComparison.OrdinalIgnoreCase)
+            ? "bar"
+            : widget.WidgetType.Equals(
+                "Line",
+                StringComparison.OrdinalIgnoreCase)
+                ? "line"
+                : "pie";
+
+    <div id="dashboardWidget_@widget.Id"
+         class="col-md-@width dashboard-widget-container"
+         data-widget-id="@widget.Id">
+
+        <div class="card dashboard-card shadow-sm border-0 h-100">
+
+            <div class="card-header bg-@color text-white fw-bold d-flex justify-content-between align-items-center">
+
+                <div>
+                    @if (!string.IsNullOrWhiteSpace(icon))
+                    {
+                        <i class="@icon me-2"></i>
+                    }
+
+                    @widget.WidgetTitle
+                </div>
+
+                <button type="button"
+                        class="btn btn-sm btn-light refresh-widget-button"
+                        data-widget-id="@widget.Id"
+                        title="Refresh widget">
+
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+
+            </div>
+
+            <div class="card-body">
+
+                @if (labels.Any() &&
+                     values.Any())
+                {
+                    <div style="height:@(height)px;">
+                        <canvas id="@chartId"></canvas>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted">
+                        No chart data found.
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+
+    @if (labels.Any() &&
+         values.Any())
+    {
+        <script>
+            (function () {
+
+                const chartElement =
+                    document.getElementById("@chartId");
+
+                if (!chartElement ||
+                    typeof Chart === "undefined") {
+                    return;
+                }
+
+                const existingChart =
+                    Chart.getChart(chartElement);
+
+                if (existingChart) {
+                    existingChart.destroy();
+                }
+
+                new Chart(chartElement, {
+                    type: "@chartType",
+
+                    data: {
+                        labels:
+                            @Html.Raw(
+                                JsonSerializer.Serialize(labels)),
+
+                        datasets: [{
+                            label:
+                                @Html.Raw(
+                                    JsonSerializer.Serialize(
+                                        widget.WidgetTitle)),
+
+                            data:
+                                @Html.Raw(
+                                    JsonSerializer.Serialize(values))
+                        }]
+                    },
+
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+
+                        plugins: {
+                            legend: {
+                                display: true
+                            }
+                        },
+
+                        scales:
+                            "@chartType" === "pie"
+                                ? {}
+                                : {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                }
+                    }
+                });
+
+            })();
+        </script>
+    }
+}

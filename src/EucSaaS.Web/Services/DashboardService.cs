@@ -59,6 +59,7 @@ public class DashboardService
         {
             var vm = new DashboardWidgetViewModel
             {
+		Id = widget.Id,
                 WidgetCode = widget.WidgetCode,
                 WidgetTitle = widget.WidgetTitle,
                 WidgetType = widget.WidgetType,

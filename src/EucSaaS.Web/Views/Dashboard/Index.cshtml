@@ -130,24 +130,42 @@
 
             function refreshDashboard() {
 
-                const department = departmentFilter.val() || "";
-                const status = statusFilter.val() || "";
+                const department =
+                    departmentFilter.val() || "";
+
+                const status =
+                    statusFilter.val() || "";
 
                 dashboardError.hide();
                 dashboardLoading.show();
-                dashboardContent.css("opacity", "0.4");
 
-                refreshButton.prop("disabled", true);
-                clearButton.prop("disabled", true);
+                dashboardContent.css(
+                    "opacity",
+                    "0.4"
+                );
+
+                refreshButton.prop(
+                    "disabled",
+                    true
+                );
+
+                clearButton.prop(
+                    "disabled",
+                    true
+                );
 
                 $.ajax({
                     url: "@Url.Action("Refresh", "Dashboard")",
+
                     type: "GET",
+
                     data: {
                         department: department,
                         status: status
                     },
+
                     cache: false,
+
                     success: function (html) {
 
                         dashboardContent.html(html);
@@ -157,17 +175,35 @@
                             status
                         );
                     },
-                    error: function () {
+
+                    error: function (xhr) {
+
+                        console.error(
+                            "Dashboard refresh failed:",
+                            xhr.responseText
+                        );
 
                         dashboardError.show();
                     },
+
                     complete: function () {
 
                         dashboardLoading.hide();
-                        dashboardContent.css("opacity", "1");
 
-                        refreshButton.prop("disabled", false);
-                        clearButton.prop("disabled", false);
+                        dashboardContent.css(
+                            "opacity",
+                            "1"
+                        );
+
+                        refreshButton.prop(
+                            "disabled",
+                            false
+                        );
+
+                        clearButton.prop(
+                            "disabled",
+                            false
+                        );
                     }
                 });
             }
@@ -180,6 +216,7 @@
                     new URLSearchParams();
 
                 if (department) {
+
                     queryString.set(
                         "department",
                         department
@@ -187,18 +224,23 @@
                 }
 
                 if (status) {
+
                     queryString.set(
                         "status",
                         status
                     );
                 }
 
-                let newUrl = "@Url.Action("Index", "Dashboard")";
+                let newUrl =
+                    "@Url.Action("Index", "Dashboard")";
 
-                const query = queryString.toString();
+                const query =
+                    queryString.toString();
 
                 if (query) {
-                    newUrl += "?" + query;
+
+                    newUrl +=
+                        "?" + query;
                 }
 
                 window.history.replaceState(
@@ -208,30 +250,180 @@
                 );
             }
 
-            filterForm.on("submit", function (event) {
+            filterForm.on(
+                "submit",
+                function (event) {
 
-                event.preventDefault();
+                    event.preventDefault();
 
-                refreshDashboard();
-            });
+                    refreshDashboard();
+                }
+            );
 
-            departmentFilter.on("change", function () {
+            departmentFilter.on(
+                "change",
+                function () {
 
-                refreshDashboard();
-            });
+                    refreshDashboard();
+                }
+            );
 
-            statusFilter.on("change", function () {
+            statusFilter.on(
+                "change",
+                function () {
 
-                refreshDashboard();
-            });
+                    refreshDashboard();
+                }
+            );
 
-            clearButton.on("click", function () {
+            clearButton.on(
+                "click",
+                function () {
 
-                departmentFilter.val("");
-                statusFilter.val("");
+                    departmentFilter.val("");
+                    statusFilter.val("");
 
-                refreshDashboard();
-            });
+                    refreshDashboard();
+                }
+            );
+
+            /*
+             * Widget-level AJAX refresh.
+             *
+             * Event delegation is required because widgets are
+             * dynamically replaced after an AJAX refresh.
+             */
+            $(document).on(
+                "click",
+                ".refresh-widget-button",
+                function () {
+
+                    const button = $(this);
+
+                    const widgetId =
+                        button.attr("data-widget-id");
+
+                    if (!widgetId) {
+
+                        console.error(
+                            "Widget ID is missing."
+                        );
+
+                        return;
+                    }
+
+                    const widgetContainer =
+                        $("#dashboardWidget_" + widgetId);
+
+                    if (widgetContainer.length === 0) {
+
+                        console.error(
+                            "Widget container was not found:",
+                            widgetId
+                        );
+
+                        return;
+                    }
+
+                    const department =
+                        departmentFilter.val() || "";
+
+                    const status =
+                        statusFilter.val() || "";
+
+                    const originalButtonHtml =
+                        button.html();
+
+                    button.prop(
+                        "disabled",
+                        true
+                    );
+
+                    button.html(
+                        '<span class="spinner-border ' +
+                        'spinner-border-sm" ' +
+                        'role="status" ' +
+                        'aria-hidden="true"></span>'
+                    );
+
+                    widgetContainer.css(
+                        "opacity",
+                        "0.45"
+                    );
+
+                    $.ajax({
+                        url: "@Url.Action("RefreshWidget", "Dashboard")",
+
+                        type: "GET",
+
+                        data: {
+                            id: widgetId,
+                            department: department,
+                            status: status
+                        },
+
+                        cache: false,
+
+                        success: function (html) {
+
+                            widgetContainer.replaceWith(
+                                html
+                            );
+                        },
+
+                        error: function (xhr) {
+
+                            console.error(
+                                "Widget refresh failed:",
+                                xhr.responseText
+                            );
+
+                            widgetContainer.css(
+                                "opacity",
+                                "1"
+                            );
+
+                            button.prop(
+                                "disabled",
+                                false
+                            );
+
+                            button.html(
+                                originalButtonHtml
+                            );
+
+                            alert(
+                                "The widget could not be refreshed."
+                            );
+                        },
+
+                        complete: function () {
+
+                            const currentContainer =
+                                $("#dashboardWidget_" + widgetId);
+
+                            if (currentContainer.length === 0) {
+                                return;
+                            }
+
+                            currentContainer.css(
+                                "opacity",
+                                "1"
+                            );
+
+                            const currentButton =
+                                currentContainer.find(
+                                    ".refresh-widget-button"
+                                );
+
+                            currentButton.prop(
+                                "disabled",
+                                false
+                            );
+                        }
+                    });
+                }
+            );
         });
     </script>
 }

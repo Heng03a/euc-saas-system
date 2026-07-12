@@ -2,6 +2,8 @@ namespace EucSaaS.Web.ViewModels.Dashboard;
 
 public class DashboardWidgetViewModel
 {
+public Guid Id { get; set; }
+
 public int WidgetWidth { get; set; } = 6;
 
 public string? Icon { get; set; }

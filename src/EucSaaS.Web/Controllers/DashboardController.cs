@@ -51,6 +51,37 @@ public class DashboardController : Controller
         return PartialView("_DashboardContent", model);
     }
 
+/// <summary>
+/// Reloads one dashboard widget through AJAX.
+/// </summary>
+[HttpGet]
+public async Task<IActionResult> RefreshWidget(
+    Guid id,
+    string? department,
+    string? status)
+{
+    var appRoleId = GetCurrentAppRoleId();
+
+    var dashboard = await _dashboardService.GetDashboardAsync(
+        appRoleId,
+        department,
+        status);
+
+    var widget = dashboard.Widgets?
+        .FirstOrDefault(x => x.Id == id);
+
+    if (widget == null)
+    {
+        return NotFound(
+            "The requested dashboard widget could not be found.");
+    }
+
+    return PartialView(
+        "_DashboardWidget",
+        widget);
+}
+
+
     private Guid? GetCurrentAppRoleId()
     {
         var appRoleIdValue = User.FindFirstValue("AppRoleId");
