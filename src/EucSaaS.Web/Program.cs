@@ -7,6 +7,7 @@ using EucSaaS.Web.Services;
 using EucSaaS.Application.Interfaces;
 using EucSaaS.Infrastructure.Services;
 using EucSaaS.Application.Services;
+using EucSaaS.Web.Services.Export;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,8 @@ builder.Services.AddScoped<DashboardFilterService>();
 
 builder.Services.AddScoped<IDataSourceDiscoveryService, DataSourceDiscoveryService>();
 builder.Services.AddScoped<IDataSourceSchemaReader, PostgreSqlSchemaReader>();
+
+builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(
