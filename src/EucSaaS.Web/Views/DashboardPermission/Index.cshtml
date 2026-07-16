@@ -1,0 +1,371 @@
+@model List<EucSaaS.Web.ViewModels.Dashboard.DashboardWidgetPermissionViewModel>
+
+@{
+    ViewData["Title"] = "Dashboard Widget Permissions";
+}
+
+<div class="container-fluid py-3">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h2 class="mb-1">Dashboard Widget Permissions</h2>
+
+            <p class="text-muted mb-0">
+                Control which application roles can view each dashboard widget.
+            </p>
+        </div>
+
+        <a asp-controller="DashboardDesigner"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Dashboard Designer
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show"
+             role="alert">
+
+            <i class="bi bi-check-circle-fill me-2"></i>
+
+            @TempData["SuccessMessage"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show"
+             role="alert">
+
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+
+            @TempData["ErrorMessage"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            No dashboard widgets are currently available.
+        </div>
+    }
+    else
+    {
+        <form asp-controller="DashboardPermission"
+              asp-action="Index"
+              method="post"
+              id="permissionForm">
+
+            @Html.AntiForgeryToken()
+
+            <div class="card shadow-sm">
+
+                <div class="card-header bg-light">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+
+                        <div>
+                            <strong>
+                                <i class="bi bi-shield-lock me-1"></i>
+                                Role Permission Matrix
+                            </strong>
+
+                            <div class="small text-muted">
+                                Checked roles are allowed to view the widget.
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-success"
+                                    id="selectAllButton">
+
+                                <i class="bi bi-check-square me-1"></i>
+                                Select All
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger"
+                                    id="clearAllButton">
+
+                                <i class="bi bi-square me-1"></i>
+                                Clear All
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered table-hover align-middle mb-0">
+
+                        <thead class="table-light">
+                            <tr>
+                                <th style="min-width: 190px;">
+                                    Widget
+                                </th>
+
+                                <th style="min-width: 140px;">
+                                    Type
+                                </th>
+
+                                <th class="text-center"
+                                    style="min-width: 90px;">
+                                    Active
+                                </th>
+
+                                @{
+                                    var firstWidget = Model.FirstOrDefault();
+                                }
+
+                                @if (firstWidget != null)
+                                {
+                                    foreach (var role in firstWidget.Roles)
+                                    {
+                                        <th class="text-center"
+                                            style="min-width: 130px;">
+
+                                            @role.RoleName
+
+                                            <div class="mt-1">
+                                                <button type="button"
+                                                        class="btn btn-link btn-sm p-0 select-role"
+                                                        data-role-id="@role.AppRoleId">
+
+                                                    Select column
+                                                </button>
+                                            </div>
+                                        </th>
+                                    }
+                                }
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @for (var widgetIndex = 0;
+                                  widgetIndex < Model.Count;
+                                  widgetIndex++)
+                            {
+                                var widget = Model[widgetIndex];
+
+                                <tr class="@(!widget.IsActive ? "table-secondary" : "")">
+
+                                    <td>
+                                        <input type="hidden"
+                                               asp-for="@Model[widgetIndex].DashboardWidgetDefinitionId" />
+
+                                        <input type="hidden"
+                                               asp-for="@Model[widgetIndex].WidgetCode" />
+
+                                        <input type="hidden"
+                                               asp-for="@Model[widgetIndex].WidgetTitle" />
+
+                                        <input type="hidden"
+                                               asp-for="@Model[widgetIndex].WidgetType" />
+
+                                        <input type="hidden"
+                                               asp-for="@Model[widgetIndex].IsActive" />
+
+                                        <div class="fw-semibold">
+                                            @widget.WidgetTitle
+                                        </div>
+
+                                        <div class="small text-muted">
+                                            @widget.WidgetCode
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <span class="badge bg-info text-dark">
+                                            @widget.WidgetType
+                                        </span>
+                                    </td>
+
+                                    <td class="text-center">
+                                        @if (widget.IsActive)
+                                        {
+                                            <span class="badge bg-success">
+                                                Active
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+                                                Inactive
+                                            </span>
+                                        }
+                                    </td>
+
+                                    @for (var roleIndex = 0;
+                                          roleIndex < widget.Roles.Count;
+                                          roleIndex++)
+                                    {
+                                        var role = widget.Roles[roleIndex];
+
+                                        <td class="text-center">
+
+                                            <input type="hidden"
+                                                   asp-for="@Model[widgetIndex].Roles[roleIndex].AppRoleId" />
+
+                                            <input type="hidden"
+                                                   asp-for="@Model[widgetIndex].Roles[roleIndex].RoleName" />
+
+                                            <div class="form-check d-inline-flex justify-content-center">
+
+                                                <input class="form-check-input permission-checkbox"
+                                                       type="checkbox"
+                                                       asp-for="@Model[widgetIndex].Roles[roleIndex].IsAllowed"
+                                                       data-role-id="@role.AppRoleId"
+                                                       data-widget-id="@widget.DashboardWidgetDefinitionId"
+                                                       aria-label="Allow @role.RoleName to view @widget.WidgetTitle" />
+
+                                            </div>
+
+                                        </td>
+                                    }
+
+                                </tr>
+                            }
+
+                        </tbody>
+                    </table>
+
+                </div>
+
+                <div class="card-footer bg-white">
+
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+
+                        <div class="small text-muted">
+                            Unchecked roles will not have access to the corresponding widget.
+                        </div>
+
+                        <button type="submit"
+                                class="btn btn-primary"
+                                id="saveButton">
+
+                            <i class="bi bi-save me-1"></i>
+                            Save Permissions
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </form>
+    }
+
+</div>
+
+@section Scripts
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const permissionForm =
+                document.getElementById("permissionForm");
+
+            const selectAllButton =
+                document.getElementById("selectAllButton");
+
+            const clearAllButton =
+                document.getElementById("clearAllButton");
+
+            const saveButton =
+                document.getElementById("saveButton");
+
+            const permissionCheckboxes =
+                document.querySelectorAll(".permission-checkbox");
+
+            if (selectAllButton) {
+                selectAllButton.addEventListener("click", function () {
+
+                    permissionCheckboxes.forEach(function (checkbox) {
+                        checkbox.checked = true;
+                    });
+                });
+            }
+
+            if (clearAllButton) {
+                clearAllButton.addEventListener("click", function () {
+
+                    permissionCheckboxes.forEach(function (checkbox) {
+                        checkbox.checked = false;
+                    });
+                });
+            }
+
+            document
+                .querySelectorAll(".select-role")
+                .forEach(function (button) {
+
+                    button.addEventListener("click", function () {
+
+                        const roleId =
+                            button.getAttribute("data-role-id");
+
+                        const roleCheckboxes =
+                            document.querySelectorAll(
+                                '.permission-checkbox[data-role-id="' +
+                                roleId +
+                                '"]'
+                            );
+
+                        const allSelected =
+                            Array.from(roleCheckboxes)
+                                .every(function (checkbox) {
+                                    return checkbox.checked;
+                                });
+
+                        roleCheckboxes.forEach(function (checkbox) {
+                            checkbox.checked = !allSelected;
+                        });
+
+                        button.textContent =
+                            allSelected
+                                ? "Select column"
+                                : "Clear column";
+                    });
+                });
+
+            if (permissionForm) {
+                permissionForm.addEventListener(
+                    "submit",
+                    function () {
+
+                        if (saveButton) {
+                            saveButton.disabled = true;
+
+                            saveButton.innerHTML =
+                                '<span class="spinner-border ' +
+                                'spinner-border-sm me-1" ' +
+                                'role="status" ' +
+                                'aria-hidden="true"></span>' +
+                                'Saving...';
+                        }
+                    }
+                );
+            }
+
+        });
+    </script>
+}

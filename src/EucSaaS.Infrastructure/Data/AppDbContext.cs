@@ -28,6 +28,13 @@ public DbSet<DashboardTemplateDefinition> DashboardTemplateDefinitions { get; se
 
 public DbSet<LookupDefinition> LookupDefinitions => Set<LookupDefinition>();
 
+
+public DbSet<DashboardWidgetPermission> DashboardWidgetPermissions
+{
+    get;
+    set;
+}
+
     public DbSet<ScreenDefinition> ScreenDefinitions => Set<ScreenDefinition>();
     public DbSet<ColumnDefinition> ColumnDefinitions => Set<ColumnDefinition>();
     public DbSet<FormFieldDefinition> FormFieldDefinitions => Set<FormFieldDefinition>();
@@ -39,6 +46,7 @@ public DbSet<LookupDefinition> LookupDefinitions => Set<LookupDefinition>();
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
 
 //-----------------------------------
 // Employee
@@ -309,5 +317,32 @@ builder.Entity<FormFieldOptionDefinition>(entity =>
                   .IsUnique();
         });
 
+        //-----------------------------------
+        // Dashboard Widget Permission
+        //-----------------------------------
+        builder.Entity<DashboardWidgetPermission>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.HasIndex(x => new
+            {
+                x.DashboardWidgetDefinitionId,
+                x.AppRoleId
+            })
+            .IsUnique();
+
+            entity.HasOne(x => x.DashboardWidgetDefinition)
+                .WithMany(x => x.Permissions)
+                .HasForeignKey(x => x.DashboardWidgetDefinitionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.AppRole)
+                .WithMany(x => x.DashboardWidgetPermissions)
+                .HasForeignKey(x => x.AppRoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+
     }
+
 }

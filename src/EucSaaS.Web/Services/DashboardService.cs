@@ -27,26 +27,64 @@ public class DashboardService
         string? department,
         string? status)
     {
-        var model = new DashboardViewModel();
+        var model = new DashboardViewModel
+        {
+            Filter = await _filterService.GetFiltersAsync(
+                department,
+                status)
+        };
 
-        model.Filter = await _filterService.GetFiltersAsync(
-            department,
-            status);
+        // -------------------------------------------------
+        // Security: a valid application role is required.
+        // No role means no dashboard widgets are returned.
+        // -------------------------------------------------
+        if (!appRoleId.HasValue || appRoleId.Value == Guid.Empty)
+        {
+            return model;
+        }
 
-        var dashboardTemplateId = appRoleId.HasValue
-            ? await _context.RoleDashboardTemplateAssignments
-                .Where(x => x.AppRoleId == appRoleId.Value && x.IsActive)
-                .Select(x => (Guid?)x.DashboardTemplateDefinitionId)
-                .FirstOrDefaultAsync()
-            : null;
+        // -------------------------------------------------
+        // Find the active dashboard template assigned
+        // to the current user's role.
+        // -------------------------------------------------
+        var dashboardTemplateId =
+            await _context.RoleDashboardTemplateAssignments
+                .AsNoTracking()
+                .Where(x =>
+                    x.AppRoleId == appRoleId.Value &&
+                    x.IsActive)
+                .Select(x =>
+                    (Guid?)x.DashboardTemplateDefinitionId)
+                .FirstOrDefaultAsync();
 
-        var widgetsQuery = _context.DashboardWidgetDefinitions
-            .Where(x => x.IsActive);
+        // -------------------------------------------------
+        // Load only:
+        // 1. Active widgets
+        // 2. Widgets permitted for the current role
+        // 3. Widgets belonging to the assigned template,
+        //    when a template assignment exists
+        // -------------------------------------------------
+var permittedWidgetIds =
+    _context.DashboardWidgetPermissions
+        .AsNoTracking()
+        .Where(permission =>
+            permission.AppRoleId == appRoleId.Value &&
+            permission.CanView)
+        .Select(permission =>
+            permission.DashboardWidgetDefinitionId);
+
+var widgetsQuery =
+    _context.DashboardWidgetDefinitions
+        .AsNoTracking()
+        .Where(widget =>
+            widget.IsActive &&
+            permittedWidgetIds.Contains(widget.Id));
 
         if (dashboardTemplateId.HasValue)
         {
-            widgetsQuery = widgetsQuery
-                .Where(x => x.DashboardTemplateDefinitionId == dashboardTemplateId.Value);
+            widgetsQuery = widgetsQuery.Where(widget =>
+                widget.DashboardTemplateDefinitionId ==
+                    dashboardTemplateId.Value);
         }
 
         var widgets = await widgetsQuery
@@ -55,11 +93,14 @@ public class DashboardService
             .ThenBy(x => x.DisplayOrder)
             .ToListAsync();
 
+        // -------------------------------------------------
+        // Execute each permitted widget's configured SQL
+        // -------------------------------------------------
         foreach (var widget in widgets)
         {
             var vm = new DashboardWidgetViewModel
             {
-		Id = widget.Id,
+                Id = widget.Id,
                 WidgetCode = widget.WidgetCode,
                 WidgetTitle = widget.WidgetTitle,
                 WidgetType = widget.WidgetType,
@@ -72,11 +113,7 @@ public class DashboardService
                 Color = widget.Color
             };
 
-            if (widget.WidgetType.Equals("Table", StringComparison.OrdinalIgnoreCase)
-                || widget.WidgetType.Equals("Bar", StringComparison.OrdinalIgnoreCase)
-                || widget.WidgetType.Equals("Pie", StringComparison.OrdinalIgnoreCase)
-                || widget.WidgetType.Equals("Chart", StringComparison.OrdinalIgnoreCase)
-                || widget.WidgetType.Equals("Line", StringComparison.OrdinalIgnoreCase))
+            if (IsTableOrChartWidget(widget.WidgetType))
             {
                 var tableResult = await ExecuteTableAsync(
                     widget.SqlQuery,
@@ -100,57 +137,124 @@ public class DashboardService
         return model;
     }
 
+    private static bool IsTableOrChartWidget(string? widgetType)
+    {
+        if (string.IsNullOrWhiteSpace(widgetType))
+        {
+            return false;
+        }
+
+        return widgetType.Equals(
+                   "Table",
+                   StringComparison.OrdinalIgnoreCase)
+               ||
+               widgetType.Equals(
+                   "Bar",
+                   StringComparison.OrdinalIgnoreCase)
+               ||
+               widgetType.Equals(
+                   "Pie",
+                   StringComparison.OrdinalIgnoreCase)
+               ||
+               widgetType.Equals(
+                   "Chart",
+                   StringComparison.OrdinalIgnoreCase)
+               ||
+               widgetType.Equals(
+                   "Line",
+                   StringComparison.OrdinalIgnoreCase);
+    }
+
     private async Task<string> ExecuteScalarAsync(
         string sql,
         string? department,
         string? status)
     {
-        var connection = (NpgsqlConnection)_context.Database.GetDbConnection();
+        if (string.IsNullOrWhiteSpace(sql))
+        {
+            return "0";
+        }
+
+        var connection =
+            (NpgsqlConnection)_context.Database.GetDbConnection();
 
         if (connection.State != ConnectionState.Open)
+        {
             await connection.OpenAsync();
+        }
 
-        await using var command = new NpgsqlCommand(sql, connection);
+        await using var command =
+            new NpgsqlCommand(sql, connection);
 
-        _sqlBuilder.AddFilterParameters(command, sql, department, status);
+        _sqlBuilder.AddFilterParameters(
+            command,
+            sql,
+            department,
+            status);
 
         var result = await command.ExecuteScalarAsync();
 
         return result?.ToString() ?? "0";
     }
 
-    private async Task<(List<string> Columns, List<Dictionary<string, string>> Rows)> ExecuteTableAsync(
-        string sql,
-        string? department,
-        string? status)
+    private async Task<(
+        List<string> Columns,
+        List<Dictionary<string, string>> Rows)>
+        ExecuteTableAsync(
+            string sql,
+            string? department,
+            string? status)
     {
         var columns = new List<string>();
-        var rows = new List<Dictionary<string, string>>();
 
-        var connection = (NpgsqlConnection)_context.Database.GetDbConnection();
+        var rows =
+            new List<Dictionary<string, string>>();
+
+        if (string.IsNullOrWhiteSpace(sql))
+        {
+            return (columns, rows);
+        }
+
+        var connection =
+            (NpgsqlConnection)_context.Database.GetDbConnection();
 
         if (connection.State != ConnectionState.Open)
-            await connection.OpenAsync();
-
-        await using var command = new NpgsqlCommand(sql, connection);
-
-        _sqlBuilder.AddFilterParameters(command, sql, department, status);
-
-        await using var reader = await command.ExecuteReaderAsync();
-
-        for (var i = 0; i < reader.FieldCount; i++)
         {
-            columns.Add(reader.GetName(i));
+            await connection.OpenAsync();
+        }
+
+        await using var command =
+            new NpgsqlCommand(sql, connection);
+
+        _sqlBuilder.AddFilterParameters(
+            command,
+            sql,
+            department,
+            status);
+
+        await using var reader =
+            await command.ExecuteReaderAsync();
+
+        for (var index = 0;
+             index < reader.FieldCount;
+             index++)
+        {
+            columns.Add(reader.GetName(index));
         }
 
         while (await reader.ReadAsync())
         {
-            var row = new Dictionary<string, string>();
+            var row =
+                new Dictionary<string, string>();
 
             foreach (var column in columns)
             {
                 var value = reader[column];
-                row[column] = value == DBNull.Value ? "" : value.ToString() ?? "";
+
+                row[column] =
+                    value == DBNull.Value
+                        ? string.Empty
+                        : value.ToString() ?? string.Empty;
             }
 
             rows.Add(row);

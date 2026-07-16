@@ -15,4 +15,12 @@ public class AppRole : BaseEntity
     //-----------------------------------
 
     public Tenant? Tenant { get; set; }
+
+public ICollection<DashboardWidgetPermission> DashboardWidgetPermissions
+{
+    get;
+    set;
+}
+= new List<DashboardWidgetPermission>();
+
 }

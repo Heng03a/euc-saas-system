@@ -37,4 +37,12 @@ public int GridHeight { get; set; } = 1;
     public int DisplayOrder { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+public ICollection<DashboardWidgetPermission> Permissions
+{
+    get;
+    set;
+}
+= new List<DashboardWidgetPermission>();
+
 }
