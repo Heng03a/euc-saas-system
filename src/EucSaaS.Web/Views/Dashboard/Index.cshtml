@@ -28,23 +28,26 @@
                             Department
                         </label>
 
-                        <select id="departmentFilter"
-                                name="department"
-                                class="form-select">
+<select id="departmentFilter"
+        name="department"
+        class="form-select">
 
-                            <option value="">
-                                All Departments
-                            </option>
+    @if (Model.Filter.Departments.Count > 1)
+    {
+        <option value="">
+            All Departments
+        </option>
+    }
 
-                            @foreach (var dept in Model.Filter.Departments)
-                            {
-                                <option value="@dept"
-                                        selected="@(Model.Filter.Department == dept)">
-                                    @dept
-                                </option>
-                            }
+    @foreach (var dept in Model.Filter.Departments)
+    {
+        <option value="@dept"
+                selected="@(Model.Filter.Department == dept)">
+            @dept
+        </option>
+    }
 
-                        </select>
+</select>
 
                     </div>
 
@@ -700,18 +703,29 @@ fullscreenButton.on(
                 }
             );
 
-            clearButton.on(
-                "click",
-                function () {
+clearButton.on(
+    "click",
+    function () {
 
-                    departmentFilter.val("");
-                    statusFilter.val("");
-
-                    updateExportUrl();
-
-                    refreshDashboard();
-                }
+        if (departmentFilter.find("option").length > 1)
+        {
+            departmentFilter.val("");
+        }
+        else
+        {
+            departmentFilter.prop(
+                "selectedIndex",
+                0
             );
+        }
+
+        statusFilter.val("");
+
+        updateExportUrl();
+
+        refreshDashboard();
+    }
+);
 
             fullscreenButton.on(
                 "click",

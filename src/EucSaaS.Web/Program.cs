@@ -8,8 +8,14 @@ using EucSaaS.Application.Interfaces;
 using EucSaaS.Infrastructure.Services;
 using EucSaaS.Application.Services;
 using EucSaaS.Web.Services.Export;
+using EucSaaS.Web.Services.Security;
+
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddScoped<
+    IDataAccessScopeResolver,
+    DataAccessScopeResolver>();
 
 builder.Services.AddControllersWithViews();
 
@@ -78,6 +84,12 @@ builder.Services.AddAuthorization(options =>
         );
     });
 });
+
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<
+    ICurrentUserContext,
+    CurrentUserContext>();
 
 var app = builder.Build();
 
