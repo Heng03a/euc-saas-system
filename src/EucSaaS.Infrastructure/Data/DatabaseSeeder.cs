@@ -22,6 +22,12 @@ public static class DatabaseSeeder
         var adminUserId = Guid.Parse("44444444-4444-4444-4444-444444444444");
         var managerUserId = Guid.Parse("88888888-8888-8888-8888-888888888888");
 
+var standardUserId =
+    Guid.Parse("99999999-9999-9999-9999-999999999999");
+
+var readOnlyUserId =
+    Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
         await SeedTenantAsync(db, tenantId);
         await SeedDepartmentAsync(db, departmentId, tenantId);
 
@@ -53,6 +59,31 @@ public static class DatabaseSeeder
             "manager",
             "1234556"
         );
+
+await SeedUserAsync(
+    db,
+    standardUserId,
+    tenantId,
+    departmentId,
+    userRoleId,
+    "Standard User",
+    "user@example.com",
+    "user",
+    "1234556"
+);
+
+await SeedUserAsync(
+    db,
+    readOnlyUserId,
+    tenantId,
+    departmentId,
+    readOnlyRoleId,
+    "Read Only User",
+    "readonly@example.com",
+    "readonly",
+    "1234556"
+);
+
 
         await SeedMenuAsync(db, tenantId, "Dashboard", "/dashboard", "bi bi-speedometer2", 1);
         await SeedMenuAsync(db, tenantId, "Users", "/users", "bi bi-people", 2);
