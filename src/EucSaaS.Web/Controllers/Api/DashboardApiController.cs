@@ -7,6 +7,7 @@ namespace EucSaaS.Web.Controllers.Api;
 [ApiController]
 [Route("api/dashboard")]
 [Authorize(Policy = "AuthenticatedOnly")]
+[Produces("application/json")]
 public class DashboardApiController : ControllerBase
 {
     private readonly DashboardService _dashboardService;
@@ -20,7 +21,21 @@ public class DashboardApiController : ControllerBase
     // GET: /api/dashboard
     // GET: /api/dashboard?department=IT&status=Active
     // ------------------------------------------------------------
+    /// <summary>
+    /// Returns the current user's permitted dashboard widgets.
+    /// </summary>
+    /// <param name="department">
+    /// Optional department filter.
+    /// </param>
+    /// <param name="status">
+    /// Optional employee status filter.
+    /// </param>
+    /// <returns>
+    /// The dashboard filter options and permitted dashboard widgets.
+    /// </returns>
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetDashboard(
         [FromQuery] string? department,
         [FromQuery] string? status)
@@ -31,7 +46,8 @@ public class DashboardApiController : ControllerBase
         {
             return Unauthorized(new
             {
-                message = "The authenticated user does not have a valid AppRoleId claim."
+                message =
+                    "The authenticated user does not have a valid AppRoleId claim."
             });
         }
 
@@ -45,12 +61,31 @@ public class DashboardApiController : ControllerBase
 
     // ------------------------------------------------------------
     // GET: /api/dashboard/widget/TOTAL_EMPLOYEES
-    // GET: /api/dashboard/widget/TOTAL_EMPLOYEES?department=IT
-    // GET: /api/dashboard/widget/TOTAL_EMPLOYEES?department=IT&status=Active
+    // GET: /api/dashboard/widget/TOTAL_EMPLOYEES
+    //      ?department=IT&status=Active
     // ------------------------------------------------------------
+    /// <summary>
+    /// Returns one permitted dashboard widget.
+    /// </summary>
+    /// <param name="widgetCode">
+    /// The unique dashboard widget code.
+    /// </param>
+    /// <param name="department">
+    /// Optional department filter.
+    /// </param>
+    /// <param name="status">
+    /// Optional employee status filter.
+    /// </param>
+    /// <returns>
+    /// The requested dashboard widget.
+    /// </returns>
     [HttpGet("widget/{widgetCode}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetWidget(
-        string widgetCode,
+        [FromRoute] string widgetCode,
         [FromQuery] string? department,
         [FromQuery] string? status)
     {
@@ -68,7 +103,8 @@ public class DashboardApiController : ControllerBase
         {
             return Unauthorized(new
             {
-                message = "The authenticated user does not have a valid AppRoleId claim."
+                message =
+                    "The authenticated user does not have a valid AppRoleId claim."
             });
         }
 
@@ -87,7 +123,9 @@ public class DashboardApiController : ControllerBase
         {
             return NotFound(new
             {
-                message = $"Dashboard widget '{widgetCode}' was not found or is not permitted for the current user."
+                message =
+                    $"Dashboard widget '{widgetCode}' was not found " +
+                    "or is not permitted for the current user."
             });
         }
 

@@ -9,7 +9,7 @@ using EucSaaS.Infrastructure.Services;
 using EucSaaS.Application.Services;
 using EucSaaS.Web.Services.Export;
 using EucSaaS.Web.Services.Security;
-
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +18,31 @@ builder.Services.AddScoped<
     DataAccessScopeResolver>();
 
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "v1",
+        Title = "EUC SaaS API",
+        Description =
+            "REST API for the EUC SaaS Enterprise Operational Enablement Platform."
+    });
+
+    // Include only routes beginning with /api/
+    // Normal MVC controllers are excluded from Swagger.
+    options.DocInclusionPredicate((documentName, apiDescription) =>
+    {
+        var relativePath = apiDescription.RelativePath;
+
+        return !string.IsNullOrWhiteSpace(relativePath) &&
+               relativePath.StartsWith(
+                   "api/",
+                   StringComparison.OrdinalIgnoreCase);
+    });
+});
 
 builder.Services.AddScoped<DashboardQueryService>();
 
@@ -92,6 +117,20 @@ builder.Services.AddScoped<
     CurrentUserContext>();
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint(
+            "/swagger/v1/swagger.json",
+            "EUC SaaS API v1");
+
+        options.DocumentTitle = "EUC SaaS API Documentation";
+    });
+}
 
 using (var scope = app.Services.CreateScope())
 {
