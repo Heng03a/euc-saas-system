@@ -1,12 +1,17 @@
 using EucSaaS.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 namespace EucSaaS.Web.Controllers.Api;
 
 [ApiController]
 [Route("api/dashboard")]
-[Authorize(Policy = "AuthenticatedOnly")]
+[Authorize(
+    AuthenticationSchemes =
+        CookieAuthenticationDefaults.AuthenticationScheme + "," +
+        JwtBearerDefaults.AuthenticationScheme,
+    Policy = "AuthenticatedOnly")]
 [Produces("application/json")]
 public class DashboardApiController : ControllerBase
 {
