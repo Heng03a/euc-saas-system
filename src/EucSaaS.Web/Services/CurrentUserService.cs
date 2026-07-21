@@ -54,3 +54,4 @@ public Guid TenantId
             .FindFirst(ClaimTypes.Role)?
             .Value ?? "";
 }
+

@@ -1,12 +1,10 @@
-namespace EucSaaS.Domain.Entities;
+namespace EucSaaS.Web.ViewModels.Api.AuditLogs;
 
-public class AuditLog
+public class AuditLogResponse
 {
     public Guid Id { get; set; }
 
-    // Nullable temporarily because existing audit records
-    // were created before tenant isolation was introduced.
-    public Guid? TenantId { get; set; }
+    public Guid TenantId { get; set; }
 
     public string ScreenCode { get; set; } = "";
 

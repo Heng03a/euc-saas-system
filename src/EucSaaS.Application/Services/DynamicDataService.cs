@@ -430,65 +430,107 @@ public class DynamicDataService
         }
     }
 
-    private async Task InsertAuditLogAsync(
-        DataSource dataSource,
-        string screenCode,
-        string recordId,
-        string actionType,
-        string fieldName,
-        string oldValue,
-        string newValue)
+private async Task InsertAuditLogAsync(
+    DataSource dataSource,
+    string resourceCode,
+    string recordId,
+    string actionType,
+    string fieldName,
+    string oldValue,
+    string newValue)
+{
+    if (_currentUserService.TenantId == Guid.Empty)
     {
-        var connectionString = BuildConnectionString(dataSource);
-
-        await using var connection = new NpgsqlConnection(connectionString);
-        await connection.OpenAsync();
-
-        var sql = @"
-            insert into ""AuditLogs""
-            (
-                ""Id"",
-                ""ScreenCode"",
-                ""RecordId"",
-                ""ActionType"",
-                ""FieldName"",
-                ""OldValue"",
-                ""NewValue"",
-                ""ChangedBy"",
-                ""ChangedAt""
-            )
-            values
-            (
-                @id,
-                @screenCode,
-                @recordId,
-                @actionType,
-                @fieldName,
-                @oldValue,
-                @newValue,
-                @changedBy,
-                @changedAt
-            )";
-
-        await using var command = new NpgsqlCommand(sql, connection);
-
-        command.Parameters.AddWithValue("id", Guid.NewGuid());
-        command.Parameters.AddWithValue("screenCode", screenCode);
-        command.Parameters.AddWithValue("recordId", recordId);
-        command.Parameters.AddWithValue("actionType", actionType);
-        command.Parameters.AddWithValue("fieldName", fieldName);
-        command.Parameters.AddWithValue("oldValue", oldValue);
-        command.Parameters.AddWithValue("newValue", newValue);
-        command.Parameters.AddWithValue("changedBy", GetChangedBy());
-        command.Parameters.AddWithValue("changedAt", DateTime.UtcNow);
-
-        await command.ExecuteNonQueryAsync();
+        throw new InvalidOperationException(
+            "TenantId was not found for the current user.");
     }
 
-    private static string GetChangedBy()
-    {
-        return "SYSTEM";
-    }
+    var changedBy =
+        !string.IsNullOrWhiteSpace(_currentUserService.Username)
+            ? _currentUserService.Username
+            : _currentUserService.UserId.ToString();
+
+    var connectionString = BuildConnectionString(dataSource);
+
+    await using var connection =
+        new NpgsqlConnection(connectionString);
+
+    await connection.OpenAsync();
+
+    const string sql = """
+        insert into "AuditLogs"
+        (
+            "Id",
+            "TenantId",
+            "ScreenCode",
+            "RecordId",
+            "ActionType",
+            "FieldName",
+            "OldValue",
+            "NewValue",
+            "ChangedBy",
+            "ChangedAt"
+        )
+        values
+        (
+            @id,
+            @tenantId,
+            @screenCode,
+            @recordId,
+            @actionType,
+            @fieldName,
+            @oldValue,
+            @newValue,
+            @changedBy,
+            @changedAt
+        )
+        """;
+
+    await using var command =
+        new NpgsqlCommand(sql, connection);
+
+    command.Parameters.AddWithValue(
+        "id",
+        Guid.NewGuid());
+
+    command.Parameters.AddWithValue(
+        "tenantId",
+        _currentUserService.TenantId);
+
+    command.Parameters.AddWithValue(
+        "screenCode",
+        resourceCode);
+
+    command.Parameters.AddWithValue(
+        "recordId",
+        recordId);
+
+    command.Parameters.AddWithValue(
+        "actionType",
+        actionType);
+
+    command.Parameters.AddWithValue(
+        "fieldName",
+        fieldName);
+
+    command.Parameters.AddWithValue(
+        "oldValue",
+        oldValue);
+
+    command.Parameters.AddWithValue(
+        "newValue",
+        newValue);
+
+    command.Parameters.AddWithValue(
+        "changedBy",
+        changedBy);
+
+    command.Parameters.AddWithValue(
+        "changedAt",
+        DateTime.UtcNow);
+
+    await command.ExecuteNonQueryAsync();
+}
 
     private void AddTenantFilter(
         string tableName,
