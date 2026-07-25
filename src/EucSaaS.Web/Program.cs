@@ -16,6 +16,12 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<DashboardQueryService>();
+builder.Services.AddScoped<DashboardFilterService>();
+builder.Services.AddScoped<DashboardDesignerQueryService>();
+
+builder.Services.AddScoped<DashboardDesignerQueryService>();
 // ------------------------------------------------------------
 // MVC and API
 // ------------------------------------------------------------
