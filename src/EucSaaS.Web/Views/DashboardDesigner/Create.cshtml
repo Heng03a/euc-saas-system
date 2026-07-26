@@ -6,57 +6,159 @@
 
 <h2>Create Dashboard Widget</h2>
 
-<form asp-action="Create" method="post">
+<form asp-action="Create"
+      method="post">
+
     @Html.AntiForgeryToken()
 
-    <div asp-validation-summary="All" class="text-danger mb-3"></div>
-
-<div class="mb-3">
-    <label class="form-label">Dashboard Template</label>
-    <select asp-for="DashboardTemplateDefinitionId"
-            asp-items="ViewBag.DashboardTemplates"
-            class="form-select">
-        <option value="">-- No Template --</option>
-    </select>
-</div>
-
-    <div class="mb-3">
-        <label class="form-label">Widget Code</label>
-        <input asp-for="WidgetCode" class="form-control" />
-        <div class="form-text">
-            Example: TOTAL_EMPLOYEES, ACTIVE_EMPLOYEES, EMP_STATUS_PIE
-        </div>
+    <div asp-validation-summary="All"
+         class="text-danger mb-3">
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Widget Title</label>
-        <input asp-for="WidgetName" class="form-control" />
-    </div>
 
-    <div class="mb-3">
-        <label class="form-label">Widget Type</label>
-        <select asp-for="WidgetType" class="form-select">
-            <option value="Card">Card</option>
-            <option value="Table">Table</option>
-            <option value="Pie">Pie</option>
-            <option value="Chart">Chart</option>
+        <label asp-for="DashboardTemplateDefinitionId"
+               class="form-label">
+            Dashboard Template
+        </label>
+
+        <select asp-for="DashboardTemplateDefinitionId"
+                asp-items="ViewBag.DashboardTemplates"
+                class="form-select">
+
+            <option value="">
+                -- No Template --
+            </option>
+
         </select>
+
+        <span asp-validation-for="DashboardTemplateDefinitionId"
+              class="text-danger">
+        </span>
+
     </div>
 
     <div class="mb-3">
-        <label class="form-label">SQL Query</label>
+
+        <label asp-for="WidgetCode"
+               class="form-label">
+            Widget Code
+        </label>
+
+        <input asp-for="WidgetCode"
+               class="form-control" />
+
+        <span asp-validation-for="WidgetCode"
+              class="text-danger">
+        </span>
+
+        <div class="form-text">
+            Example: TOTAL_EMPLOYEES,
+            ACTIVE_EMPLOYEES,
+            EMP_STATUS_PIE
+        </div>
+
+    </div>
+
+    <div class="mb-3">
+
+        <label asp-for="WidgetName"
+               class="form-label">
+            Widget Title
+        </label>
+
+        <input asp-for="WidgetName"
+               class="form-control" />
+
+        <span asp-validation-for="WidgetName"
+              class="text-danger">
+        </span>
+
+    </div>
+
+    <div class="mb-3">
+
+        <label asp-for="WidgetType"
+               class="form-label">
+            Widget Type
+        </label>
+
+        <select asp-for="WidgetType"
+                id="WidgetType"
+                class="form-select">
+
+            <option value="Card">
+                Card
+            </option>
+
+            <option value="Table">
+                Table
+            </option>
+
+            <option value="Bar">
+                Bar Chart
+            </option>
+
+            <option value="Line">
+                Line Chart
+            </option>
+
+            <option value="Pie">
+                Pie Chart
+            </option>
+
+            <option value="Doughnut">
+                Doughnut Chart
+            </option>
+
+        </select>
+
+        <span asp-validation-for="WidgetType"
+              class="text-danger">
+        </span>
+
+        <div id="widgetTypeHelp"
+             class="form-text">
+        </div>
+
+    </div>
+
+    <div class="mb-3">
+
+        <label asp-for="SqlQuery"
+               class="form-label">
+            SQL Query
+        </label>
+
         <textarea asp-for="SqlQuery"
                   id="SqlQuery"
-                  class="form-control"
-                  rows="6"></textarea>
+                  class="form-control font-monospace"
+                  rows="10">
+        </textarea>
+
+        <span asp-validation-for="SqlQuery"
+              class="text-danger">
+        </span>
+
+        <div class="form-text">
+            Every dashboard SQL query must contain
+            <code>@@TenantId</code>.
+        </div>
 
         <button type="button"
-                class="btn btn-outline-primary mt-2"
-                onclick="testSql()">
+                id="testSqlButton"
+                class="btn btn-outline-primary mt-2">
+
+            <i class="bi bi-play-circle me-1"></i>
+
             Test SQL
+
         </button>
 
-        <div id="sqlPreviewContainer" class="mt-3"></div>
+        <div id="sqlPreviewContainer"
+             class="mt-3">
+        </div>
+
     </div>
 
     <hr />
@@ -64,116 +166,404 @@
     <h5>Layout Settings</h5>
 
     <div class="row">
+
         <div class="col-md-3 mb-3">
-            <label class="form-label">Row Position</label>
+
+            <label asp-for="RowPosition"
+                   class="form-label">
+                Row Position
+            </label>
+
             <input asp-for="RowPosition"
                    class="form-control"
                    type="number"
                    min="1" />
+
+            <span asp-validation-for="RowPosition"
+                  class="text-danger">
+            </span>
+
         </div>
 
         <div class="col-md-3 mb-3">
-            <label class="form-label">Column Position</label>
+
+            <label asp-for="ColumnPosition"
+                   class="form-label">
+                Column Position
+            </label>
+
             <input asp-for="ColumnPosition"
                    class="form-control"
                    type="number"
                    min="1" />
+
+            <span asp-validation-for="ColumnPosition"
+                  class="text-danger">
+            </span>
+
         </div>
 
         <div class="col-md-3 mb-3">
-            <label class="form-label">Widget Width</label>
+
+            <label asp-for="WidgetWidth"
+                   class="form-label">
+                Widget Width
+            </label>
+
             <input asp-for="WidgetWidth"
                    class="form-control"
                    type="number"
                    min="1"
                    max="12" />
+
+            <span asp-validation-for="WidgetWidth"
+                  class="text-danger">
+            </span>
+
             <div class="form-text">
-                3 = quarter, 4 = one-third, 6 = half, 12 = full row.
+                3 = quarter,
+                4 = one-third,
+                6 = half,
+                12 = full row.
             </div>
+
         </div>
 
         <div class="col-md-3 mb-3">
-            <label class="form-label">Height</label>
+
+            <label asp-for="Height"
+                   class="form-label">
+                Height (px)
+            </label>
+
             <input asp-for="Height"
                    class="form-control"
                    type="number"
                    min="100" />
+
+            <span asp-validation-for="Height"
+                  class="text-danger">
+            </span>
+
             <div class="form-text">
-                Example: 180 for card, 300 for chart/table.
+                Example: 180 for card,
+                300 for chart,
+                450 for table.
             </div>
+
         </div>
+
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Display Order</label>
-        <input asp-for="DisplayOrder" class="form-control" type="number" />
+
+        <label asp-for="DisplayOrder"
+               class="form-label">
+            Display Order
+        </label>
+
+        <input asp-for="DisplayOrder"
+               class="form-control"
+               type="number"
+               min="1" />
+
+        <span asp-validation-for="DisplayOrder"
+              class="text-danger">
+        </span>
+
     </div>
 
     <hr />
 
     <div class="mb-3">
-        <label class="form-label">Icon</label>
-        <input asp-for="Icon" class="form-control" />
+
+        <label asp-for="Icon"
+               class="form-label">
+            Icon
+        </label>
+
+        <input asp-for="Icon"
+               class="form-control" />
+
+        <span asp-validation-for="Icon"
+              class="text-danger">
+        </span>
+
         <div class="form-text">
-            Example: bi bi-people-fill, bi bi-bar-chart, bi bi-table
+            Example:
+            bi bi-people-fill,
+            bi bi-bar-chart,
+            bi bi-table
         </div>
+
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Color</label>
-        <select asp-for="Color" class="form-select">
-            <option value="primary">primary</option>
-            <option value="secondary">secondary</option>
-            <option value="success">success</option>
-            <option value="danger">danger</option>
-            <option value="warning">warning</option>
-            <option value="info">info</option>
-            <option value="dark">dark</option>
+
+        <label asp-for="Color"
+               class="form-label">
+            Colour
+        </label>
+
+        <select asp-for="Color"
+                class="form-select">
+
+            <option value="primary">
+                primary
+            </option>
+
+            <option value="secondary">
+                secondary
+            </option>
+
+            <option value="success">
+                success
+            </option>
+
+            <option value="danger">
+                danger
+            </option>
+
+            <option value="warning">
+                warning
+            </option>
+
+            <option value="info">
+                info
+            </option>
+
+            <option value="dark">
+                dark
+            </option>
+
         </select>
+
+        <span asp-validation-for="Color"
+              class="text-danger">
+        </span>
+
     </div>
 
     <div class="form-check mb-3">
-        <input asp-for="IsActive" class="form-check-input" />
-        <label asp-for="IsActive" class="form-check-label">Active</label>
+
+        <input asp-for="IsActive"
+               class="form-check-input" />
+
+        <label asp-for="IsActive"
+               class="form-check-label">
+            Active
+        </label>
+
     </div>
 
-    <button type="submit" class="btn btn-success">
+    <button type="submit"
+            class="btn btn-success">
+
+        <i class="bi bi-plus-circle me-1"></i>
+
         Create
+
     </button>
 
     <a asp-controller="DashboardDesigner"
        asp-action="Index"
        class="btn btn-secondary">
+
         Cancel
+
     </a>
+
 </form>
 
 @section Scripts
 {
     @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        await Html.RenderPartialAsync(
+            "_ValidationScriptsPartial");
     }
 
     <script>
-        async function testSql() {
-            const sql = document.getElementById("SqlQuery").value;
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
 
-            const token = document.querySelector(
-                'input[name="__RequestVerificationToken"]'
-            ).value;
+                const widgetTypeElement =
+                    document.getElementById(
+                        "WidgetType");
 
-            const response = await fetch('/DashboardDesigner/TestSql', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'RequestVerificationToken': token
-                },
-                body: 'sqlQuery=' + encodeURIComponent(sql)
+                const testSqlButton =
+                    document.getElementById(
+                        "testSqlButton");
+
+                widgetTypeElement.addEventListener(
+                    "change",
+                    updateWidgetTypeHelp);
+
+                testSqlButton.addEventListener(
+                    "click",
+                    testSql);
+
+                updateWidgetTypeHelp();
             });
 
-            const html = await response.text();
+        function isChartWidgetType(
+            widgetType) {
 
-            document.getElementById("sqlPreviewContainer").innerHTML = html;
+            const normalized =
+                (widgetType || "")
+                    .trim()
+                    .toLowerCase();
+
+            return normalized === "bar" ||
+                   normalized === "line" ||
+                   normalized === "pie" ||
+                   normalized === "doughnut" ||
+                   normalized === "chart";
+        }
+
+        function updateWidgetTypeHelp() {
+
+            const widgetType =
+                document.getElementById(
+                    "WidgetType").value;
+
+            const help =
+                document.getElementById(
+                    "widgetTypeHelp");
+
+            const normalized =
+                widgetType
+                    .trim()
+                    .toLowerCase();
+
+            if (isChartWidgetType(
+                    widgetType)) {
+
+                help.innerHTML =
+                    'Chart SQL must return a ' +
+                    '<code>"Label"</code> column and a numeric ' +
+                    '<code>"Value"</code> column.';
+            }
+            else if (normalized === "card") {
+
+                help.innerHTML =
+                    'Card SQL should return one row and one scalar value.';
+            }
+            else {
+
+                help.innerHTML =
+                    'Table SQL may return multiple columns and rows.';
+            }
+        }
+
+        async function testSql() {
+
+            const sql =
+                document.getElementById(
+                    "SqlQuery").value;
+
+            const widgetType =
+                document.getElementById(
+                    "WidgetType").value;
+
+            const token =
+                document.querySelector(
+                    'input[name="__RequestVerificationToken"]'
+                ).value;
+
+            const previewContainer =
+                document.getElementById(
+                    "sqlPreviewContainer");
+
+            const testSqlButton =
+                document.getElementById(
+                    "testSqlButton");
+
+            const originalButtonHtml =
+                testSqlButton.innerHTML;
+
+            previewContainer.innerHTML =
+                '<div class="text-muted">' +
+                    '<span class="spinner-border ' +
+                    'spinner-border-sm me-2" ' +
+                    'role="status"></span>' +
+                    'Testing SQL...' +
+                '</div>';
+
+            testSqlButton.disabled =
+                true;
+
+            testSqlButton.innerHTML =
+                '<span class="spinner-border ' +
+                'spinner-border-sm me-2" ' +
+                'role="status"></span>' +
+                'Testing...';
+
+            try {
+
+                const body =
+                    new URLSearchParams();
+
+                body.append(
+                    "sqlQuery",
+                    sql);
+
+                body.append(
+                    "widgetType",
+                    widgetType);
+
+                const response =
+                    await fetch(
+                        '@Url.Action(
+                            "TestSql",
+                            "DashboardDesigner")',
+                        {
+                            method:
+                                "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/x-www-form-urlencoded",
+
+                                "RequestVerificationToken":
+                                    token
+                            },
+
+                            body:
+                                body.toString()
+                        });
+
+                const html =
+                    await response.text();
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        "SQL test request failed.");
+                }
+
+                previewContainer.innerHTML =
+                    html;
+            }
+            catch (error) {
+
+                console.error(
+                    "SQL test failed:",
+                    error);
+
+                previewContainer.innerHTML =
+                    '<div class="alert alert-danger">' +
+                        'The SQL test request failed.' +
+                    '</div>';
+            }
+            finally {
+
+                testSqlButton.disabled =
+                    false;
+
+                testSqlButton.innerHTML =
+                    originalButtonHtml;
+            }
         }
     </script>
 }

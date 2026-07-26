@@ -2,6 +2,7 @@ using EucSaaS.Application.Services;
 using EucSaaS.Domain.Entities;
 using EucSaaS.Infrastructure.Data;
 using EucSaaS.Web.Services;
+using EucSaaS.Web.Services.Security;
 using EucSaaS.Web.ViewModels.Dashboard;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,20 +19,33 @@ public class DashboardDesignerController : Controller
 
     private readonly DashboardQueryService _dashboardQueryService;
 
+    private readonly DashboardChartResultValidator
+        _chartResultValidator;
+
     private readonly DashboardDesignerQueryService
         _dashboardDesignerQueryService;
+
+    private readonly IDataAccessScopeResolver
+        _scopeResolver;
 
     public DashboardDesignerController(
         AppDbContext context,
         DashboardQueryService dashboardQueryService,
-        DashboardDesignerQueryService dashboardDesignerQueryService)
+        DashboardChartResultValidator chartResultValidator,
+        DashboardDesignerQueryService dashboardDesignerQueryService,
+        IDataAccessScopeResolver scopeResolver)
     {
         _context = context;
 
         _dashboardQueryService = dashboardQueryService;
 
+        _chartResultValidator =
+            chartResultValidator;
+
         _dashboardDesignerQueryService =
             dashboardDesignerQueryService;
+
+        _scopeResolver = scopeResolver;
     }
 
     // ------------------------------------------------------------
@@ -526,7 +540,8 @@ public class DashboardDesignerController : Controller
     [HttpPost("/DashboardDesigner/TestSql")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TestSql(
-        string sqlQuery)
+        string sqlQuery,
+        string widgetType)
     {
         var preview =
             new DashboardSqlPreviewViewModel();
@@ -562,11 +577,39 @@ public class DashboardDesignerController : Controller
                     preview);
             }
 
+            var accessScope =
+                _scopeResolver.Resolve();
+
+            if (accessScope.TenantId == Guid.Empty)
+            {
+                preview.IsSuccess = false;
+
+                preview.Message =
+                    "The authenticated user does not have a valid tenant ID.";
+
+                return PartialView(
+                    "_SqlPreview",
+                    preview);
+            }
+
             var table =
                 await _dashboardQueryService.TestSqlAsync(
                     dataSource,
                     sqlQuery,
+                    accessScope.TenantId,
                     20);
+
+            // Chart widgets must return:
+            // 1. A "Label" column
+            // 2. A numeric "Value" column
+            //
+            // ValidateAndConvert throws a clear validation
+            // exception when the result structure is invalid.
+            if (DashboardChartType.IsChartWidget(widgetType))
+            {
+                _chartResultValidator.ValidateAndConvert(
+                    table);
+            }
 
             preview.IsSuccess = true;
 
