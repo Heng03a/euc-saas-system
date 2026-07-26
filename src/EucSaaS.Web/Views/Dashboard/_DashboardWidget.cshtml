@@ -16,10 +16,12 @@
         ? "primary"
         : widget.Color;
 
-    var icon = widget.Icon ?? "";
+    var icon = widget.Icon ?? string.Empty;
+
+    var widgetType = widget.WidgetType ?? string.Empty;
 }
 
-@if (widget.WidgetType.Equals(
+@if (widgetType.Equals(
         "Card",
         StringComparison.OrdinalIgnoreCase))
 {
@@ -59,16 +61,20 @@
                                 title="Refresh widget">
 
                             <i class="bi bi-arrow-clockwise"></i>
+
                         </button>
 
                     </div>
 
                 </div>
+
             </div>
+
         </div>
+
     </div>
 }
-else if (widget.WidgetType.Equals(
+else if (widgetType.Equals(
              "Table",
              StringComparison.OrdinalIgnoreCase))
 {
@@ -95,6 +101,7 @@ else if (widget.WidgetType.Equals(
                         title="Refresh widget">
 
                     <i class="bi bi-arrow-clockwise"></i>
+
                 </button>
 
             </div>
@@ -132,25 +139,29 @@ else if (widget.WidgetType.Equals(
                             </thead>
 
                             <tbody>
+
                                 @foreach (var row in widget.Rows)
                                 {
                                     <tr>
+
                                         @foreach (var column in widget.Columns)
                                         {
                                             var value = row.ContainsKey(column)
                                                 ? row[column]
-                                                : "";
+                                                : string.Empty;
 
                                             var isNumber = decimal.TryParse(
                                                 value,
                                                 out _);
 
-                                            <td class="@(isNumber ? "text-end" : "")">
+                                            <td class="@(isNumber ? "text-end" : string.Empty)">
                                                 @value
                                             </td>
                                         }
+
                                     </tr>
                                 }
+
                             </tbody>
 
                         </table>
@@ -159,73 +170,53 @@ else if (widget.WidgetType.Equals(
                 }
 
             </div>
+
         </div>
+
     </div>
 }
 else if (
-    widget.WidgetType.Equals(
+    widgetType.Equals(
         "Bar",
         StringComparison.OrdinalIgnoreCase) ||
-    widget.WidgetType.Equals(
+    widgetType.Equals(
         "Pie",
         StringComparison.OrdinalIgnoreCase) ||
-    widget.WidgetType.Equals(
+    widgetType.Equals(
         "Chart",
         StringComparison.OrdinalIgnoreCase) ||
-    widget.WidgetType.Equals(
+    widgetType.Equals(
         "Line",
+        StringComparison.OrdinalIgnoreCase) ||
+    widgetType.Equals(
+        "Doughnut",
         StringComparison.OrdinalIgnoreCase))
 {
-    var chartId = $"chart_{widget.Id:N}";
+    var chartId =
+        $"chart_{widget.Id:N}";
 
-    var labelColumn =
-        widget.Columns?.FirstOrDefault() ?? "";
-
-    var valueColumn =
-        widget.Columns?.Skip(1).FirstOrDefault() ?? "";
-
-    var labels = new List<string>();
-    var values = new List<decimal>();
-
-    if (!string.IsNullOrWhiteSpace(labelColumn) &&
-        !string.IsNullOrWhiteSpace(valueColumn))
-    {
-        foreach (var row in
-                 widget.Rows ??
-                 Enumerable.Empty<Dictionary<string, string>>())
-        {
-            labels.Add(
-                row.ContainsKey(labelColumn)
-                    ? row[labelColumn]
-                    : "");
-
-            var rawValue =
-                row.ContainsKey(valueColumn)
-                    ? row[valueColumn]
-                    : "0";
-
-            values.Add(
-                decimal.TryParse(
-                    rawValue,
-                    out var number)
-                    ? number
-                    : 0);
-        }
-    }
+    var chartData =
+        widget.ChartData;
 
     var chartType =
-        widget.WidgetType.Equals(
-            "Bar",
-            StringComparison.OrdinalIgnoreCase) ||
-        widget.WidgetType.Equals(
-            "Chart",
-            StringComparison.OrdinalIgnoreCase)
-            ? "bar"
-            : widget.WidgetType.Equals(
-                "Line",
-                StringComparison.OrdinalIgnoreCase)
-                ? "line"
-                : "pie";
+        chartData?.ChartType ?? "bar";
+
+    var labels =
+        chartData?.Labels ??
+        Array.Empty<string>();
+
+    var values =
+        chartData?.Values ??
+        Array.Empty<decimal>();
+
+    var showLegend =
+        chartData?.ShowLegend ?? true;
+
+    var hasChartData =
+        chartData != null &&
+        chartData.HasData &&
+        labels.Count > 0 &&
+        values.Count > 0;
 
     <div id="dashboardWidget_@widget.Id"
          class="col-md-@width dashboard-widget-container"
@@ -250,93 +241,223 @@ else if (
                         title="Refresh widget">
 
                     <i class="bi bi-arrow-clockwise"></i>
+
                 </button>
 
             </div>
 
             <div class="card-body">
 
-                @if (labels.Any() &&
-                     values.Any())
+                @if (hasChartData)
                 {
-                    <div style="height:@(height)px;">
-                        <canvas id="@chartId"></canvas>
+                    <div class="dashboard-chart-container"
+                         style="height:@(height)px;">
+
+                        <canvas id="@chartId"
+                                role="img"
+                                aria-label="@widget.WidgetTitle">
+                        </canvas>
+
                     </div>
                 }
                 else
                 {
-                    <div class="text-muted">
+                    <div class="text-muted d-flex justify-content-center align-items-center"
+                         style="height:@(height)px;">
+
                         No chart data found.
+
                     </div>
                 }
 
             </div>
+
         </div>
+
     </div>
 
-    @if (labels.Any() &&
-         values.Any())
+    @if (hasChartData)
     {
         <script>
             (function () {
 
-                const chartElement =
-                    document.getElementById("@chartId");
+                const chartId =
+                    @Html.Raw(
+                        JsonSerializer.Serialize(
+                            chartId));
 
-                if (!chartElement ||
-                    typeof Chart === "undefined") {
+                const chartElement =
+                    document.getElementById(
+                        chartId);
+
+                if (!chartElement) {
+
+                    console.error(
+                        "Chart canvas was not found:",
+                        chartId);
+
+                    return;
+                }
+
+                if (typeof Chart === "undefined") {
+
+                    console.error(
+                        "Chart.js has not been loaded.");
+
                     return;
                 }
 
                 const existingChart =
-                    Chart.getChart(chartElement);
+                    Chart.getChart(
+                        chartElement);
 
                 if (existingChart) {
+
                     existingChart.destroy();
                 }
 
-                new Chart(chartElement, {
-                    type: "@chartType",
+                const chartType =
+                    @Html.Raw(
+                        JsonSerializer.Serialize(
+                            chartType));
 
-                    data: {
-                        labels:
-                            @Html.Raw(
-                                JsonSerializer.Serialize(labels)),
+                const labels =
+                    @Html.Raw(
+                        JsonSerializer.Serialize(
+                            labels));
 
-                        datasets: [{
-                            label:
-                                @Html.Raw(
-                                    JsonSerializer.Serialize(
-                                        widget.WidgetTitle)),
+                const values =
+                    @Html.Raw(
+                        JsonSerializer.Serialize(
+                            values));
 
-                            data:
-                                @Html.Raw(
-                                    JsonSerializer.Serialize(values))
-                        }]
-                    },
+                const widgetTitle =
+                    @Html.Raw(
+                        JsonSerializer.Serialize(
+                            widget.WidgetTitle));
 
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
+                const showLegend =
+                    @Html.Raw(
+                        JsonSerializer.Serialize(
+                            showLegend));
 
-                        plugins: {
-                            legend: {
-                                display: true
-                            }
+                const isCircularChart =
+                    chartType === "pie" ||
+                    chartType === "doughnut";
+
+                const dataset = {
+                    label:
+                        widgetTitle,
+
+                    data:
+                        values,
+
+                    borderWidth:
+                        1
+                };
+
+                if (chartType === "line") {
+
+                    dataset.tension =
+                        0.25;
+
+                    dataset.fill =
+                        false;
+                }
+
+                new Chart(
+                    chartElement,
+                    {
+                        type:
+                            chartType,
+
+                        data: {
+                            labels:
+                                labels,
+
+                            datasets: [
+                                dataset
+                            ]
                         },
 
-                        scales:
-                            "@chartType" === "pie"
-                                ? {}
-                                : {
-                                    y: {
-                                        beginAtZero: true
-                                    }
+                        options: {
+                            responsive:
+                                true,
+
+                            maintainAspectRatio:
+                                false,
+
+                            interaction: {
+                                mode:
+                                    "nearest",
+
+                                intersect:
+                                    false
+                            },
+
+                            plugins: {
+                                legend: {
+                                    display:
+                                        showLegend,
+
+                                    position:
+                                        isCircularChart
+                                            ? "right"
+                                            : "top"
+                                },
+
+                                tooltip: {
+                                    enabled:
+                                        true
                                 }
+                            },
+
+                            scales:
+                                isCircularChart
+                                    ? {}
+                                    : {
+                                        y: {
+                                            beginAtZero:
+                                                true,
+
+                                            ticks: {
+                                                precision:
+                                                    0
+                                            }
+                                        }
+                                    }
+                        }
                     }
-                });
+                );
 
             })();
         </script>
     }
+}
+else
+{
+    <div id="dashboardWidget_@widget.Id"
+         class="col-md-@width dashboard-widget-container"
+         data-widget-id="@widget.Id">
+
+        <div class="card dashboard-card shadow-sm border-0 h-100">
+
+            <div class="card-body d-flex justify-content-center align-items-center"
+                 style="min-height:@(height)px;">
+
+                <div class="text-muted text-center">
+
+                    Unsupported widget type:
+
+                    <strong>
+                        @widget.WidgetType
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
 }

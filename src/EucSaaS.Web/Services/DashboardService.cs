@@ -14,18 +14,21 @@ public class DashboardService
     private readonly DashboardSqlBuilder _sqlBuilder;
     private readonly DashboardFilterService _filterService;
     private readonly IDataAccessScopeResolver _scopeResolver;
+private readonly DashboardChartResultValidator _chartValidator;
 
-    public DashboardService(
-        AppDbContext context,
-        DashboardSqlBuilder sqlBuilder,
-        DashboardFilterService filterService,
-        IDataAccessScopeResolver scopeResolver)
-    {
-        _context = context;
-        _sqlBuilder = sqlBuilder;
-        _filterService = filterService;
-        _scopeResolver = scopeResolver;
-    }
+public DashboardService(
+    AppDbContext context,
+    DashboardSqlBuilder sqlBuilder,
+    DashboardFilterService filterService,
+    IDataAccessScopeResolver scopeResolver,
+    DashboardChartResultValidator chartValidator)
+{
+    _context = context;
+    _sqlBuilder = sqlBuilder;
+    _filterService = filterService;
+    _scopeResolver = scopeResolver;
+    _chartValidator = chartValidator;
+}
 
     public async Task<DashboardViewModel> GetDashboardAsync(
         Guid? appRoleId,
@@ -151,25 +154,37 @@ public class DashboardService
                 Color = widget.Color
             };
 
-            if (IsTableOrChartWidget(widget.WidgetType))
-            {
-                var tableResult = await ExecuteTableAsync(
-                    widget.SqlQuery,
-                    accessScope.TenantId,
-                    effectiveDepartment,
-                    effectiveStatus);
+if (IsChartWidget(widget.WidgetType))
+{
+    vm.ChartData =
+        await ExecuteChartAsync(
+            widget.WidgetType,
+            widget.SqlQuery,
+            accessScope.TenantId,
+            effectiveDepartment,
+            effectiveStatus);
+}
+else if (IsTableWidget(widget.WidgetType))
+{
+    var tableResult =
+        await ExecuteTableAsync(
+            widget.SqlQuery,
+            accessScope.TenantId,
+            effectiveDepartment,
+            effectiveStatus);
 
-                vm.Columns = tableResult.Columns;
-                vm.Rows = tableResult.Rows;
-            }
-            else
-            {
-                vm.Value = await ExecuteScalarAsync(
-                    widget.SqlQuery,
-                    accessScope.TenantId,
-                    effectiveDepartment,
-                    effectiveStatus);
-            }
+    vm.Columns = tableResult.Columns;
+    vm.Rows = tableResult.Rows;
+}
+else
+{
+    vm.Value =
+        await ExecuteScalarAsync(
+            widget.SqlQuery,
+            accessScope.TenantId,
+            effectiveDepartment,
+            effectiveStatus);
+}
 
             model.Widgets.Add(vm);
         }
@@ -275,34 +290,22 @@ public class DashboardService
             StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool IsTableOrChartWidget(
-        string? widgetType)
-    {
-        if (string.IsNullOrWhiteSpace(widgetType))
-        {
-            return false;
-        }
+ private static bool IsTableWidget(
+    string? widgetType)
+{
+    return string.Equals(
+        widgetType,
+        "Table",
+        StringComparison.OrdinalIgnoreCase);
+}
 
-        return widgetType.Equals(
-                   "Table",
-                   StringComparison.OrdinalIgnoreCase)
-               ||
-               widgetType.Equals(
-                   "Bar",
-                   StringComparison.OrdinalIgnoreCase)
-               ||
-               widgetType.Equals(
-                   "Pie",
-                   StringComparison.OrdinalIgnoreCase)
-               ||
-               widgetType.Equals(
-                   "Chart",
-                   StringComparison.OrdinalIgnoreCase)
-               ||
-               widgetType.Equals(
-                   "Line",
-                   StringComparison.OrdinalIgnoreCase);
-    }
+private static bool IsChartWidget(
+    string? widgetType)
+{
+    return DashboardChartType.IsChartWidget(
+        widgetType);
+}
+
 
     private async Task<string> ExecuteScalarAsync(
         string sql,
@@ -433,4 +436,54 @@ public class DashboardService
                 tenantId);
         }
     }
+private async Task<ChartWidgetDataViewModel>
+ExecuteChartAsync(
+    string widgetType,
+    string sql,
+    Guid tenantId,
+    string? department,
+    string? status)
+{
+    var result =
+        new ChartWidgetDataViewModel
+        {
+            ChartType =
+                DashboardChartType.FromWidgetType(
+                    widgetType)
+        };
+
+    if (string.IsNullOrWhiteSpace(sql))
+        return result;
+
+    var connection =
+        (NpgsqlConnection)_context.Database
+            .GetDbConnection();
+
+    if (connection.State != ConnectionState.Open)
+        await connection.OpenAsync();
+
+    await using var command =
+        new NpgsqlCommand(
+            sql,
+            connection);
+
+    AddQueryParameters(
+        command,
+        sql,
+        tenantId,
+        department,
+        status);
+
+    var table = new DataTable();
+
+    await using var reader =
+        await command.ExecuteReaderAsync();
+
+    table.Load(reader);
+
+    result.Points =
+        _chartValidator.ValidateAndConvert(table);
+
+    return result;
+}
 }

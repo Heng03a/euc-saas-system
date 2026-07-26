@@ -20,6 +20,7 @@ builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<DashboardQueryService>();
 builder.Services.AddScoped<DashboardFilterService>();
 builder.Services.AddScoped<DashboardDesignerQueryService>();
+builder.Services.AddScoped<DashboardChartResultValidator>();
 
 builder.Services.AddScoped<DashboardDesignerQueryService>();
 // ------------------------------------------------------------

@@ -10,6 +10,7 @@ public string? Icon { get; set; }
 
 public string? Color { get; set; } = "primary";
 
+public ChartWidgetDataViewModel? ChartData { get; set; }
 
 public int RowPosition { get; set; } = 1;
 
