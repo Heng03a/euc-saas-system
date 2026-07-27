@@ -1,0 +1,70 @@
+@using System.Text.Json
+@model EucSaaS.Web.ViewModels.Dashboard.DashboardWidgetViewModel
+
+@{
+    var chartId =
+        $"dashboardChart_{Model.Id:N}";
+
+    var chartConfigurationId =
+        $"dashboardChartConfiguration_{Model.Id:N}";
+
+    var chartType =
+        Model.ChartData?.ChartType?
+            .Trim()
+            .ToLowerInvariant()
+        ?? "bar";
+
+    var points =
+        Model.ChartData?.Points
+        ?? new List<EucSaaS.Web.ViewModels.Dashboard.ChartDataPointViewModel>();
+
+    var chartConfiguration =
+        new
+        {
+            widgetId = Model.Id,
+            chartId,
+            chartType,
+            title = Model.WidgetTitle,
+            labels = points.Select(x => x.Label).ToList(),
+            values = points.Select(x => x.Value).ToList()
+        };
+
+    var chartConfigurationJson =
+        JsonSerializer.Serialize(
+            chartConfiguration);
+
+    var chartHeight =
+        Model.Height;
+
+    if (chartHeight < 180)
+    {
+        chartHeight = 260;
+    }
+}
+
+@if (points.Count == 0)
+{
+    <div class="alert alert-light border mb-0">
+        No chart data was returned.
+    </div>
+}
+else
+{
+    <div class="dashboard-chart-wrapper"
+         data-dashboard-chart="true"
+         data-chart-id="@chartId"
+         data-configuration-id="@chartConfigurationId"
+         style="height:@($"{chartHeight}px");">
+
+        <canvas id="@chartId"
+                role="img"
+                aria-label="@Model.WidgetTitle">
+        </canvas>
+
+        <script id="@chartConfigurationId"
+                type="application/json">
+            @Html.Raw(chartConfigurationJson)
+        </script>
+
+    </div>
+}

@@ -4,7 +4,9 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<h2 class="mb-4">Dashboard</h2>
+<h2 class="mb-4">
+    Dashboard
+</h2>
 
 <div id="dashboardFullscreenArea"
      class="dashboard-fullscreen-area">
@@ -24,54 +26,36 @@
 
                     <div class="col-md-4">
 
-                        <label class="form-label fw-semibold">
+                        <label for="departmentFilter"
+                               class="form-label fw-semibold">
+
                             Department
+
                         </label>
 
-<select id="departmentFilter"
-        name="department"
-        class="form-select">
-
-    @if (Model.Filter.Departments.Count > 1)
-    {
-        <option value="">
-            All Departments
-        </option>
-    }
-
-    @foreach (var dept in Model.Filter.Departments)
-    {
-        <option value="@dept"
-                selected="@(Model.Filter.Department == dept)">
-            @dept
-        </option>
-    }
-
-</select>
-
-                    </div>
-
-                    <!-- Status -->
-
-                    <div class="col-md-4">
-
-                        <label class="form-label fw-semibold">
-                            Status
-                        </label>
-
-                        <select id="statusFilter"
-                                name="status"
+                        <select id="departmentFilter"
+                                name="department"
                                 class="form-select">
 
-                            <option value="">
-                                All Statuses
-                            </option>
-
-                            @foreach (var status in Model.Filter.Statuses)
+                            @if (Model.Filter.Departments.Count > 1)
                             {
-                                <option value="@status"
-                                        selected="@(Model.Filter.Status == status)">
-                                    @status
+                                <option value="">
+
+                                    All Departments
+
+                                </option>
+                            }
+
+                            @foreach (var department
+                                in Model.Filter.Departments)
+                            {
+                                <option value="@department"
+                                        selected="@(
+                                            Model.Filter.Department ==
+                                            department)">
+
+                                    @department
+
                                 </option>
                             }
 
@@ -79,11 +63,50 @@
 
                     </div>
 
-                    <!-- Buttons -->
+                    <!-- Status -->
 
                     <div class="col-md-4">
 
-                        <label class="form-label fw-semibold">
+                        <label for="statusFilter"
+                               class="form-label fw-semibold">
+
+                            Status
+
+                        </label>
+
+                        <select id="statusFilter"
+                                name="status"
+                                class="form-select">
+
+                            <option value="">
+
+                                All Statuses
+
+                            </option>
+
+                            @foreach (var status
+                                in Model.Filter.Statuses)
+                            {
+                                <option value="@status"
+                                        selected="@(
+                                            Model.Filter.Status ==
+                                            status)">
+
+                                    @status
+
+                                </option>
+                            }
+
+                        </select>
+
+                    </div>
+
+                    <!-- Controls -->
+
+                    <div class="col-md-4">
+
+                        <label for="autoRefreshInterval"
+                               class="form-label fw-semibold">
 
                             Auto Refresh
 
@@ -117,8 +140,6 @@
 
                             </select>
 
-                            <!-- Refresh -->
-
                             <button id="refreshDashboardButton"
                                     type="submit"
                                     class="btn btn-primary"
@@ -128,8 +149,6 @@
 
                             </button>
 
-                            <!-- Clear -->
-
                             <button id="clearDashboardButton"
                                     type="button"
                                     class="btn btn-outline-secondary">
@@ -138,19 +157,16 @@
 
                             </button>
 
-                            <!-- Fullscreen -->
-
                             <button id="fullscreenDashboardButton"
                                     type="button"
                                     class="btn btn-outline-dark"
-                                    title="Fullscreen">
+                                    title="Open dashboard in fullscreen">
 
                                 <i id="fullscreenDashboardIcon"
-                                   class="bi bi-arrows-fullscreen"></i>
+                                   class="bi bi-arrows-fullscreen">
+                                </i>
 
                             </button>
-
-                            <!-- Export Excel -->
 
                             <a id="exportExcelButton"
                                class="btn btn-success"
@@ -175,7 +191,9 @@
 
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between
+                align-items-center
+                mb-3">
 
         <div>
 
@@ -189,11 +207,12 @@
 
         <small class="text-muted">
 
-            Last Refreshed :
+            Last Refreshed:
 
             <span id="lastRefreshedTime">
 
-                @DateTime.Now.ToString("dd MMM yyyy HH:mm:ss")
+                @DateTime.Now.ToString(
+                    "dd MMM yyyy HH:mm:ss")
 
             </span>
 
@@ -205,7 +224,12 @@
          class="text-center my-5"
          style="display:none;">
 
-        <div class="spinner-border text-primary">
+        <div class="spinner-border text-primary"
+             role="status">
+
+            <span class="visually-hidden">
+                Loading...
+            </span>
 
         </div>
 
@@ -236,31 +260,87 @@
 
 <style>
 
-.dashboard-fullscreen-area:fullscreen{
+    .dashboard-widget-card {
+        border-radius: 0.75rem;
+        transition:
+            transform 0.15s ease-in-out,
+            box-shadow 0.15s ease-in-out;
+    }
 
-    background:var(--bs-body-bg);
+    .dashboard-widget-card:hover {
+        transform: translateY(-2px);
+    }
 
-    padding:24px;
+    .dashboard-widget-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        flex-shrink: 0;
+        font-size: 1.25rem;
+        border-radius: 0.5rem;
+        background: var(--bs-tertiary-bg);
+    }
 
-    overflow:auto;
+    .dashboard-widget-column {
+        min-width: 0;
+    }
 
-}
+    .dashboard-card-value-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-.dashboard-fullscreen-area:-webkit-full-screen{
+    .dashboard-card-value {
+        width: 100%;
+        font-size: clamp(
+            2rem,
+            4vw,
+            3.75rem
+        );
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
+        overflow-wrap: anywhere;
+    }
 
-    background:var(--bs-body-bg);
+    .dashboard-table-wrapper {
+        overflow: auto;
+    }
 
-    padding:24px;
+    .dashboard-chart-wrapper {
+        position: relative;
+        width: 100%;
+    }
 
-    overflow:auto;
+    .dashboard-chart-wrapper canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
 
-}
+    .dashboard-fullscreen-area:fullscreen {
+        background: var(--bs-body-bg);
+        padding: 24px;
+        overflow: auto;
+    }
+
+    .dashboard-fullscreen-area:-webkit-full-screen {
+        background: var(--bs-body-bg);
+        padding: 24px;
+        overflow: auto;
+    }
 
 </style>
 
 @section Scripts
 {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js">
+    </script>
+
     <script>
+
         $(document).ready(function () {
 
             const filterForm =
@@ -309,6 +389,468 @@
 
             let autoRefreshTimer = null;
 
+            const dashboardChartInstances =
+                new Map();
+
+            function getChartColours() {
+
+                return [
+                    "rgba(13, 110, 253, 0.75)",
+                    "rgba(25, 135, 84, 0.75)",
+                    "rgba(255, 193, 7, 0.75)",
+                    "rgba(220, 53, 69, 0.75)",
+                    "rgba(13, 202, 240, 0.75)",
+                    "rgba(111, 66, 193, 0.75)",
+                    "rgba(253, 126, 20, 0.75)",
+                    "rgba(32, 201, 151, 0.75)",
+                    "rgba(108, 117, 125, 0.75)",
+                    "rgba(214, 51, 132, 0.75)"
+                ];
+            }
+
+            function getChartBorderColours() {
+
+                return [
+                    "rgb(13, 110, 253)",
+                    "rgb(25, 135, 84)",
+                    "rgb(255, 193, 7)",
+                    "rgb(220, 53, 69)",
+                    "rgb(13, 202, 240)",
+                    "rgb(111, 66, 193)",
+                    "rgb(253, 126, 20)",
+                    "rgb(32, 201, 151)",
+                    "rgb(108, 117, 125)",
+                    "rgb(214, 51, 132)"
+                ];
+            }
+
+            function normaliseChartType(
+                chartType) {
+
+                const supportedTypes =
+                    [
+                        "pie",
+                        "bar",
+                        "line",
+                        "doughnut"
+                    ];
+
+                const normalisedType =
+                    (
+                        chartType ||
+                        "bar"
+                    )
+                    .toString()
+                    .trim()
+                    .toLowerCase();
+
+                return supportedTypes.includes(
+                    normalisedType
+                )
+                    ? normalisedType
+                    : "bar";
+            }
+
+            function repeatColours(
+                colours,
+                requiredLength) {
+
+                const result = [];
+
+                if (
+                    !Array.isArray(colours) ||
+                    colours.length === 0
+                ) {
+
+                    return result;
+                }
+
+                for (
+                    let index = 0;
+                    index < requiredLength;
+                    index++
+                ) {
+
+                    result.push(
+                        colours[
+                            index %
+                            colours.length
+                        ]
+                    );
+                }
+
+                return result;
+            }
+
+            function destroyDashboardCharts(
+                container) {
+
+                const root =
+                    container instanceof HTMLElement
+                        ? container
+                        : document;
+
+                const chartWrappers =
+                    root.querySelectorAll(
+                        '[data-dashboard-chart="true"]'
+                    );
+
+                chartWrappers.forEach(
+                    function (wrapper) {
+
+                        const chartId =
+                            wrapper.getAttribute(
+                                "data-chart-id"
+                            );
+
+                        if (!chartId) {
+
+                            return;
+                        }
+
+                        const chartInstance =
+                            dashboardChartInstances.get(
+                                chartId
+                            );
+
+                        if (chartInstance) {
+
+                            chartInstance.destroy();
+
+                            dashboardChartInstances.delete(
+                                chartId
+                            );
+                        }
+
+                        const canvas =
+                            document.getElementById(
+                                chartId
+                            );
+
+                        if (
+                            canvas &&
+                            typeof Chart !== "undefined"
+                        ) {
+
+                            const existingChart =
+                                Chart.getChart(
+                                    canvas
+                                );
+
+                            if (existingChart) {
+
+                                existingChart.destroy();
+                            }
+                        }
+                    }
+                );
+            }
+
+            function createDashboardChartOptions(
+                chartType) {
+
+                const isCircularChart =
+                    chartType === "pie" ||
+                    chartType === "doughnut";
+
+                const options = {
+                    responsive:
+                        true,
+
+                    maintainAspectRatio:
+                        false,
+
+                    animation: {
+                        duration:
+                            450
+                    },
+
+                    interaction: {
+                        intersect:
+                            false,
+
+                        mode:
+                            isCircularChart
+                                ? "nearest"
+                                : "index"
+                    },
+
+                    plugins: {
+                        legend: {
+                            display:
+                                true,
+
+                            position:
+                                isCircularChart
+                                    ? "right"
+                                    : "top"
+                        },
+
+                        tooltip: {
+                            enabled:
+                                true
+                        }
+                    }
+                };
+
+                if (!isCircularChart) {
+
+                    options.scales = {
+                        x: {
+                            grid: {
+                                display:
+                                    false
+                            }
+                        },
+
+                        y: {
+                            beginAtZero:
+                                true
+                        }
+                    };
+                }
+
+                return options;
+            }
+
+            function initialiseDashboardCharts(
+                container) {
+
+                if (
+                    typeof Chart === "undefined"
+                ) {
+
+                    console.error(
+                        "Chart.js is not available."
+                    );
+
+                    return;
+                }
+
+                const root =
+                    container instanceof HTMLElement
+                        ? container
+                        : document;
+
+                const chartWrappers =
+                    root.querySelectorAll(
+                        '[data-dashboard-chart="true"]'
+                    );
+
+                chartWrappers.forEach(
+                    function (wrapper) {
+
+                        const chartId =
+                            wrapper.getAttribute(
+                                "data-chart-id"
+                            );
+
+                        const configurationId =
+                            wrapper.getAttribute(
+                                "data-configuration-id"
+                            );
+
+                        if (
+                            !chartId ||
+                            !configurationId
+                        ) {
+
+                            console.error(
+                                "Dashboard chart metadata is incomplete."
+                            );
+
+                            return;
+                        }
+
+                        const canvas =
+                            document.getElementById(
+                                chartId
+                            );
+
+                        const configurationElement =
+                            document.getElementById(
+                                configurationId
+                            );
+
+                        if (
+                            !canvas ||
+                            !configurationElement
+                        ) {
+
+                            console.error(
+                                "Dashboard chart elements were not found:",
+                                chartId
+                            );
+
+                            return;
+                        }
+
+                        try {
+
+                            const storedChart =
+                                dashboardChartInstances.get(
+                                    chartId
+                                );
+
+                            if (storedChart) {
+
+                                storedChart.destroy();
+
+                                dashboardChartInstances.delete(
+                                    chartId
+                                );
+                            }
+
+                            const chartJsInstance =
+                                Chart.getChart(
+                                    canvas
+                                );
+
+                            if (chartJsInstance) {
+
+                                chartJsInstance.destroy();
+                            }
+
+                            const configurationText =
+                                configurationElement
+                                    .textContent
+                                    ?.trim();
+
+                            if (!configurationText) {
+
+                                throw new Error(
+                                    "Chart configuration is empty."
+                                );
+                            }
+
+                            const chartConfiguration =
+                                JSON.parse(
+                                    configurationText
+                                );
+
+                            const chartType =
+                                normaliseChartType(
+                                    chartConfiguration.chartType
+                                );
+
+                            const labels =
+                                Array.isArray(
+                                    chartConfiguration.labels
+                                )
+                                    ? chartConfiguration.labels
+                                    : [];
+
+                            const values =
+                                Array.isArray(
+                                    chartConfiguration.values
+                                )
+                                    ? chartConfiguration.values
+                                    : [];
+
+                            const backgroundColours =
+                                repeatColours(
+                                    getChartColours(),
+                                    values.length
+                                );
+
+                            const borderColours =
+                                repeatColours(
+                                    getChartBorderColours(),
+                                    values.length
+                                );
+
+                            const isLineChart =
+                                chartType === "line";
+
+                            const isCircularChart =
+                                chartType === "pie" ||
+                                chartType === "doughnut";
+
+                            const dataset = {
+                                label:
+                                    chartConfiguration.title
+                                    || "Value",
+
+                                data:
+                                    values,
+
+                                backgroundColor:
+                                    isLineChart
+                                        ? "rgba(13, 110, 253, 0.15)"
+                                        : backgroundColours,
+
+                                borderColor:
+                                    isLineChart
+                                        ? "rgb(13, 110, 253)"
+                                        : borderColours,
+
+                                borderWidth:
+                                    isCircularChart
+                                        ? 1
+                                        : 2,
+
+                                tension:
+                                    isLineChart
+                                        ? 0.25
+                                        : 0
+                            };
+
+                            if (isLineChart) {
+
+                                dataset.fill = false;
+
+                                dataset.pointRadius = 4;
+
+                                dataset.pointHoverRadius = 6;
+                            }
+
+                            const chartInstance =
+                                new Chart(
+                                    canvas,
+                                    {
+                                        type:
+                                            chartType,
+
+                                        data: {
+                                            labels:
+                                                labels,
+
+                                            datasets:
+                                                [
+                                                    dataset
+                                                ]
+                                        },
+
+                                        options:
+                                            createDashboardChartOptions(
+                                                chartType
+                                            )
+                                    }
+                                );
+
+                            dashboardChartInstances.set(
+                                chartId,
+                                chartInstance
+                            );
+                        }
+                        catch (error) {
+
+                            console.error(
+                                "Dashboard chart could not be rendered:",
+                                chartId,
+                                error
+                            );
+
+                            wrapper.innerHTML =
+                                '<div class="alert ' +
+                                'alert-danger mb-0">' +
+                                'The chart could not be rendered.' +
+                                '</div>';
+                        }
+                    }
+                );
+            }
+
             function updateLastRefreshedTime() {
 
                 const now =
@@ -318,13 +860,26 @@
                     now.toLocaleString(
                         "en-SG",
                         {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                            hour12: false
+                            day:
+                                "2-digit",
+
+                            month:
+                                "short",
+
+                            year:
+                                "numeric",
+
+                            hour:
+                                "2-digit",
+
+                            minute:
+                                "2-digit",
+
+                            second:
+                                "2-digit",
+
+                            hour12:
+                                false
                         }
                     );
 
@@ -336,10 +891,12 @@
             function updateExportUrl() {
 
                 const department =
-                    departmentFilter.val() || "";
+                    departmentFilter.val()
+                    || "";
 
                 const status =
-                    statusFilter.val() || "";
+                    statusFilter.val()
+                    || "";
 
                 const exportUrl =
                     "@Url.Action("ExportExcel", "Dashboard")"
@@ -358,13 +915,57 @@
                 );
             }
 
+            function updateBrowserUrl(
+                department,
+                status) {
+
+                const queryString =
+                    new URLSearchParams();
+
+                if (department) {
+
+                    queryString.set(
+                        "department",
+                        department
+                    );
+                }
+
+                if (status) {
+
+                    queryString.set(
+                        "status",
+                        status
+                    );
+                }
+
+                let newUrl =
+                    "@Url.Action("Index", "Dashboard")";
+
+                const query =
+                    queryString.toString();
+
+                if (query) {
+
+                    newUrl +=
+                        "?" + query;
+                }
+
+                window.history.replaceState(
+                    {},
+                    "",
+                    newUrl
+                );
+            }
+
             function refreshDashboard() {
 
                 const department =
-                    departmentFilter.val() || "";
+                    departmentFilter.val()
+                    || "";
 
                 const status =
-                    statusFilter.val() || "";
+                    statusFilter.val()
+                    || "";
 
                 dashboardError.hide();
 
@@ -415,8 +1016,16 @@
                     success:
                         function (html) {
 
+                            destroyDashboardCharts(
+                                dashboardContent[0]
+                            );
+
                             dashboardContent.html(
                                 html
+                            );
+
+                            initialiseDashboardCharts(
+                                dashboardContent[0]
                             );
 
                             updateBrowserUrl(
@@ -470,48 +1079,6 @@
                             );
                         }
                 });
-            }
-
-            function updateBrowserUrl(
-                department,
-                status) {
-
-                const queryString =
-                    new URLSearchParams();
-
-                if (department) {
-
-                    queryString.set(
-                        "department",
-                        department
-                    );
-                }
-
-                if (status) {
-
-                    queryString.set(
-                        "status",
-                        status
-                    );
-                }
-
-                let newUrl =
-                    "@Url.Action("Index", "Dashboard")";
-
-                const query =
-                    queryString.toString();
-
-                if (query) {
-
-                    newUrl +=
-                        "?" + query;
-                }
-
-                window.history.replaceState(
-                    {},
-                    "",
-                    newUrl
-                );
             }
 
             function stopAutoRefresh() {
@@ -572,9 +1139,7 @@
 
             function updateFullscreenButton() {
 
-                if (
-                    isDashboardFullscreen()
-                ) {
+                if (isDashboardFullscreen()) {
 
                     fullscreenIcon
                         .removeClass(
@@ -610,12 +1175,11 @@
 
                 try {
 
-                    if (
-                        !isDashboardFullscreen()
-                    ) {
+                    if (!isDashboardFullscreen()) {
 
                         if (
-                            fullscreenArea.requestFullscreen
+                            fullscreenArea
+                                .requestFullscreen
                         ) {
 
                             await fullscreenArea
@@ -662,13 +1226,6 @@
                 }
             }
 
-fullscreenButton.on(
-    "click",
-    function () {
-
-        toggleDashboardFullscreen();
-    }
-);
             filterForm.on(
                 "submit",
                 function (event) {
@@ -703,29 +1260,33 @@ fullscreenButton.on(
                 }
             );
 
-clearButton.on(
-    "click",
-    function () {
+            clearButton.on(
+                "click",
+                function () {
 
-        if (departmentFilter.find("option").length > 1)
-        {
-            departmentFilter.val("");
-        }
-        else
-        {
-            departmentFilter.prop(
-                "selectedIndex",
-                0
+                    if (
+                        departmentFilter
+                            .find("option")
+                            .length > 1
+                    ) {
+
+                        departmentFilter.val("");
+                    }
+                    else {
+
+                        departmentFilter.prop(
+                            "selectedIndex",
+                            0
+                        );
+                    }
+
+                    statusFilter.val("");
+
+                    updateExportUrl();
+
+                    refreshDashboard();
+                }
             );
-        }
-
-        statusFilter.val("");
-
-        updateExportUrl();
-
-        refreshDashboard();
-    }
-);
 
             fullscreenButton.on(
                 "click",
@@ -753,6 +1314,7 @@ clearButton.on(
 
             /*
              * Widget-level AJAX refresh.
+             *
              * Event delegation is required because widgets
              * are dynamically replaced after AJAX requests.
              */
@@ -781,7 +1343,9 @@ clearButton.on(
                     const widgetContainer =
                         $("#dashboardWidget_" + widgetId);
 
-                    if (widgetContainer.length === 0) {
+                    if (
+                        widgetContainer.length === 0
+                    ) {
 
                         console.error(
                             "Widget container was not found:",
@@ -792,10 +1356,12 @@ clearButton.on(
                     }
 
                     const department =
-                        departmentFilter.val() || "";
+                        departmentFilter.val()
+                        || "";
 
                     const status =
-                        statusFilter.val() || "";
+                        statusFilter.val()
+                        || "";
 
                     const originalButtonHtml =
                         button.html();
@@ -819,7 +1385,9 @@ clearButton.on(
 
                     $.ajax({
                         url:
-                            "@Url.Action("RefreshWidget", "Dashboard")",
+                            "@Url.Action(
+                                "RefreshWidget",
+                                "Dashboard")",
 
                         type:
                             "GET",
@@ -841,9 +1409,28 @@ clearButton.on(
                         success:
                             function (html) {
 
+                                destroyDashboardCharts(
+                                    widgetContainer[0]
+                                );
+
                                 widgetContainer.replaceWith(
                                     html
                                 );
+
+                                const refreshedWidgetContainer =
+                                    document.getElementById(
+                                        "dashboardWidget_" +
+                                        widgetId
+                                    );
+
+                                if (
+                                    refreshedWidgetContainer
+                                ) {
+
+                                    initialiseDashboardCharts(
+                                        refreshedWidgetContainer
+                                    );
+                                }
 
                                 updateLastRefreshedTime();
                             },
@@ -879,7 +1466,10 @@ clearButton.on(
                             function () {
 
                                 const currentContainer =
-                                    $("#dashboardWidget_" + widgetId);
+                                    $(
+                                        "#dashboardWidget_" +
+                                        widgetId
+                                    );
 
                                 if (
                                     currentContainer.length === 0
@@ -908,7 +1498,8 @@ clearButton.on(
             );
 
             /*
-             * Prevent export when the button is temporarily disabled.
+             * Prevent export when the button is temporarily
+             * disabled during dashboard refresh.
              */
             exportExcelButton.on(
                 "click",
@@ -926,23 +1517,32 @@ clearButton.on(
             );
 
             /*
-             * Stop auto refresh when leaving the page.
+             * Stop refresh timers and destroy charts before
+             * leaving the page.
              */
             $(window).on(
                 "beforeunload",
                 function () {
 
                     stopAutoRefresh();
+
+                    destroyDashboardCharts(
+                        dashboardContent[0]
+                    );
                 }
             );
 
             /*
-             * Initial setup.
+             * Initial page setup.
              */
             updateExportUrl();
 
             updateFullscreenButton();
+
+            initialiseDashboardCharts(
+                dashboardContent[0]
+            );
         });
+
     </script>
 }
-

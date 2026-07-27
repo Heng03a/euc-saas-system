@@ -1,29 +1,26 @@
 @model EucSaaS.Web.ViewModels.Dashboard.DashboardViewModel
 
-@if (Model.Widgets == null || !Model.Widgets.Any())
+@if (Model.Widgets == null ||
+     Model.Widgets.Count == 0)
 {
     <div class="alert alert-info">
-        No dashboard widgets configured.
+        <i class="bi bi-info-circle me-2"></i>
+
+        No dashboard widgets are available for your role.
     </div>
 }
 else
 {
-    var groupedRows = Model.Widgets
-        .OrderBy(x => x.RowPosition)
-        .ThenBy(x => x.ColumnPosition)
-        .ThenBy(x => x.DisplayOrder)
-        .GroupBy(x => x.RowPosition);
+    <div class="row g-4 dashboard-widget-grid">
 
-    foreach (var rowGroup in groupedRows)
-    {
-        <div class="row g-3 mb-3">
+        @foreach (var widget in Model.Widgets
+            .OrderBy(x => x.RowPosition)
+            .ThenBy(x => x.ColumnPosition)
+            .ThenBy(x => x.DisplayOrder))
+        {
+            <partial name="_DashboardWidget"
+                     model="widget" />
+        }
 
-            @foreach (var widget in rowGroup)
-            {
-                <partial name="_DashboardWidget"
-                         model="widget" />
-            }
-
-        </div>
-    }
+    </div>
 }
