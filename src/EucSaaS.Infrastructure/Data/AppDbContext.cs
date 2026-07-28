@@ -28,6 +28,9 @@ public DbSet<DashboardTemplateDefinition> DashboardTemplateDefinitions { get; se
 
 public DbSet<LookupDefinition> LookupDefinitions => Set<LookupDefinition>();
 
+public DbSet<DashboardWidgetTemplate> DashboardWidgetTemplates =>
+    Set<DashboardWidgetTemplate>();
+
 
 public DbSet<DashboardWidgetPermission> DashboardWidgetPermissions
 {
@@ -342,6 +345,91 @@ builder.Entity<FormFieldOptionDefinition>(entity =>
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+// ------------------------------------------------------------
+// Dashboard Widget Template
+// ------------------------------------------------------------
+builder.Entity<DashboardWidgetTemplate>(entity =>
+{
+    entity.ToTable("DashboardWidgetTemplates");
+
+    entity.HasKey(x => x.Id);
+
+    entity.Property(x => x.TemplateCode)
+        .IsRequired()
+        .HasMaxLength(100);
+
+    entity.Property(x => x.TemplateName)
+        .IsRequired()
+        .HasMaxLength(200);
+
+    entity.Property(x => x.Category)
+        .IsRequired()
+        .HasMaxLength(100);
+
+    entity.Property(x => x.Description)
+        .HasMaxLength(1000);
+
+    entity.Property(x => x.DefaultWidgetType)
+        .IsRequired()
+        .HasMaxLength(50);
+
+    entity.Property(x => x.DefaultSqlQuery)
+        .IsRequired();
+
+    entity.Property(x => x.DefaultIcon)
+        .HasMaxLength(100);
+
+    entity.Property(x => x.DefaultColor)
+        .HasMaxLength(50);
+
+    entity.Property(x => x.CreatedBy)
+        .IsRequired()
+        .HasMaxLength(200);
+
+    entity.Property(x => x.UpdatedBy)
+        .HasMaxLength(200);
+
+    entity.Property(x => x.CreatedAt)
+        .IsRequired();
+
+    entity.Property(x => x.IsSystem)
+        .HasDefaultValue(false);
+
+    entity.Property(x => x.IsActive)
+        .HasDefaultValue(true);
+
+    entity.Property(x => x.DefaultGridWidth)
+        .HasDefaultValue(4);
+
+    entity.Property(x => x.DefaultGridHeight)
+        .HasDefaultValue(2);
+
+    /*
+     * PostgreSQL permits multiple null values in a normal unique index.
+     *
+     * System templates have TenantId = null.
+     * Tenant templates have a populated TenantId.
+     */
+    entity.HasIndex(x => new
+    {
+        x.TenantId,
+        x.TemplateCode
+    })
+    .IsUnique();
+
+    entity.HasIndex(x => new
+    {
+        x.TenantId,
+        x.IsActive,
+        x.Category
+    });
+
+    entity.HasIndex(x => new
+    {
+        x.IsSystem,
+        x.IsActive
+    });
+});
 
 
 // ------------------------------------------------------------
