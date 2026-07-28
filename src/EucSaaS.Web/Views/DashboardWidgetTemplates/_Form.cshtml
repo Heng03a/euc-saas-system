@@ -1,0 +1,168 @@
+@model EucSaaS.Web.ViewModels.DashboardWidgetTemplates.DashboardWidgetTemplateFormViewModel
+
+<div asp-validation-summary="ModelOnly"
+     class="alert alert-danger">
+</div>
+
+<div class="row">
+
+    <div class="col-md-6 mb-3">
+        <label asp-for="TemplateCode"
+               class="form-label"></label>
+
+        <input asp-for="TemplateCode"
+               class="form-control"
+               autocomplete="off" />
+
+        <span asp-validation-for="TemplateCode"
+              class="text-danger"></span>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <label asp-for="TemplateName"
+               class="form-label"></label>
+
+        <input asp-for="TemplateName"
+               class="form-control" />
+
+        <span asp-validation-for="TemplateName"
+              class="text-danger"></span>
+    </div>
+
+</div>
+
+<div class="row">
+
+    <div class="col-md-6 mb-3">
+        <label asp-for="Category"
+               class="form-label"></label>
+
+        <input asp-for="Category"
+               class="form-control" />
+
+        <span asp-validation-for="Category"
+              class="text-danger"></span>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <label asp-for="DefaultWidgetType"
+               class="form-label"></label>
+
+        <select asp-for="DefaultWidgetType"
+                class="form-select">
+
+            @foreach (var item in Model.WidgetTypes)
+            {
+                <option value="@item">
+                    @item
+                </option>
+            }
+
+        </select>
+
+        <span asp-validation-for="DefaultWidgetType"
+              class="text-danger"></span>
+    </div>
+
+</div>
+
+<div class="mb-3">
+
+    <label asp-for="Description"
+           class="form-label"></label>
+
+    <textarea asp-for="Description"
+              class="form-control"
+              rows="3">
+    </textarea>
+
+    <span asp-validation-for="Description"
+          class="text-danger"></span>
+
+</div>
+
+<div class="mb-3">
+
+    <label asp-for="DefaultSqlQuery"
+           class="form-label"></label>
+
+    <textarea asp-for="DefaultSqlQuery"
+              class="form-control font-monospace"
+              rows="10"
+              spellcheck="false">
+    </textarea>
+
+    <span asp-validation-for="DefaultSqlQuery"
+          class="text-danger"></span>
+
+</div>
+
+<div class="row">
+
+    <div class="col-md-3 mb-3">
+
+        <label asp-for="DefaultIcon"
+               class="form-label"></label>
+
+        <input asp-for="DefaultIcon"
+               class="form-control" />
+
+    </div>
+
+    <div class="col-md-3 mb-3">
+
+        <label asp-for="DefaultColor"
+               class="form-label"></label>
+
+        <input asp-for="DefaultColor"
+               class="form-control" />
+
+    </div>
+
+    <div class="col-md-3 mb-3">
+
+        <label asp-for="DefaultGridWidth"
+               class="form-label"></label>
+
+        <input asp-for="DefaultGridWidth"
+               type="number"
+               class="form-control" />
+
+    </div>
+
+    <div class="col-md-3 mb-3">
+
+        <label asp-for="DefaultGridHeight"
+               class="form-label"></label>
+
+        <input asp-for="DefaultGridHeight"
+               type="number"
+               class="form-control" />
+
+    </div>
+
+</div>
+
+<div class="form-check mb-4">
+
+    <input asp-for="IsActive"
+           class="form-check-input" />
+
+    <label asp-for="IsActive"
+           class="form-check-label">
+    </label>
+
+</div>
+
+@if (Model.IsSystem)
+{
+    <div class="alert alert-warning">
+
+        <strong>System Template</strong>
+
+        <br />
+
+        System templates are read-only.
+
+    </div>
+}

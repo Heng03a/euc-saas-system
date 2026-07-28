@@ -1,0 +1,145 @@
+@model EucSaaS.Web.ViewModels.DashboardWidgetTemplates.DashboardWidgetTemplateFormViewModel
+
+@{
+    ViewData["Title"] = "Edit Dashboard Widget Template";
+}
+
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h1 class="h3 mb-1">
+                Edit Dashboard Widget Template
+            </h1>
+
+            <p class="text-muted mb-0">
+                Update this tenant-specific reusable dashboard widget template.
+            </p>
+        </div>
+
+        <div class="d-flex gap-2">
+
+            @if (Model.Id.HasValue)
+            {
+                <a asp-action="Details"
+                   asp-route-id="@Model.Id"
+                   class="btn btn-outline-secondary">
+                    <i class="bi bi-eye me-1"></i>
+                    View Details
+                </a>
+            }
+
+            <a asp-action="Index"
+               class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>
+                Back to Templates
+            </a>
+
+        </div>
+
+    </div>
+
+    @if (Model.IsSystem)
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-shield-lock me-1"></i>
+            This is a system template and cannot be edited.
+        </div>
+    }
+
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-white">
+            <h2 class="h5 mb-0">
+                Template Information
+            </h2>
+        </div>
+
+        <div class="card-body">
+
+            <form asp-action="Edit"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <input asp-for="Id" type="hidden" />
+                <input asp-for="TenantId" type="hidden" />
+                <input asp-for="IsSystem" type="hidden" />
+
+                <partial name="_Form"
+                         model="Model" />
+
+                <hr />
+
+                <div class="d-flex justify-content-end gap-2">
+
+                    @if (Model.Id.HasValue)
+                    {
+                        <a asp-action="Details"
+                           asp-route-id="@Model.Id"
+                           class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-action="Index"
+                           class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    }
+
+                    @if (Model.IsSystem)
+                    {
+                        <button type="submit"
+                                class="btn btn-primary"
+                                disabled>
+                            <i class="bi bi-save me-1"></i>
+                            Save Changes
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="submit"
+                                class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i>
+                            Save Changes
+                        </button>
+                    }
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const templateCode =
+                document.getElementById("TemplateCode");
+
+            if (templateCode) {
+
+                templateCode.addEventListener("input", function () {
+
+                    this.value = this.value
+                        .toUpperCase()
+                        .replace(/[^A-Z0-9_]/g, "_");
+
+                });
+
+            }
+
+        });
+    </script>
+}

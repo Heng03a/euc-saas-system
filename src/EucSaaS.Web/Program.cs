@@ -13,6 +13,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
+using EucSaaS.Web.Services.DashboardWidgetTemplates;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +23,11 @@ builder.Services.AddScoped<DashboardQueryService>();
 builder.Services.AddScoped<DashboardFilterService>();
 builder.Services.AddScoped<DashboardDesignerQueryService>();
 builder.Services.AddScoped<DashboardChartResultValidator>();
+
+builder.Services.AddScoped<
+    IDashboardWidgetTemplateService,
+    DashboardWidgetTemplateService>();
+
 
 builder.Services.AddScoped<DashboardDesignerQueryService>();
 // ------------------------------------------------------------

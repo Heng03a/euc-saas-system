@@ -1,0 +1,1050 @@
+@model EucSaaS.Web.ViewModels.DashboardWidgetTemplates.DashboardWidgetTemplateIndexViewModel
+
+@{
+    ViewData["Title"] = "Dashboard Widget Templates";
+
+    var templates =
+        Model.Templates ??
+        new List<EucSaaS.Web.ViewModels.DashboardWidgetTemplates.DashboardWidgetTemplateListItemViewModel>();
+
+    var totalRecords = Model.TotalRecords;
+
+    var pageSize = Model.PageSize;
+
+    var totalPages =
+        pageSize == 0
+            ? 1
+            : Math.Max(
+                1,
+                (int)Math.Ceiling(
+                    totalRecords / (double)pageSize));
+
+    var currentPage =
+        Math.Max(1, Model.Page);
+
+    var startRecord =
+        totalRecords == 0
+            ? 0
+            : pageSize == 0
+                ? 1
+                : ((currentPage - 1) * pageSize) + 1;
+
+    var endRecord =
+        totalRecords == 0
+            ? 0
+            : pageSize == 0
+                ? totalRecords
+                : Math.Min(
+                    currentPage * pageSize,
+                    totalRecords);
+
+    var hasFilters =
+        !string.IsNullOrWhiteSpace(Model.Search) ||
+        !string.IsNullOrWhiteSpace(Model.Category) ||
+        !string.IsNullOrWhiteSpace(Model.Status) ||
+        !string.IsNullOrWhiteSpace(Model.Ownership);
+
+    string GetNextSortDirection(
+        string column)
+    {
+        return string.Equals(
+                   Model.SortBy,
+                   column,
+                   StringComparison.OrdinalIgnoreCase) &&
+               string.Equals(
+                   Model.SortDirection,
+                   "asc",
+                   StringComparison.OrdinalIgnoreCase)
+            ? "desc"
+            : "asc";
+    }
+
+    string GetSortIcon(
+        string column)
+    {
+        if (!string.Equals(
+                Model.SortBy,
+                column,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "bi-arrow-down-up";
+        }
+
+        return string.Equals(
+                Model.SortDirection,
+                "desc",
+                StringComparison.OrdinalIgnoreCase)
+            ? "bi-sort-down"
+            : "bi-sort-up";
+    }
+}
+
+<div class="container-fluid py-3">
+
+    @* ---------------------------------------------------------
+       Page header
+       --------------------------------------------------------- *@
+    <div class="d-flex flex-column flex-lg-row
+                justify-content-between align-items-lg-center
+                gap-3 mb-4">
+
+        <div>
+            <h1 class="h3 mb-1">
+                <i class="bi bi-layout-text-window-reverse me-2"></i>
+                Dashboard Widget Templates
+            </h1>
+
+            <p class="text-muted mb-0">
+                Manage global system templates and tenant-owned custom templates.
+            </p>
+        </div>
+
+        <div>
+            <a asp-action="Create"
+               class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>
+                Create Template
+            </a>
+        </div>
+    </div>
+
+    @* ---------------------------------------------------------
+       Messages
+       --------------------------------------------------------- *@
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success alert-dismissible fade show"
+             role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            @successMessage
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="alert alert-danger alert-dismissible fade show"
+             role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @errorMessage
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
+    @* ---------------------------------------------------------
+       Search and filters
+       --------------------------------------------------------- *@
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-body-tertiary">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">
+                    <i class="bi bi-funnel me-1"></i>
+                    Search and Filters
+                </span>
+
+                @if (hasFilters)
+                {
+                    <span class="badge text-bg-primary">
+                        Filters applied
+                    </span>
+                }
+            </div>
+        </div>
+
+        <div class="card-body">
+            <form asp-action="Index"
+                  method="get"
+                  id="filterForm">
+
+                <input type="hidden"
+                       name="page"
+                       value="1" />
+
+                <div class="row g-3">
+                    <div class="col-12 col-xl-4">
+                        <label for="search"
+                               class="form-label">
+                            Search
+                        </label>
+
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-search"></i>
+                            </span>
+
+                            <input type="search"
+                                   id="search"
+                                   name="search"
+                                   value="@Model.Search"
+                                   class="form-control"
+                                   placeholder="Code, name, category or description" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-2">
+                        <label for="category"
+                               class="form-label">
+                            Category
+                        </label>
+
+                        <select id="category"
+                                name="category"
+                                class="form-select">
+                            <option value="">
+                                All categories
+                            </option>
+
+                            @foreach (var category in Model.Categories)
+                            {
+                                if (string.Equals(
+                                        Model.Category,
+                                        category,
+                                        StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <option value="@category"
+                                            selected>
+                                        @category
+                                    </option>
+                                }
+                                else
+                                {
+                                    <option value="@category">
+                                        @category
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-2">
+                        <label for="status"
+                               class="form-label">
+                            Status
+                        </label>
+
+                        <select id="status"
+                                name="status"
+                                class="form-select">
+                            <option value=""
+                                    selected="@(string.IsNullOrWhiteSpace(Model.Status))">
+                                All statuses
+                            </option>
+
+                            <option value="active"
+                                    selected="@(string.Equals(Model.Status, "active", StringComparison.OrdinalIgnoreCase))">
+                                Active
+                            </option>
+
+                            <option value="inactive"
+                                    selected="@(string.Equals(Model.Status, "inactive", StringComparison.OrdinalIgnoreCase))">
+                                Inactive
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-2">
+                        <label for="ownership"
+                               class="form-label">
+                            Ownership
+                        </label>
+
+                        <select id="ownership"
+                                name="ownership"
+                                class="form-select">
+                            <option value=""
+                                    selected="@(string.IsNullOrWhiteSpace(Model.Ownership))">
+                                All templates
+                            </option>
+
+                            <option value="system"
+                                    selected="@(string.Equals(Model.Ownership, "system", StringComparison.OrdinalIgnoreCase))">
+                                System
+                            </option>
+
+                            <option value="custom"
+                                    selected="@(string.Equals(Model.Ownership, "custom", StringComparison.OrdinalIgnoreCase))">
+                                Tenant custom
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-2">
+                        <label for="pageSize"
+                               class="form-label">
+                            Page size
+                        </label>
+
+                        <select id="pageSize"
+                                name="pageSize"
+                                class="form-select">
+                            <option value="6"
+                                    selected="@(Model.PageSize == 6)">
+                                6
+                            </option>
+
+                            <option value="10"
+                                    selected="@(Model.PageSize == 10)">
+                                10
+                            </option>
+
+                            <option value="20"
+                                    selected="@(Model.PageSize == 20)">
+                                20
+                            </option>
+
+                            <option value="50"
+                                    selected="@(Model.PageSize == 50)">
+                                50
+                            </option>
+
+                            <option value="100"
+                                    selected="@(Model.PageSize == 100)">
+                                100
+                            </option>
+
+                            <option value="0"
+                                    selected="@(Model.PageSize == 0)">
+                                Show all
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <input type="hidden"
+                       name="sortBy"
+                       value="@Model.SortBy" />
+
+                <input type="hidden"
+                       name="sortDirection"
+                       value="@Model.SortDirection" />
+
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <button type="submit"
+                            class="btn btn-primary">
+                        <i class="bi bi-search me-1"></i>
+                        Apply
+                    </button>
+
+                    <a asp-action="Index"
+                       asp-route-sortBy="templatename"
+                       asp-route-sortDirection="asc"
+                       asp-route-page="1"
+                       asp-route-pageSize="@Model.PageSize"
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i>
+                        Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* ---------------------------------------------------------
+       Results
+       --------------------------------------------------------- *@
+    <div class="card shadow-sm">
+        <div class="card-header bg-body-tertiary">
+            <div class="d-flex flex-column flex-md-row
+                        justify-content-between align-items-md-center
+                        gap-2">
+
+                <span class="fw-semibold">
+                    <i class="bi bi-table me-1"></i>
+                    Templates
+                </span>
+
+                <span class="text-muted small">
+                    Showing @startRecord to @endRecord
+                    of @totalRecords templates
+                </span>
+            </div>
+        </div>
+
+        @if (templates.Count == 0)
+        {
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox display-5 text-muted"></i>
+
+                <h2 class="h5 mt-3">
+                    No templates found
+                </h2>
+
+                <p class="text-muted mb-3">
+                    No dashboard widget templates match the selected criteria.
+                </p>
+
+                @if (hasFilters)
+                {
+                    <a asp-action="Index"
+                       asp-route-pageSize="@Model.PageSize"
+                       class="btn btn-outline-primary">
+                        Clear filters
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover
+                              align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>
+                                <a asp-action="Index"
+                                   asp-route-search="@Model.Search"
+                                   asp-route-category="@Model.Category"
+                                   asp-route-status="@Model.Status"
+                                   asp-route-ownership="@Model.Ownership"
+                                   asp-route-sortBy="templatecode"
+                                   asp-route-sortDirection="@GetNextSortDirection("templatecode")"
+                                   asp-route-page="1"
+                                   asp-route-pageSize="@Model.PageSize"
+                                   class="text-decoration-none text-body">
+                                    Code
+                                    <i class="bi @GetSortIcon("templatecode") ms-1"></i>
+                                </a>
+                            </th>
+
+                            <th>
+                                <a asp-action="Index"
+                                   asp-route-search="@Model.Search"
+                                   asp-route-category="@Model.Category"
+                                   asp-route-status="@Model.Status"
+                                   asp-route-ownership="@Model.Ownership"
+                                   asp-route-sortBy="templatename"
+                                   asp-route-sortDirection="@GetNextSortDirection("templatename")"
+                                   asp-route-page="1"
+                                   asp-route-pageSize="@Model.PageSize"
+                                   class="text-decoration-none text-body">
+                                    Template
+                                    <i class="bi @GetSortIcon("templatename") ms-1"></i>
+                                </a>
+                            </th>
+
+                            <th>
+                                <a asp-action="Index"
+                                   asp-route-search="@Model.Search"
+                                   asp-route-category="@Model.Category"
+                                   asp-route-status="@Model.Status"
+                                   asp-route-ownership="@Model.Ownership"
+                                   asp-route-sortBy="category"
+                                   asp-route-sortDirection="@GetNextSortDirection("category")"
+                                   asp-route-page="1"
+                                   asp-route-pageSize="@Model.PageSize"
+                                   class="text-decoration-none text-body">
+                                    Category
+                                    <i class="bi @GetSortIcon("category") ms-1"></i>
+                                </a>
+                            </th>
+
+                            <th>
+                                <a asp-action="Index"
+                                   asp-route-search="@Model.Search"
+                                   asp-route-category="@Model.Category"
+                                   asp-route-status="@Model.Status"
+                                   asp-route-ownership="@Model.Ownership"
+                                   asp-route-sortBy="widgettype"
+                                   asp-route-sortDirection="@GetNextSortDirection("widgettype")"
+                                   asp-route-page="1"
+                                   asp-route-pageSize="@Model.PageSize"
+                                   class="text-decoration-none text-body">
+                                    Widget type
+                                    <i class="bi @GetSortIcon("widgettype") ms-1"></i>
+                                </a>
+                            </th>
+
+                            <th>
+                                <a asp-action="Index"
+                                   asp-route-search="@Model.Search"
+                                   asp-route-category="@Model.Category"
+                                   asp-route-status="@Model.Status"
+                                   asp-route-ownership="@Model.Ownership"
+                                   asp-route-sortBy="ownership"
+                                   asp-route-sortDirection="@GetNextSortDirection("ownership")"
+                                   asp-route-page="1"
+                                   asp-route-pageSize="@Model.PageSize"
+                                   class="text-decoration-none text-body">
+                                    Ownership
+                                    <i class="bi @GetSortIcon("ownership") ms-1"></i>
+                                </a>
+                            </th>
+
+                            <th>
+                                <a asp-action="Index"
+                                   asp-route-search="@Model.Search"
+                                   asp-route-category="@Model.Category"
+                                   asp-route-status="@Model.Status"
+                                   asp-route-ownership="@Model.Ownership"
+                                   asp-route-sortBy="status"
+                                   asp-route-sortDirection="@GetNextSortDirection("status")"
+                                   asp-route-page="1"
+                                   asp-route-pageSize="@Model.PageSize"
+                                   class="text-decoration-none text-body">
+                                    Status
+                                    <i class="bi @GetSortIcon("status") ms-1"></i>
+                                </a>
+                            </th>
+
+                            <th>
+                                <a asp-action="Index"
+                                   asp-route-search="@Model.Search"
+                                   asp-route-category="@Model.Category"
+                                   asp-route-status="@Model.Status"
+                                   asp-route-ownership="@Model.Ownership"
+                                   asp-route-sortBy="updatedat"
+                                   asp-route-sortDirection="@GetNextSortDirection("updatedat")"
+                                   asp-route-page="1"
+                                   asp-route-pageSize="@Model.PageSize"
+                                   class="text-decoration-none text-body">
+                                    Last changed
+                                    <i class="bi @GetSortIcon("updatedat") ms-1"></i>
+                                </a>
+                            </th>
+
+                            <th class="text-end">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var item in templates)
+                        {
+                            var changedAt =
+                                item.UpdatedAt ??
+                                item.CreatedAt;
+
+                            <tr>
+                                <td>
+                                    <code>@item.TemplateCode</code>
+                                </td>
+
+                                <td style="min-width: 220px;">
+                                    <div class="fw-semibold">
+                                        @item.TemplateName
+                                    </div>
+
+                                    @if (!string.IsNullOrWhiteSpace(
+                                            item.Description))
+                                    {
+                                        <div class="small text-muted
+                                                    text-truncate"
+                                             style="max-width: 350px;"
+                                             title="@item.Description">
+                                            @item.Description
+                                        </div>
+                                    }
+                                </td>
+
+                                <td>
+                                    <span class="badge
+                                                 text-bg-light
+                                                 border">
+                                        @item.Category
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @item.DefaultWidgetType
+                                </td>
+
+                                <td>
+                                    @if (item.IsSystem)
+                                    {
+                                        <span class="badge text-bg-dark">
+                                            <i class="bi bi-shield-lock me-1"></i>
+                                            System
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge text-bg-info">
+                                            <i class="bi bi-building me-1"></i>
+                                            Tenant
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge text-bg-success">
+                                            Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge text-bg-secondary">
+                                            Inactive
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <span title="@changedAt.ToString("yyyy-MM-dd HH:mm:ss")">
+                                        @changedAt.ToLocalTime()
+                                            .ToString("dd MMM yyyy HH:mm")
+                                    </span>
+                                </td>
+
+                                <td class="text-end"
+                                    style="min-width: 310px;">
+
+                                    <div class="d-inline-flex
+                                                flex-wrap
+                                                justify-content-end
+                                                gap-1">
+
+                                        @* View is allowed for both system
+                                           and accessible tenant templates. *@
+                                        <a asp-action="Details"
+                                           asp-route-id="@item.Id"
+                                           class="btn btn-sm
+                                                  btn-outline-primary"
+                                           title="View details">
+                                            <i class="bi bi-eye"></i>
+                                            <span class="d-none d-xxl-inline">
+                                                View
+                                            </span>
+                                        </a>
+
+                                        @* Any accessible template may be cloned.
+                                           The clone becomes tenant-owned. *@
+                                        <form asp-action="Clone"
+                                              asp-route-id="@item.Id"
+                                              method="post"
+                                              class="d-inline
+                                                     clone-template-form"
+                                              data-template-name="@item.TemplateName">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <button type="submit"
+                                                    class="btn btn-sm
+                                                           btn-outline-success"
+                                                    title="Clone template">
+                                                <i class="bi bi-copy"></i>
+                                                <span class="d-none d-xxl-inline">
+                                                    Clone
+                                                </span>
+                                            </button>
+                                        </form>
+
+                                        @if (!item.IsSystem)
+                                        {
+                                            @* Tenant custom templates are editable. *@
+                                            <a asp-action="Edit"
+                                               asp-route-id="@item.Id"
+                                               class="btn btn-sm
+                                                      btn-outline-warning"
+                                               title="Edit template">
+                                                <i class="bi bi-pencil-square"></i>
+                                                <span class="d-none d-xxl-inline">
+                                                    Edit
+                                                </span>
+                                            </a>
+
+                                            @* Toggle status. *@
+                                            <form asp-action="ToggleStatus"
+                                                  asp-route-id="@item.Id"
+                                                  method="post"
+                                                  class="d-inline
+                                                         toggle-template-form"
+                                                  data-template-name="@item.TemplateName"
+                                                  data-current-status="@(item.IsActive ? "Active" : "Inactive")">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <input type="hidden"
+                                                       name="returnSearch"
+                                                       value="@Model.Search" />
+
+                                                <input type="hidden"
+                                                       name="returnCategory"
+                                                       value="@Model.Category" />
+
+                                                <input type="hidden"
+                                                       name="returnStatus"
+                                                       value="@Model.Status" />
+
+                                                <input type="hidden"
+                                                       name="returnOwnership"
+                                                       value="@Model.Ownership" />
+
+                                                <input type="hidden"
+                                                       name="returnSortBy"
+                                                       value="@Model.SortBy" />
+
+                                                <input type="hidden"
+                                                       name="returnSortDirection"
+                                                       value="@Model.SortDirection" />
+
+                                                <input type="hidden"
+                                                       name="returnPage"
+                                                       value="@Model.Page" />
+
+                                                <input type="hidden"
+                                                       name="returnPageSize"
+                                                       value="@Model.PageSize" />
+
+                                                <button type="submit"
+                                                        class="btn btn-sm
+                                                               @(item.IsActive
+                                                                   ? "btn-outline-secondary"
+                                                                   : "btn-outline-success")"
+                                                        title="Change status">
+                                                    <i class="bi
+                                                              @(item.IsActive
+                                                                  ? "bi-pause-circle"
+                                                                  : "bi-play-circle")">
+                                                    </i>
+
+                                                    <span class="d-none d-xxl-inline">
+                                                        @(item.IsActive
+                                                            ? "Disable"
+                                                            : "Enable")
+                                                    </span>
+                                                </button>
+                                            </form>
+
+                                            @* Tenant custom templates may be deleted. *@
+                                            <form asp-action="Delete"
+                                                  asp-route-id="@item.Id"
+                                                  method="post"
+                                                  class="d-inline
+                                                         delete-template-form"
+                                                  data-template-name="@item.TemplateName">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <input type="hidden"
+                                                       name="returnSearch"
+                                                       value="@Model.Search" />
+
+                                                <input type="hidden"
+                                                       name="returnCategory"
+                                                       value="@Model.Category" />
+
+                                                <input type="hidden"
+                                                       name="returnStatus"
+                                                       value="@Model.Status" />
+
+                                                <input type="hidden"
+                                                       name="returnOwnership"
+                                                       value="@Model.Ownership" />
+
+                                                <input type="hidden"
+                                                       name="returnSortBy"
+                                                       value="@Model.SortBy" />
+
+                                                <input type="hidden"
+                                                       name="returnSortDirection"
+                                                       value="@Model.SortDirection" />
+
+                                                <input type="hidden"
+                                                       name="returnPage"
+                                                       value="@Model.Page" />
+
+                                                <input type="hidden"
+                                                       name="returnPageSize"
+                                                       value="@Model.PageSize" />
+
+                                                <button type="submit"
+                                                        class="btn btn-sm
+                                                               btn-outline-danger"
+                                                        title="Delete template">
+                                                    <i class="bi bi-trash"></i>
+                                                    <span class="d-none d-xxl-inline">
+                                                        Delete
+                                                    </span>
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-sm
+                                                           btn-outline-secondary"
+                                                    disabled
+                                                    title="System templates are read-only">
+                                                <i class="bi bi-lock"></i>
+                                                <span class="d-none d-xxl-inline">
+                                                    Read-only
+                                                </span>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @* -------------------------------------------------
+               Paging
+               ------------------------------------------------- *@
+            @if (pageSize > 0 &&
+                 totalPages > 1)
+            {
+                <div class="card-footer bg-body">
+                    <div class="d-flex flex-column flex-md-row
+                                justify-content-between
+                                align-items-md-center
+                                gap-3">
+
+                        <span class="small text-muted">
+                            Page @currentPage of @totalPages
+                        </span>
+
+                        <nav aria-label="Template paging">
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item
+                                           @(currentPage <= 1
+                                               ? "disabled"
+                                               : string.Empty)">
+                                    <a class="page-link"
+                                       asp-action="Index"
+                                       asp-route-search="@Model.Search"
+                                       asp-route-category="@Model.Category"
+                                       asp-route-status="@Model.Status"
+                                       asp-route-ownership="@Model.Ownership"
+                                       asp-route-sortBy="@Model.SortBy"
+                                       asp-route-sortDirection="@Model.SortDirection"
+                                       asp-route-page="@(currentPage - 1)"
+                                       asp-route-pageSize="@Model.PageSize">
+                                        Previous
+                                    </a>
+                                </li>
+
+                                @{
+                                    var firstPage =
+                                        Math.Max(
+                                            1,
+                                            currentPage - 2);
+
+                                    var lastPage =
+                                        Math.Min(
+                                            totalPages,
+                                            currentPage + 2);
+                                }
+
+                                @if (firstPage > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           asp-action="Index"
+                                           asp-route-search="@Model.Search"
+                                           asp-route-category="@Model.Category"
+                                           asp-route-status="@Model.Status"
+                                           asp-route-ownership="@Model.Ownership"
+                                           asp-route-sortBy="@Model.SortBy"
+                                           asp-route-sortDirection="@Model.SortDirection"
+                                           asp-route-page="1"
+                                           asp-route-pageSize="@Model.PageSize">
+                                            1
+                                        </a>
+                                    </li>
+
+                                    @if (firstPage > 2)
+                                    {
+                                        <li class="page-item disabled">
+                                            <span class="page-link">
+                                                …
+                                            </span>
+                                        </li>
+                                    }
+                                }
+
+                                @for (var pageNumber = firstPage;
+                                      pageNumber <= lastPage;
+                                      pageNumber++)
+                                {
+                                    <li class="page-item
+                                               @(pageNumber == currentPage
+                                                   ? "active"
+                                                   : string.Empty)">
+                                        <a class="page-link"
+                                           asp-action="Index"
+                                           asp-route-search="@Model.Search"
+                                           asp-route-category="@Model.Category"
+                                           asp-route-status="@Model.Status"
+                                           asp-route-ownership="@Model.Ownership"
+                                           asp-route-sortBy="@Model.SortBy"
+                                           asp-route-sortDirection="@Model.SortDirection"
+                                           asp-route-page="@pageNumber"
+                                           asp-route-pageSize="@Model.PageSize">
+                                            @pageNumber
+                                        </a>
+                                    </li>
+                                }
+
+                                @if (lastPage < totalPages)
+                                {
+                                    @if (lastPage <
+                                         totalPages - 1)
+                                    {
+                                        <li class="page-item disabled">
+                                            <span class="page-link">
+                                                …
+                                            </span>
+                                        </li>
+                                    }
+
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           asp-action="Index"
+                                           asp-route-search="@Model.Search"
+                                           asp-route-category="@Model.Category"
+                                           asp-route-status="@Model.Status"
+                                           asp-route-ownership="@Model.Ownership"
+                                           asp-route-sortBy="@Model.SortBy"
+                                           asp-route-sortDirection="@Model.SortDirection"
+                                           asp-route-page="@totalPages"
+                                           asp-route-pageSize="@Model.PageSize">
+                                            @totalPages
+                                        </a>
+                                    </li>
+                                }
+
+                                <li class="page-item
+                                           @(currentPage >= totalPages
+                                               ? "disabled"
+                                               : string.Empty)">
+                                    <a class="page-link"
+                                       asp-action="Index"
+                                       asp-route-search="@Model.Search"
+                                       asp-route-category="@Model.Category"
+                                       asp-route-status="@Model.Status"
+                                       asp-route-ownership="@Model.Ownership"
+                                       asp-route-sortBy="@Model.SortBy"
+                                       asp-route-sortDirection="@Model.SortDirection"
+                                       asp-route-page="@(currentPage + 1)"
+                                       asp-route-pageSize="@Model.PageSize">
+                                        Next
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@section Scripts
+{
+    <script>
+        (() => {
+            "use strict";
+
+            const filterForm =
+                document.getElementById("filterForm");
+
+            const automaticFilterFields = [
+                document.getElementById("category"),
+                document.getElementById("status"),
+                document.getElementById("ownership"),
+                document.getElementById("pageSize")
+            ];
+
+            automaticFilterFields.forEach(field => {
+                if (!field || !filterForm) {
+                    return;
+                }
+
+                field.addEventListener("change", () => {
+                    filterForm.submit();
+                });
+            });
+
+            document
+                .querySelectorAll(".clone-template-form")
+                .forEach(form => {
+                    form.addEventListener(
+                        "submit",
+                        event => {
+                            const templateName =
+                                form.dataset.templateName ??
+                                "this template";
+
+                            const confirmed =
+                                window.confirm(
+                                    `Clone "${templateName}"?\n\n` +
+                                    "A tenant-owned editable copy will be created. " +
+                                    "The original template will not be changed."
+                                );
+
+                            if (!confirmed) {
+                                event.preventDefault();
+                            }
+                        });
+                });
+
+            document
+                .querySelectorAll(".toggle-template-form")
+                .forEach(form => {
+                    form.addEventListener(
+                        "submit",
+                        event => {
+                            const templateName =
+                                form.dataset.templateName ??
+                                "this template";
+
+                            const currentStatus =
+                                form.dataset.currentStatus ??
+                                "current";
+
+                            const nextStatus =
+                                currentStatus === "Active"
+                                    ? "Inactive"
+                                    : "Active";
+
+                            const confirmed =
+                                window.confirm(
+                                    `Change "${templateName}" from ` +
+                                    `${currentStatus} to ${nextStatus}?`
+                                );
+
+                            if (!confirmed) {
+                                event.preventDefault();
+                            }
+                        });
+                });
+
+            document
+                .querySelectorAll(".delete-template-form")
+                .forEach(form => {
+                    form.addEventListener(
+                        "submit",
+                        event => {
+                            const templateName =
+                                form.dataset.templateName ??
+                                "this template";
+
+                            const confirmed =
+                                window.confirm(
+                                    `Delete "${templateName}"?\n\n` +
+                                    "This action cannot be undone."
+                                );
+
+                            if (!confirmed) {
+                                event.preventDefault();
+                            }
+                        });
+                });
+        })();
+    </script>
+}

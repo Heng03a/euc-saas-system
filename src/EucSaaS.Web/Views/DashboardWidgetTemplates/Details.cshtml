@@ -1,0 +1,558 @@
+@model EucSaaS.Web.ViewModels.DashboardWidgetTemplates.DashboardWidgetTemplateDetailsViewModel
+
+@{
+    ViewData["Title"] = "Dashboard Widget Template Details";
+}
+
+<div class="container-fluid">
+
+    <div class="d-flex flex-column flex-lg-row
+                justify-content-between align-items-lg-center
+                gap-3 mb-4">
+
+        <div>
+            <h1 class="h3 mb-1">
+                Dashboard Widget Template Details
+            </h1>
+
+            <p class="text-muted mb-0">
+                Review the reusable configuration and SQL definition
+                for this dashboard widget template.
+            </p>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+
+            @if (!Model.IsSystem)
+            {
+                <a asp-action="Edit"
+                   asp-route-id="@Model.Id"
+                   class="btn btn-primary">
+
+                    <i class="bi bi-pencil-square me-1"></i>
+                    Edit Template
+
+                </a>
+            }
+
+            <a asp-action="Index"
+               class="btn btn-outline-secondary">
+
+                <i class="bi bi-arrow-left me-1"></i>
+                Back to Templates
+
+            </a>
+
+        </div>
+
+    </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success alert-dismissible fade show"
+             role="alert">
+
+            <i class="bi bi-check-circle me-1"></i>
+            @successMessage
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+
+        </div>
+    }
+
+    @if (Model.IsSystem)
+    {
+        <div class="alert alert-info">
+
+            <div class="d-flex align-items-start">
+
+                <i class="bi bi-shield-lock fs-4 me-3"></i>
+
+                <div>
+                    <strong>System template</strong>
+
+                    <div>
+                        This template is provided by the platform and is
+                        available to all tenants. It cannot be edited or deleted.
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+    <div class="row g-4">
+
+        <div class="col-12 col-xl-8">
+
+            <div class="card shadow-sm mb-4">
+
+                <div class="card-header bg-white">
+
+                    <div class="d-flex justify-content-between
+                                align-items-center">
+
+                        <h2 class="h5 mb-0">
+                            Template Information
+                        </h2>
+
+                        <div class="d-flex gap-2">
+
+                            @if (Model.IsSystem)
+                            {
+                                <span class="badge bg-primary">
+                                    <i class="bi bi-shield-check me-1"></i>
+                                    System
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-building me-1"></i>
+                                    Tenant
+                                </span>
+                            }
+
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge bg-success">
+                                    Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">
+                                    Inactive
+                                </span>
+                            }
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="card-body">
+
+                    <dl class="row mb-0">
+
+                        <dt class="col-sm-4 col-lg-3">
+                            Template Code
+                        </dt>
+
+                        <dd class="col-sm-8 col-lg-9">
+                            <code>@Model.TemplateCode</code>
+                        </dd>
+
+                        <dt class="col-sm-4 col-lg-3">
+                            Template Name
+                        </dt>
+
+                        <dd class="col-sm-8 col-lg-9">
+                            @Model.TemplateName
+                        </dd>
+
+                        <dt class="col-sm-4 col-lg-3">
+                            Category
+                        </dt>
+
+                        <dd class="col-sm-8 col-lg-9">
+                            @if (string.IsNullOrWhiteSpace(Model.Category))
+                            {
+                                <span class="text-muted">
+                                    Not specified
+                                </span>
+                            }
+                            else
+                            {
+                                @Model.Category
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4 col-lg-3">
+                            Widget Type
+                        </dt>
+
+                        <dd class="col-sm-8 col-lg-9">
+                            <span class="badge bg-light text-dark border">
+                                @Model.DefaultWidgetType
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-4 col-lg-3">
+                            Description
+                        </dt>
+
+                        <dd class="col-sm-8 col-lg-9">
+                            @if (string.IsNullOrWhiteSpace(Model.Description))
+                            {
+                                <span class="text-muted">
+                                    No description provided.
+                                </span>
+                            }
+                            else
+                            {
+                                <div class="text-break"
+                                     style="white-space: pre-wrap;">@Model.Description</div>
+                            }
+                        </dd>
+
+                    </dl>
+
+                </div>
+
+            </div>
+
+            <div class="card shadow-sm">
+
+                <div class="card-header bg-white">
+
+                    <div class="d-flex justify-content-between
+                                align-items-center gap-2">
+
+                        <h2 class="h5 mb-0">
+                            Default SQL Query
+                        </h2>
+
+                        <button type="button"
+                                id="copySqlButton"
+                                class="btn btn-sm btn-outline-secondary">
+
+                            <i class="bi bi-clipboard me-1"></i>
+                            Copy SQL
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <div class="card-body">
+
+                    @if (string.IsNullOrWhiteSpace(Model.DefaultSqlQuery))
+                    {
+                        <div class="alert alert-warning mb-0">
+
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            No default SQL query has been configured.
+
+                        </div>
+                    }
+                    else
+                    {
+                        <pre id="sqlQuery"
+                             class="bg-light border rounded p-3 mb-0
+                                    font-monospace overflow-auto"
+                             style="min-height: 220px;
+                                    max-height: 520px;
+                                    white-space: pre-wrap;
+                                    word-break: break-word;"><code>@Model.DefaultSqlQuery</code></pre>
+                    }
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-12 col-xl-4">
+
+            <div class="card shadow-sm mb-4">
+
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">
+                        Display Defaults
+                    </h2>
+                </div>
+
+                <div class="card-body">
+
+                    <dl class="row mb-0">
+
+                        <dt class="col-5">
+                            Icon
+                        </dt>
+
+                        <dd class="col-7">
+                            @if (string.IsNullOrWhiteSpace(Model.DefaultIcon))
+                            {
+                                <span class="text-muted">
+                                    Not specified
+                                </span>
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center gap-2">
+
+                                    <i class="@Model.DefaultIcon fs-5"></i>
+
+                                    <code class="small">
+                                        @Model.DefaultIcon
+                                    </code>
+
+                                </div>
+                            }
+                        </dd>
+
+                        <dt class="col-5">
+                            Colour
+                        </dt>
+
+                        <dd class="col-7">
+                            @if (string.IsNullOrWhiteSpace(Model.DefaultColor))
+                            {
+                                <span class="text-muted">
+                                    Not specified
+                                </span>
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center gap-2">
+
+                                    <span class="border rounded"
+                                          style="display:inline-block;
+                                                 width:24px;
+                                                 height:24px;
+                                                 background-color:@Model.DefaultColor;">
+                                    </span>
+
+                                    <code class="small">
+                                        @Model.DefaultColor
+                                    </code>
+
+                                </div>
+                            }
+                        </dd>
+
+                        <dt class="col-5">
+                            Grid Width
+                        </dt>
+
+                        <dd class="col-7">
+                            @Model.DefaultGridWidth
+                        </dd>
+
+                        <dt class="col-5">
+                            Grid Height
+                        </dt>
+
+                        <dd class="col-7">
+                            @Model.DefaultGridHeight
+                        </dd>
+
+                    </dl>
+
+                </div>
+
+            </div>
+
+            <div class="card shadow-sm mb-4">
+
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">
+                        Ownership
+                    </h2>
+                </div>
+
+                <div class="card-body">
+
+                    <dl class="row mb-0">
+
+                        <dt class="col-5">
+                            Scope
+                        </dt>
+
+                        <dd class="col-7">
+                            @if (Model.IsSystem)
+                            {
+                                <span>All tenants</span>
+                            }
+                            else
+                            {
+                                <span>Current tenant</span>
+                            }
+                        </dd>
+
+                        <dt class="col-5">
+                            Template ID
+                        </dt>
+
+                        <dd class="col-7">
+                            <code class="small text-break">
+                                @Model.Id
+                            </code>
+                        </dd>
+
+                    </dl>
+
+                </div>
+
+            </div>
+
+            <div class="card shadow-sm">
+
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">
+                        Audit Information
+                    </h2>
+                </div>
+
+                <div class="card-body">
+
+                    <dl class="row mb-0">
+
+                        <dt class="col-5">
+                            Created By
+                        </dt>
+
+                        <dd class="col-7">
+                            @if (string.IsNullOrWhiteSpace(Model.CreatedBy))
+                            {
+                                <span class="text-muted">
+                                    Unknown
+                                </span>
+                            }
+                            else
+                            {
+                                @Model.CreatedBy
+                            }
+                        </dd>
+
+                        <dt class="col-5">
+                            Created At
+                        </dt>
+
+                        <dd class="col-7">
+                            @Model.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                        </dd>
+
+                        <dt class="col-5">
+                            Updated By
+                        </dt>
+
+                        <dd class="col-7">
+                            @if (string.IsNullOrWhiteSpace(Model.UpdatedBy))
+                            {
+                                <span class="text-muted">
+                                    Not updated
+                                </span>
+                            }
+                            else
+                            {
+                                @Model.UpdatedBy
+                            }
+                        </dd>
+
+                        <dt class="col-5">
+                            Updated At
+                        </dt>
+
+                        <dd class="col-7">
+                            @if (Model.UpdatedAt.HasValue)
+                            {
+                                @Model.UpdatedAt.Value.ToString(
+                                    "dd MMM yyyy HH:mm")
+                            }
+                            else
+                            {
+                                <span class="text-muted">
+                                    Not updated
+                                </span>
+                            }
+                        </dd>
+
+                    </dl>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const copyButton =
+                document.getElementById("copySqlButton");
+
+            const sqlQuery =
+                document.getElementById("sqlQuery");
+
+            if (!copyButton || !sqlQuery) {
+                return;
+            }
+
+            copyButton.addEventListener("click", async function () {
+
+                const originalHtml = copyButton.innerHTML;
+
+                try {
+
+                    await navigator.clipboard.writeText(
+                        sqlQuery.innerText);
+
+                    copyButton.innerHTML =
+                        '<i class="bi bi-check-circle me-1"></i>' +
+                        'Copied';
+
+                    copyButton.classList.remove(
+                        "btn-outline-secondary");
+
+                    copyButton.classList.add(
+                        "btn-success");
+
+                    window.setTimeout(function () {
+
+                        copyButton.innerHTML = originalHtml;
+
+                        copyButton.classList.remove(
+                            "btn-success");
+
+                        copyButton.classList.add(
+                            "btn-outline-secondary");
+
+                    }, 1800);
+
+                }
+                catch {
+
+                    copyButton.innerHTML =
+                        '<i class="bi bi-x-circle me-1"></i>' +
+                        'Copy failed';
+
+                    copyButton.classList.remove(
+                        "btn-outline-secondary");
+
+                    copyButton.classList.add(
+                        "btn-danger");
+
+                    window.setTimeout(function () {
+
+                        copyButton.innerHTML = originalHtml;
+
+                        copyButton.classList.remove(
+                            "btn-danger");
+
+                        copyButton.classList.add(
+                            "btn-outline-secondary");
+
+                    }, 1800);
+
+                }
+
+            });
+
+        });
+    </script>
+}
