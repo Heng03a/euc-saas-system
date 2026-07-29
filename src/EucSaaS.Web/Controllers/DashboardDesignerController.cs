@@ -96,6 +96,145 @@ public class DashboardDesignerController : Controller
         return View(model);
     }
 
+// ------------------------------------------------------------
+// Create dashboard widget from widget template
+// ------------------------------------------------------------
+[HttpGet(
+    "/DashboardDesigner/CreateFromTemplate/{templateId:guid}")]
+public async Task<IActionResult> CreateFromTemplate(
+    Guid templateId)
+{
+    var accessScope =
+        _scopeResolver.Resolve();
+
+    if (accessScope.TenantId == Guid.Empty)
+    {
+        TempData["ErrorMessage"] =
+            "The authenticated user does not have a valid tenant.";
+
+        return RedirectToAction(
+            "Index",
+            "DashboardWidgetTemplates");
+    }
+
+    /*
+     * A tenant may use:
+     *
+     * 1. An active global system template.
+     * 2. An active template belonging to its own tenant.
+     *
+     * It must never use another tenant's template.
+     */
+    var template =
+        await _context.DashboardWidgetTemplates
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                x =>
+                    x.Id == templateId &&
+                    x.IsActive &&
+                    (
+                        x.TenantId == null ||
+                        x.TenantId == accessScope.TenantId
+                    ));
+
+    if (template == null)
+    {
+        TempData["ErrorMessage"] =
+            "The selected widget template was not found, " +
+            "is inactive, or is not available to this tenant.";
+
+        return RedirectToAction(
+            "Index",
+            "DashboardWidgetTemplates");
+    }
+
+    await LoadDashboardTemplatesAsync();
+
+    var widgetCode =
+        await GenerateWidgetCodeFromTemplateAsync(
+            template.TemplateCode);
+
+    var maximumDisplayOrder =
+        await _context.DashboardWidgetDefinitions
+            .MaxAsync(x => (int?)x.DisplayOrder)
+        ?? 0;
+
+    var model =
+        new DashboardWidgetDefinitionViewModel
+        {
+            Id =
+                Guid.NewGuid(),
+
+            WidgetCode =
+                widgetCode,
+
+            WidgetName =
+                template.TemplateName,
+
+            WidgetType =
+                template.DefaultWidgetType,
+
+            Description =
+                template.Description ?? string.Empty,
+
+            SqlQuery =
+                template.DefaultSqlQuery,
+
+            DisplayOrder =
+                maximumDisplayOrder + 1,
+
+            /*
+             * DashboardWidgetDefinition currently uses
+             * WidgetWidth and Height in its Create workflow.
+             *
+             * Template defaults are mapped into those fields.
+             */
+            WidgetWidth =
+                template.DefaultGridWidth <= 0
+                    ? 4
+                    : template.DefaultGridWidth,
+
+            RowPosition =
+                1,
+
+            ColumnPosition =
+                1,
+
+            Height =
+                ConvertTemplateGridHeightToPixels(
+                    template.DefaultGridHeight),
+
+            Icon =
+                string.IsNullOrWhiteSpace(
+                    template.DefaultIcon)
+                    ? "bi bi-grid"
+                    : template.DefaultIcon,
+
+            Color =
+                string.IsNullOrWhiteSpace(
+                    template.DefaultColor)
+                    ? "primary"
+                    : template.DefaultColor,
+
+            /*
+             * Generated widgets start inactive.
+             * The administrator should review and test them
+             * before activation.
+             */
+            IsActive =
+                false
+        };
+
+    TempData["InfoMessage"] =
+        $"Widget fields were loaded from template " +
+        $"'{template.TemplateName}'. " +
+        $"Review and test the widget before saving.";
+
+    return View(
+        "Create",
+        model);
+}
+
     // ------------------------------------------------------------
     // Create widget - POST
     // ------------------------------------------------------------
@@ -752,4 +891,99 @@ public class DashboardDesignerController : Controller
             }
         }
     }
+
+// ------------------------------------------------------------
+// Generate a unique widget code from a template code
+// ------------------------------------------------------------
+private async Task<string>
+    GenerateWidgetCodeFromTemplateAsync(
+        string templateCode)
+{
+    var normalizedCode =
+        NormalizeWidgetCode(templateCode);
+
+    if (string.IsNullOrWhiteSpace(normalizedCode))
+    {
+        normalizedCode =
+            "DASHBOARD_WIDGET";
+    }
+
+    var candidateCode =
+        normalizedCode;
+
+    var counter =
+        1;
+
+    while (
+        await _context.DashboardWidgetDefinitions
+            .AnyAsync(
+                x => x.WidgetCode == candidateCode))
+    {
+        counter++;
+
+        candidateCode =
+            $"{normalizedCode}_{counter}";
+    }
+
+    return candidateCode;
+}
+
+// ------------------------------------------------------------
+// Normalize template code for use as a widget code
+// ------------------------------------------------------------
+private static string NormalizeWidgetCode(
+    string? value)
+{
+    if (string.IsNullOrWhiteSpace(value))
+    {
+        return string.Empty;
+    }
+
+    var characters =
+        value
+            .Trim()
+            .ToUpperInvariant()
+            .Select(
+                character =>
+                    char.IsLetterOrDigit(character)
+                        ? character
+                        : '_')
+            .ToArray();
+
+    var normalized =
+        new string(characters);
+
+    while (normalized.Contains("__"))
+    {
+        normalized =
+            normalized.Replace("__", "_");
+    }
+
+    return normalized.Trim('_');
+}
+
+// ------------------------------------------------------------
+// Convert template grid height to widget pixel height
+// ------------------------------------------------------------
+private static int ConvertTemplateGridHeightToPixels(
+    int gridHeight)
+{
+    /*
+     * Existing Dashboard Designer stores Height in pixels,
+     * while the template stores DefaultGridHeight as a
+     * logical grid-unit value.
+     */
+    if (gridHeight <= 0)
+    {
+        return 300;
+    }
+
+    const int pixelsPerGridUnit =
+        150;
+
+    return Math.Max(
+        150,
+        gridHeight * pixelsPerGridUnit);
+}
+
 }

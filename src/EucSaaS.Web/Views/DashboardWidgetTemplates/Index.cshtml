@@ -77,7 +77,83 @@
             ? "bi-sort-down"
             : "bi-sort-up";
     }
+
+    string GetWidgetTypeIcon(
+        string? widgetType)
+    {
+        return widgetType?.Trim().ToLowerInvariant() switch
+        {
+            "card" => "bi-credit-card-2-front",
+            "table" => "bi-table",
+            "pie" => "bi-pie-chart",
+            "bar" => "bi-bar-chart",
+            "line" => "bi-graph-up",
+            "doughnut" => "bi-circle",
+            "chart" => "bi-bar-chart-line",
+            _ => "bi-grid"
+        };
+    }
 }
+
+<style>
+    .template-view-switcher .nav-link {
+        min-width: 110px;
+    }
+
+    .template-gallery-card {
+        height: 100%;
+        transition:
+            transform 0.15s ease-in-out,
+            box-shadow 0.15s ease-in-out;
+    }
+
+    .template-gallery-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .12) !important;
+    }
+
+    .template-gallery-icon {
+        width: 58px;
+        height: 58px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        border-radius: .9rem;
+        font-size: 1.6rem;
+    }
+
+    .template-gallery-heading {
+        min-width: 0;
+    }
+
+    .template-gallery-title {
+        overflow-wrap: anywhere;
+    }
+
+    .template-gallery-code {
+        display: block;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
+
+    .template-gallery-description {
+        min-height: 3.25rem;
+    }
+
+    .template-gallery-meta {
+        border-radius: .75rem;
+    }
+
+    .template-gallery-create-button {
+        min-width: 145px;
+    }
+
+    .template-gallery-actions .btn,
+    .template-gallery-actions form {
+        flex: 0 0 auto;
+    }
+</style>
 
 <div class="container-fluid py-3">
 
@@ -354,14 +430,54 @@
        --------------------------------------------------------- *@
     <div class="card shadow-sm">
         <div class="card-header bg-body-tertiary">
-            <div class="d-flex flex-column flex-md-row
-                        justify-content-between align-items-md-center
-                        gap-2">
+            <div class="d-flex flex-column flex-lg-row
+                        justify-content-between align-items-lg-center
+                        gap-3">
 
-                <span class="fw-semibold">
-                    <i class="bi bi-table me-1"></i>
-                    Templates
-                </span>
+                <div class="d-flex flex-column flex-sm-row
+                            align-items-sm-center gap-3">
+
+                    <span class="fw-semibold">
+                        <i class="bi bi-collection me-1"></i>
+                        Templates
+                    </span>
+
+                    <ul class="nav nav-pills
+                               template-view-switcher"
+                        id="templateViewTabs"
+                        role="tablist">
+
+                        <li class="nav-item"
+                            role="presentation">
+                            <button class="nav-link active"
+                                    id="table-view-tab"
+                                    data-bs-toggle="pill"
+                                    data-bs-target="#table-view"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="table-view"
+                                    aria-selected="true">
+                                <i class="bi bi-table me-1"></i>
+                                Table
+                            </button>
+                        </li>
+
+                        <li class="nav-item"
+                            role="presentation">
+                            <button class="nav-link"
+                                    id="gallery-view-tab"
+                                    data-bs-toggle="pill"
+                                    data-bs-target="#gallery-view"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="gallery-view"
+                                    aria-selected="false">
+                                <i class="bi bi-grid-3x3-gap me-1"></i>
+                                Gallery
+                            </button>
+                        </li>
+                    </ul>
+                </div>
 
                 <span class="text-muted small">
                     Showing @startRecord to @endRecord
@@ -395,8 +511,20 @@
         }
         else
         {
-            <div class="table-responsive">
-                <table class="table table-hover
+            <div class="tab-content"
+                 id="templateViewTabContent">
+
+                @* -------------------------------------------------
+                   Table view
+                   ------------------------------------------------- *@
+                <div class="tab-pane fade show active"
+                     id="table-view"
+                     role="tabpanel"
+                     aria-labelledby="table-view-tab"
+                     tabindex="0">
+
+                    <div class="table-responsive">
+                        <table class="table table-hover
                               align-middle mb-0">
                     <thead class="table-light">
                         <tr>
@@ -549,7 +677,8 @@
 
                                 <td>
                                     <span class="badge
-                                                 text-bg-light
+                                                 bg-light
+                                                 text-dark
                                                  border">
                                         @item.Category
                                     </span>
@@ -591,20 +720,50 @@
                                     }
                                 </td>
 
-                                <td>
-                                    <span title="@changedAt.ToString("yyyy-MM-dd HH:mm:ss")">
-                                        @changedAt.ToLocalTime()
-                                            .ToString("dd MMM yyyy HH:mm")
-                                    </span>
-                                </td>
+<td class="text-nowrap">
+    <span title="@changedAt.ToString("yyyy-MM-dd HH:mm:ss")">
+        @(changedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm"))
+    </span>
+</td>
 
                                 <td class="text-end"
-                                    style="min-width: 310px;">
+                                    style="min-width: 430px;">
 
                                     <div class="d-inline-flex
                                                 flex-wrap
                                                 justify-content-end
                                                 gap-1">
+
+                                        @* Phase 13.3:
+                                           Create a dashboard widget from an
+                                           active system or tenant template. *@
+                                        @if (item.IsActive)
+                                        {
+                                            <a asp-controller="DashboardDesigner"
+                                               asp-action="CreateFromTemplate"
+                                               asp-route-templateId="@item.Id"
+                                               class="btn btn-sm
+                                                      btn-success"
+                                               title="Create dashboard widget from template">
+                                                <i class="bi bi-plus-square"></i>
+                                                <span class="d-none d-xxl-inline">
+                                                    Create Widget
+                                                </span>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-sm
+                                                           btn-outline-secondary"
+                                                    disabled
+                                                    title="Inactive templates cannot create widgets">
+                                                <i class="bi bi-plus-square"></i>
+                                                <span class="d-none d-xxl-inline">
+                                                    Create Widget
+                                                </span>
+                                            </button>
+                                        }
 
                                         @* View is allowed for both system
                                            and accessible tenant templates. *@
@@ -789,7 +948,401 @@
                             </tr>
                         }
                     </tbody>
-                </table>
+                        </table>
+                    </div>
+                </div>
+
+                @* -------------------------------------------------
+                   Gallery view
+                   ------------------------------------------------- *@
+                <div class="tab-pane fade"
+                     id="gallery-view"
+                     role="tabpanel"
+                     aria-labelledby="gallery-view-tab"
+                     tabindex="0">
+
+                    <div class="card-body">
+                        <div class="row g-4">
+                            @foreach (var item in templates)
+                            {
+                                var changedAt =
+                                    item.UpdatedAt ??
+                                    item.CreatedAt;
+
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <article class="card shadow-sm
+                                                    template-gallery-card">
+
+                                        <div class="card-body d-flex
+                                                    flex-column gap-3">
+
+                                            <div class="d-flex
+                                                        align-items-start
+                                                        gap-3">
+
+                                                <span class="template-gallery-icon
+                                                             bg-body-tertiary
+                                                             border">
+                                                    <i class="bi
+                                                              @GetWidgetTypeIcon(item.DefaultWidgetType)">
+                                                    </i>
+                                                </span>
+
+                                                <div class="template-gallery-heading
+                                                            flex-grow-1">
+
+                                                    <h2 class="h5 mb-1
+                                                               template-gallery-title">
+                                                        @item.TemplateName
+                                                    </h2>
+
+                                                    <code class="small
+                                                                 template-gallery-code">
+                                                        @item.TemplateCode
+                                                    </code>
+
+                                                    <div class="d-flex
+                                                                flex-wrap gap-2
+                                                                mt-2">
+
+                                                        @if (item.IsActive)
+                                                        {
+                                                            <span class="badge
+                                                                         bg-success
+                                                                         text-white
+                                                                         border
+                                                                         border-success">
+                                                                <i class="bi
+                                                                          bi-check-circle-fill
+                                                                          me-1"></i>
+                                                                Active
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge
+                                                                         bg-secondary
+                                                                         text-white
+                                                                         border
+                                                                         border-secondary">
+                                                                <i class="bi
+                                                                          bi-pause-circle-fill
+                                                                          me-1"></i>
+                                                                Inactive
+                                                            </span>
+                                                        }
+
+                                                        <span class="badge
+                                                                     bg-light
+                                                                     text-dark
+                                                                     border">
+                                                            <i class="bi
+                                                                      @GetWidgetTypeIcon(item.DefaultWidgetType)
+                                                                      me-1"></i>
+                                                            @item.DefaultWidgetType
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="template-gallery-meta
+                                                        bg-body-tertiary
+                                                        border p-3">
+
+                                                <div class="d-flex
+                                                            flex-wrap gap-2">
+
+                                                    <span class="badge
+                                                                 bg-light
+                                                                 text-dark
+                                                                 border">
+                                                        <i class="bi
+                                                                  bi-folder2-open
+                                                                  me-1"></i>
+                                                        Category:
+                                                        @item.Category
+                                                    </span>
+
+                                                    @if (item.IsSystem)
+                                                    {
+                                                        <span class="badge
+                                                                     bg-dark
+                                                                     text-white
+                                                                     border
+                                                                     border-dark">
+                                                            <i class="bi
+                                                                      bi-shield-lock-fill
+                                                                      me-1"></i>
+                                                            System Template
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge
+                                                                     bg-info
+                                                                     text-dark
+                                                                     border
+                                                                     border-info">
+                                                            <i class="bi
+                                                                      bi-building-fill
+                                                                      me-1"></i>
+                                                            Tenant Template
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            <div class="template-gallery-description
+                                                        text-muted">
+
+                                                @if (!string.IsNullOrWhiteSpace(
+                                                        item.Description))
+                                                {
+                                                    @item.Description
+                                                }
+                                                else
+                                                {
+                                                    <span class="fst-italic">
+                                                        No description provided.
+                                                    </span>
+                                                }
+                                            </div>
+
+                                            <div class="d-flex
+                                                        justify-content-between
+                                                        align-items-center
+                                                        gap-3
+                                                        small text-muted">
+
+                                                <span>
+                                                    <i class="bi
+                                                              bi-clock-history
+                                                              me-1"></i>
+                                                    Last changed
+                                                </span>
+
+                                                <strong class="text-body
+                                                               text-nowrap">
+                                                    @(changedAt
+                                                        .ToLocalTime()
+                                                        .ToString(
+                                                            "dd MMM yyyy HH:mm"))
+                                                </strong>
+                                            </div>
+
+                                            <div class="border-top pt-3 mt-auto">
+                                                <div class="d-flex
+                                                            flex-wrap gap-2
+                                                            template-gallery-actions">
+
+                                                    @if (item.IsActive)
+                                                    {
+                                                        <a asp-controller="DashboardDesigner"
+                                                           asp-action="CreateFromTemplate"
+                                                           asp-route-templateId="@item.Id"
+                                                           class="btn btn-sm
+                                                                  btn-success
+                                                                  template-gallery-create-button"
+                                                           title="Create dashboard widget from template">
+                                                            <i class="bi
+                                                                      bi-plus-square
+                                                                      me-1"></i>
+                                                            Create Widget
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button type="button"
+                                                                class="btn btn-sm
+                                                                       btn-outline-secondary
+                                                                       template-gallery-create-button"
+                                                                disabled
+                                                                title="Inactive templates cannot create widgets">
+                                                            <i class="bi
+                                                                      bi-plus-square
+                                                                      me-1"></i>
+                                                            Create Widget
+                                                        </button>
+                                                    }
+
+                                                    <a asp-action="Details"
+                                                       asp-route-id="@item.Id"
+                                                       class="btn btn-sm
+                                                              btn-outline-primary"
+                                                       title="View details">
+                                                        <i class="bi bi-eye
+                                                                  me-1"></i>
+                                                        View
+                                                    </a>
+
+                                                    <form asp-action="Clone"
+                                                          asp-route-id="@item.Id"
+                                                          method="post"
+                                                          class="d-inline
+                                                                 clone-template-form"
+                                                          data-template-name="@item.TemplateName">
+
+                                                        @Html.AntiForgeryToken()
+
+                                                        <button type="submit"
+                                                                class="btn btn-sm
+                                                                       btn-outline-success"
+                                                                title="Clone template">
+                                                            <i class="bi
+                                                                      bi-copy
+                                                                      me-1"></i>
+                                                            Clone
+                                                        </button>
+                                                    </form>
+
+                                                    @if (!item.IsSystem)
+                                                    {
+                                                        <a asp-action="Edit"
+                                                           asp-route-id="@item.Id"
+                                                           class="btn btn-sm
+                                                                  btn-outline-warning"
+                                                           title="Edit template">
+                                                            <i class="bi
+                                                                      bi-pencil-square
+                                                                      me-1"></i>
+                                                            Edit
+                                                        </a>
+
+                                                        <form asp-action="ToggleStatus"
+                                                              asp-route-id="@item.Id"
+                                                              method="post"
+                                                              class="d-inline
+                                                                     toggle-template-form"
+                                                              data-template-name="@item.TemplateName"
+                                                              data-current-status="@(item.IsActive ? "Active" : "Inactive")">
+
+                                                            @Html.AntiForgeryToken()
+
+                                                            <input type="hidden"
+                                                                   name="returnSearch"
+                                                                   value="@Model.Search" />
+
+                                                            <input type="hidden"
+                                                                   name="returnCategory"
+                                                                   value="@Model.Category" />
+
+                                                            <input type="hidden"
+                                                                   name="returnStatus"
+                                                                   value="@Model.Status" />
+
+                                                            <input type="hidden"
+                                                                   name="returnOwnership"
+                                                                   value="@Model.Ownership" />
+
+                                                            <input type="hidden"
+                                                                   name="returnSortBy"
+                                                                   value="@Model.SortBy" />
+
+                                                            <input type="hidden"
+                                                                   name="returnSortDirection"
+                                                                   value="@Model.SortDirection" />
+
+                                                            <input type="hidden"
+                                                                   name="returnPage"
+                                                                   value="@Model.Page" />
+
+                                                            <input type="hidden"
+                                                                   name="returnPageSize"
+                                                                   value="@Model.PageSize" />
+
+                                                            <button type="submit"
+                                                                    class="btn btn-sm
+                                                                           @(item.IsActive
+                                                                               ? "btn-outline-secondary"
+                                                                               : "btn-outline-success")"
+                                                                    title="Change status">
+                                                                <i class="bi
+                                                                          @(item.IsActive
+                                                                              ? "bi-pause-circle"
+                                                                              : "bi-play-circle")
+                                                                          me-1">
+                                                                </i>
+
+                                                                @(item.IsActive
+                                                                    ? "Disable"
+                                                                    : "Enable")
+                                                            </button>
+                                                        </form>
+
+                                                        <form asp-action="Delete"
+                                                              asp-route-id="@item.Id"
+                                                              method="post"
+                                                              class="d-inline
+                                                                     delete-template-form"
+                                                              data-template-name="@item.TemplateName">
+
+                                                            @Html.AntiForgeryToken()
+
+                                                            <input type="hidden"
+                                                                   name="returnSearch"
+                                                                   value="@Model.Search" />
+
+                                                            <input type="hidden"
+                                                                   name="returnCategory"
+                                                                   value="@Model.Category" />
+
+                                                            <input type="hidden"
+                                                                   name="returnStatus"
+                                                                   value="@Model.Status" />
+
+                                                            <input type="hidden"
+                                                                   name="returnOwnership"
+                                                                   value="@Model.Ownership" />
+
+                                                            <input type="hidden"
+                                                                   name="returnSortBy"
+                                                                   value="@Model.SortBy" />
+
+                                                            <input type="hidden"
+                                                                   name="returnSortDirection"
+                                                                   value="@Model.SortDirection" />
+
+                                                            <input type="hidden"
+                                                                   name="returnPage"
+                                                                   value="@Model.Page" />
+
+                                                            <input type="hidden"
+                                                                   name="returnPageSize"
+                                                                   value="@Model.PageSize" />
+
+                                                            <button type="submit"
+                                                                    class="btn btn-sm
+                                                                           btn-outline-danger"
+                                                                    title="Delete template">
+                                                                <i class="bi
+                                                                          bi-trash
+                                                                          me-1"></i>
+                                                                Delete
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button type="button"
+                                                                class="btn btn-sm
+                                                                       btn-outline-secondary"
+                                                                disabled
+                                                                title="System templates are read-only">
+                                                            <i class="bi
+                                                                      bi-lock
+                                                                      me-1"></i>
+                                                            Read-only
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </article>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
             </div>
 
             @* -------------------------------------------------
@@ -952,6 +1505,81 @@
 
             const filterForm =
                 document.getElementById("filterForm");
+
+            // -------------------------------------------------
+            // Phase 13.4.2:
+            // Remember and restore Table/Gallery view.
+            // -------------------------------------------------
+            const templateViewStorageKey =
+                "dashboardWidgetTemplates.selectedView";
+
+            const tableViewTab =
+                document.getElementById("table-view-tab");
+
+            const galleryViewTab =
+                document.getElementById("gallery-view-tab");
+
+            const viewTabs = [
+                tableViewTab,
+                galleryViewTab
+            ].filter(tab => tab !== null);
+
+            const restoreTemplateView = () => {
+                if (viewTabs.length === 0 ||
+                    typeof bootstrap === "undefined" ||
+                    !bootstrap.Tab) {
+                    return;
+                }
+
+                try {
+                    const savedView =
+                        window.localStorage.getItem(
+                            templateViewStorageKey);
+
+                    const targetTab =
+                        savedView === "gallery"
+                            ? galleryViewTab
+                            : tableViewTab;
+
+                    if (!targetTab) {
+                        return;
+                    }
+
+                    bootstrap.Tab
+                        .getOrCreateInstance(targetTab)
+                        .show();
+                }
+                catch (error) {
+                    console.warn(
+                        "Unable to restore the template view.",
+                        error);
+                }
+            };
+
+            viewTabs.forEach(tab => {
+                tab.addEventListener(
+                    "shown.bs.tab",
+                    event => {
+                        const selectedView =
+                            event.target?.id ===
+                            "gallery-view-tab"
+                                ? "gallery"
+                                : "table";
+
+                        try {
+                            window.localStorage.setItem(
+                                templateViewStorageKey,
+                                selectedView);
+                        }
+                        catch (error) {
+                            console.warn(
+                                "Unable to remember the template view.",
+                                error);
+                        }
+                    });
+            });
+
+            restoreTemplateView();
 
             const automaticFilterFields = [
                 document.getElementById("category"),
