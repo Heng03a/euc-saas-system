@@ -5,488 +5,691 @@ namespace EucSaaS.Infrastructure.Data;
 
 public class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options)
+    public AppDbContext(
+        DbContextOptions<AppDbContext> options)
         : base(options)
-      {
-            
-      }
+    {
+    }
 
-      public DbSet<DataSource> DataSources { get; set; }
-      
-public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
-public DbSet<DashboardWidgetDefinition> DashboardWidgetDefinitions => Set<DashboardWidgetDefinition>();
+    // ------------------------------------------------------------
+    // DbSets
+    // ------------------------------------------------------------
+    public DbSet<DataSource> DataSources =>
+        Set<DataSource>();
 
-public DbSet<RoleDashboardTemplateAssignment> RoleDashboardTemplateAssignments { get; set; }
+    public DbSet<AuditLog> AuditLogs =>
+        Set<AuditLog>();
 
-public DbSet<DashboardTemplateDefinition> DashboardTemplateDefinitions { get; set; }
+    public DbSet<DashboardWidgetDefinition>
+        DashboardWidgetDefinitions =>
+            Set<DashboardWidgetDefinition>();
 
-    public DbSet<Tenant> Tenants => Set<Tenant>();
-    public DbSet<Department> Departments => Set<Department>();
-    public DbSet<AppRole> AppRoles => Set<AppRole>();
-    public DbSet<AppUser> AppUsers => Set<AppUser>();
-    public DbSet<AppMenu> AppMenus => Set<AppMenu>();
+    public DbSet<DashboardLayout> DashboardLayouts =>
+        Set<DashboardLayout>();
 
-public DbSet<LookupDefinition> LookupDefinitions => Set<LookupDefinition>();
+    public DbSet<DashboardLayoutItem> DashboardLayoutItems =>
+        Set<DashboardLayoutItem>();
 
-public DbSet<DashboardWidgetTemplate> DashboardWidgetTemplates =>
-    Set<DashboardWidgetTemplate>();
+    public DbSet<RoleDashboardTemplateAssignment>
+        RoleDashboardTemplateAssignments =>
+            Set<RoleDashboardTemplateAssignment>();
 
+    public DbSet<DashboardTemplateDefinition>
+        DashboardTemplateDefinitions =>
+            Set<DashboardTemplateDefinition>();
 
-public DbSet<DashboardWidgetPermission> DashboardWidgetPermissions
-{
-    get;
-    set;
-}
+    public DbSet<Tenant> Tenants =>
+        Set<Tenant>();
 
-    public DbSet<ScreenDefinition> ScreenDefinitions => Set<ScreenDefinition>();
-    public DbSet<ColumnDefinition> ColumnDefinitions => Set<ColumnDefinition>();
-    public DbSet<FormFieldDefinition> FormFieldDefinitions => Set<FormFieldDefinition>();
-    public DbSet<ScreenPermission> ScreenPermissions => Set<ScreenPermission>();
+    public DbSet<Department> Departments =>
+        Set<Department>();
 
-    public DbSet<FormFieldOptionDefinition> FormFieldOptionDefinitions => Set<FormFieldOptionDefinition>();
-    public DbSet<Employee> Employees => Set<Employee>();  
+    public DbSet<AppRole> AppRoles =>
+        Set<AppRole>();
 
-    protected override void OnModelCreating(ModelBuilder builder)
+    public DbSet<AppUser> AppUsers =>
+        Set<AppUser>();
+
+    public DbSet<AppMenu> AppMenus =>
+        Set<AppMenu>();
+
+    public DbSet<LookupDefinition> LookupDefinitions =>
+        Set<LookupDefinition>();
+
+    public DbSet<DashboardWidgetTemplate>
+        DashboardWidgetTemplates =>
+            Set<DashboardWidgetTemplate>();
+
+    public DbSet<DashboardWidgetPermission>
+        DashboardWidgetPermissions =>
+            Set<DashboardWidgetPermission>();
+
+    public DbSet<ScreenDefinition> ScreenDefinitions =>
+        Set<ScreenDefinition>();
+
+    public DbSet<ColumnDefinition> ColumnDefinitions =>
+        Set<ColumnDefinition>();
+
+    public DbSet<FormFieldDefinition> FormFieldDefinitions =>
+        Set<FormFieldDefinition>();
+
+    public DbSet<ScreenPermission> ScreenPermissions =>
+        Set<ScreenPermission>();
+
+    public DbSet<FormFieldOptionDefinition>
+        FormFieldOptionDefinitions =>
+            Set<FormFieldOptionDefinition>();
+
+    public DbSet<Employee> Employees =>
+        Set<Employee>();
+
+    protected override void OnModelCreating(
+        ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
+        // ------------------------------------------------------------
+        // Employee
+        // ------------------------------------------------------------
+        builder.Entity<Employee>(entity =>
+        {
+            entity.HasKey(x => x.Id);
 
-//-----------------------------------
-// Employee
-//-----------------------------------
-builder.Entity<Employee>(entity =>
-{
-    entity.HasKey(x => x.Id);
+            entity.Property(x => x.EmployeeCode)
+                .HasMaxLength(50)
+                .IsRequired();
 
-    entity.Property(x => x.EmployeeCode)
-          .HasMaxLength(50)
-          .IsRequired();
+            entity.Property(x => x.FullName)
+                .HasMaxLength(200)
+                .IsRequired();
 
-    entity.Property(x => x.FullName)
-          .HasMaxLength(200)
-          .IsRequired();
+            entity.Property(x => x.Department)
+                .HasMaxLength(100)
+                .IsRequired();
 
-    entity.Property(x => x.Department)
-          .HasMaxLength(100)
-          .IsRequired();
+            entity.Property(x => x.JobTitle)
+                .HasMaxLength(150);
 
-    entity.Property(x => x.JobTitle)
-          .HasMaxLength(150);
+            entity.Property(x => x.Email)
+                .HasMaxLength(200)
+                .IsRequired();
 
-    entity.Property(x => x.Email)
-          .HasMaxLength(200)
-          .IsRequired();
+            entity.Property(x => x.Status)
+                .HasMaxLength(50)
+                .IsRequired();
 
-    entity.Property(x => x.Status)
-          .HasMaxLength(50)
-          .IsRequired();
+            entity.HasOne(x => x.Tenant)
+                .WithMany()
+                .HasForeignKey(x => x.TenantId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-    entity.HasOne(x => x.Tenant)
-          .WithMany()
-          .HasForeignKey(x => x.TenantId)
-          .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(
+                    x => new
+                    {
+                        x.TenantId,
+                        x.EmployeeCode
+                    })
+                .IsUnique();
+        });
 
-    entity.HasIndex(x => new { x.TenantId, x.EmployeeCode })
-          .IsUnique();
-});
+        // ------------------------------------------------------------
+        // Tenant
+        // ------------------------------------------------------------
+        builder.Entity<Tenant>(entity =>
+        {
+            entity.HasKey(x => x.Id);
 
-//-----------------------------------
-// Tenant
-//-----------------------------------
-builder.Entity<Tenant>(entity =>
-{
-    entity.HasKey(x => x.Id);
+            entity.Property(x => x.Name)
+                .HasMaxLength(200)
+                .IsRequired();
 
-    entity.Property(x => x.Name)
-          .HasMaxLength(200)
-          .IsRequired();
+            entity.Property(x => x.Code)
+                .HasMaxLength(50)
+                .IsRequired();
 
-    entity.Property(x => x.Code)
-          .HasMaxLength(50)
-          .IsRequired();
+            entity.HasIndex(x => x.Code)
+                .IsUnique();
+        });
 
-    entity.HasIndex(x => x.Code)
-          .IsUnique();
-});
-
-        //-----------------------------------
+        // ------------------------------------------------------------
         // Department
-        //-----------------------------------
+        // ------------------------------------------------------------
         builder.Entity<Department>(entity =>
         {
             entity.HasKey(x => x.Id);
 
             entity.Property(x => x.Name)
-                  .HasMaxLength(200)
-                  .IsRequired();
+                .HasMaxLength(200)
+                .IsRequired();
         });
 
-        //-----------------------------------
+        // ------------------------------------------------------------
         // Role
-        //-----------------------------------
+        // ------------------------------------------------------------
         builder.Entity<AppRole>(entity =>
         {
             entity.HasKey(x => x.Id);
 
             entity.Property(x => x.Name)
-                  .HasMaxLength(100)
-                  .IsRequired();
+                .HasMaxLength(100)
+                .IsRequired();
         });
 
-        //-----------------------------------
+        // ------------------------------------------------------------
         // User
-        //-----------------------------------
+        // ------------------------------------------------------------
         builder.Entity<AppUser>(entity =>
         {
             entity.HasKey(x => x.Id);
 
             entity.Property(x => x.Username)
-                  .HasMaxLength(100)
-                  .IsRequired();
+                .HasMaxLength(100)
+                .IsRequired();
 
             entity.Property(x => x.PasswordHash)
-                  .HasMaxLength(500)
-                  .IsRequired();
+                .HasMaxLength(500)
+                .IsRequired();
 
             entity.Property(x => x.FullName)
-                  .HasMaxLength(200);
+                .HasMaxLength(200);
 
             entity.Property(x => x.Email)
-                  .HasMaxLength(200);
-
-            //-----------------------------------
-            // Relationships
-            //-----------------------------------
+                .HasMaxLength(200);
 
             entity.HasOne(x => x.Role)
-                  .WithMany()
-                  .HasForeignKey(x => x.RoleId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                .WithMany()
+                .HasForeignKey(x => x.RoleId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(x => x.Department)
-                  .WithMany()
-                  .HasForeignKey(x => x.DepartmentId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                .WithMany()
+                .HasForeignKey(x => x.DepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(x => x.Tenant)
-                  .WithMany()
-                  .HasForeignKey(x => x.TenantId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                .WithMany()
+                .HasForeignKey(x => x.TenantId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
-        //-----------------------------------
+        // ------------------------------------------------------------
         // Menu
-        //-----------------------------------
+        // ------------------------------------------------------------
         builder.Entity<AppMenu>(entity =>
         {
             entity.HasKey(x => x.Id);
 
             entity.Property(x => x.Name)
-                  .HasMaxLength(200)
-                  .IsRequired();
+                .HasMaxLength(200)
+                .IsRequired();
 
             entity.Property(x => x.Url)
-                  .HasMaxLength(500);
+                .HasMaxLength(500);
 
             entity.Property(x => x.Icon)
-                  .HasMaxLength(100);
+                .HasMaxLength(100);
         });
 
-        //-----------------------------------
+        // ------------------------------------------------------------
         // Screen Definition
-        //-----------------------------------
+        // ------------------------------------------------------------
         builder.Entity<ScreenDefinition>(entity =>
         {
             entity.HasKey(x => x.Id);
 
             entity.Property(x => x.ScreenCode)
-                  .IsRequired()
-                  .HasMaxLength(100);
+                .IsRequired()
+                .HasMaxLength(100);
 
             entity.Property(x => x.ScreenName)
-                  .IsRequired()
-                  .HasMaxLength(200);
+                .IsRequired()
+                .HasMaxLength(200);
 
             entity.Property(x => x.EntityName)
-                  .IsRequired()
-                  .HasMaxLength(100);
+                .IsRequired()
+                .HasMaxLength(100);
 
             entity.Property(x => x.RoutePath)
-                  .IsRequired()
-                  .HasMaxLength(200);
+                .IsRequired()
+                .HasMaxLength(200);
 
             entity.Property(x => x.Description)
-                  .HasMaxLength(500);
+                .HasMaxLength(500);
 
             entity.HasIndex(x => x.ScreenCode)
-                  .IsUnique();
+                .IsUnique();
         });
 
-        //-----------------------------------
+        // ------------------------------------------------------------
         // Column Definition
-        //-----------------------------------
+        // ------------------------------------------------------------
         builder.Entity<ColumnDefinition>(entity =>
         {
             entity.HasKey(x => x.Id);
 
             entity.Property(x => x.FieldName)
-                  .IsRequired()
-                  .HasMaxLength(100);
+                .IsRequired()
+                .HasMaxLength(100);
 
             entity.Property(x => x.DisplayLabel)
-                  .IsRequired()
-                  .HasMaxLength(200);
+                .IsRequired()
+                .HasMaxLength(200);
 
             entity.Property(x => x.DataType)
-                  .IsRequired()
-                  .HasMaxLength(50);
+                .IsRequired()
+                .HasMaxLength(50);
 
             entity.HasOne(x => x.ScreenDefinition)
-                  .WithMany(x => x.Columns)
-                  .HasForeignKey(x => x.ScreenDefinitionId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                .WithMany(x => x.Columns)
+                .HasForeignKey(x => x.ScreenDefinitionId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
-        //-----------------------------------
+        // ------------------------------------------------------------
         // Form Field Definition
-        //-----------------------------------
+        // ------------------------------------------------------------
         builder.Entity<FormFieldDefinition>(entity =>
         {
             entity.HasKey(x => x.Id);
 
             entity.Property(x => x.FieldName)
-                  .IsRequired()
-                  .HasMaxLength(100);
+                .IsRequired()
+                .HasMaxLength(100);
 
             entity.Property(x => x.DisplayLabel)
-                  .IsRequired()
-                  .HasMaxLength(200);
+                .IsRequired()
+                .HasMaxLength(200);
 
             entity.Property(x => x.ControlType)
-                  .IsRequired()
-                  .HasMaxLength(50);
+                .IsRequired()
+                .HasMaxLength(50);
 
             entity.Property(x => x.DataType)
-                  .IsRequired()
-                  .HasMaxLength(50);
+                .IsRequired()
+                .HasMaxLength(50);
 
             entity.Property(x => x.Placeholder)
-                  .HasMaxLength(200);
+                .HasMaxLength(200);
 
             entity.HasOne(x => x.ScreenDefinition)
-                  .WithMany(x => x.FormFields)
-                  .HasForeignKey(x => x.ScreenDefinitionId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                .WithMany(x => x.FormFields)
+                .HasForeignKey(x => x.ScreenDefinitionId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
-//-----------------------------------
-// Form Field Option Definition
-//-----------------------------------
-builder.Entity<FormFieldOptionDefinition>(entity =>
-{
-    entity.HasKey(x => x.Id);
+        // ------------------------------------------------------------
+        // Form Field Option Definition
+        // ------------------------------------------------------------
+        builder.Entity<FormFieldOptionDefinition>(entity =>
+        {
+            entity.HasKey(x => x.Id);
 
-    entity.Property(x => x.OptionLabel)
-          .IsRequired()
-          .HasMaxLength(200);
+            entity.Property(x => x.OptionLabel)
+                .IsRequired()
+                .HasMaxLength(200);
 
-    entity.Property(x => x.OptionValue)
-          .IsRequired()
-          .HasMaxLength(200);
+            entity.Property(x => x.OptionValue)
+                .IsRequired()
+                .HasMaxLength(200);
 
-    entity.HasOne(x => x.FormFieldDefinition)
-          .WithMany(x => x.Options)
-          .HasForeignKey(x => x.FormFieldDefinitionId)
-          .OnDelete(DeleteBehavior.Cascade);
-});
+            entity.HasOne(x => x.FormFieldDefinition)
+                .WithMany(x => x.Options)
+                .HasForeignKey(
+                    x => x.FormFieldDefinitionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        //-----------------------------------
+        // ------------------------------------------------------------
         // Screen Permission
-        //-----------------------------------
+        // ------------------------------------------------------------
         builder.Entity<ScreenPermission>(entity =>
         {
             entity.HasKey(x => x.Id);
 
             entity.Property(x => x.RoleName)
-                  .IsRequired()
-                  .HasMaxLength(100);
+                .IsRequired()
+                .HasMaxLength(100);
 
             entity.HasOne(x => x.ScreenDefinition)
-                  .WithMany(x => x.Permissions)
-                  .HasForeignKey(x => x.ScreenDefinitionId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                .WithMany(x => x.Permissions)
+                .HasForeignKey(x => x.ScreenDefinitionId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasIndex(x => new { x.ScreenDefinitionId, x.RoleName })
-                  .IsUnique();
+            entity.HasIndex(
+                    x => new
+                    {
+                        x.ScreenDefinitionId,
+                        x.RoleName
+                    })
+                .IsUnique();
         });
 
-        //-----------------------------------
+        // ------------------------------------------------------------
         // Dashboard Widget Permission
-        //-----------------------------------
+        // ------------------------------------------------------------
         builder.Entity<DashboardWidgetPermission>(entity =>
         {
             entity.HasKey(x => x.Id);
 
-            entity.HasIndex(x => new
-            {
-                x.DashboardWidgetDefinitionId,
-                x.AppRoleId
-            })
-            .IsUnique();
+            entity.HasIndex(
+                    x => new
+                    {
+                        x.DashboardWidgetDefinitionId,
+                        x.AppRoleId
+                    })
+                .IsUnique();
 
-            entity.HasOne(x => x.DashboardWidgetDefinition)
+            entity.HasOne(
+                    x => x.DashboardWidgetDefinition)
                 .WithMany(x => x.Permissions)
-                .HasForeignKey(x => x.DashboardWidgetDefinitionId)
+                .HasForeignKey(
+                    x =>
+                        x.DashboardWidgetDefinitionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(x => x.AppRole)
-                .WithMany(x => x.DashboardWidgetPermissions)
+                .WithMany(
+                    x =>
+                        x.DashboardWidgetPermissions)
                 .HasForeignKey(x => x.AppRoleId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-// ------------------------------------------------------------
-// Dashboard Widget Template
-// ------------------------------------------------------------
-builder.Entity<DashboardWidgetTemplate>(entity =>
-{
-    entity.ToTable("DashboardWidgetTemplates");
+        // ------------------------------------------------------------
+        // Dashboard Widget Template
+        // ------------------------------------------------------------
+        builder.Entity<DashboardWidgetTemplate>(entity =>
+        {
+            entity.ToTable(
+                "DashboardWidgetTemplates");
 
-    entity.HasKey(x => x.Id);
+            entity.HasKey(x => x.Id);
 
-    entity.Property(x => x.TemplateCode)
-        .IsRequired()
-        .HasMaxLength(100);
+            entity.Property(x => x.TemplateCode)
+                .IsRequired()
+                .HasMaxLength(100);
 
-    entity.Property(x => x.TemplateName)
-        .IsRequired()
-        .HasMaxLength(200);
+            entity.Property(x => x.TemplateName)
+                .IsRequired()
+                .HasMaxLength(200);
 
-    entity.Property(x => x.Category)
-        .IsRequired()
-        .HasMaxLength(100);
+            entity.Property(x => x.Category)
+                .IsRequired()
+                .HasMaxLength(100);
 
-    entity.Property(x => x.Description)
-        .HasMaxLength(1000);
+            entity.Property(x => x.Description)
+                .HasMaxLength(1000);
 
-    entity.Property(x => x.DefaultWidgetType)
-        .IsRequired()
-        .HasMaxLength(50);
+            entity.Property(x => x.DefaultWidgetType)
+                .IsRequired()
+                .HasMaxLength(50);
 
-    entity.Property(x => x.DefaultSqlQuery)
-        .IsRequired();
+            entity.Property(x => x.DefaultSqlQuery)
+                .IsRequired();
 
-    entity.Property(x => x.DefaultIcon)
-        .HasMaxLength(100);
+            entity.Property(x => x.DefaultIcon)
+                .HasMaxLength(100);
 
-    entity.Property(x => x.DefaultColor)
-        .HasMaxLength(50);
+            entity.Property(x => x.DefaultColor)
+                .HasMaxLength(50);
 
-    entity.Property(x => x.CreatedBy)
-        .IsRequired()
-        .HasMaxLength(200);
+            entity.Property(x => x.CreatedBy)
+                .IsRequired()
+                .HasMaxLength(200);
 
-    entity.Property(x => x.UpdatedBy)
-        .HasMaxLength(200);
+            entity.Property(x => x.UpdatedBy)
+                .HasMaxLength(200);
 
-    entity.Property(x => x.CreatedAt)
-        .IsRequired();
+            entity.Property(x => x.CreatedAt)
+                .IsRequired();
 
-    entity.Property(x => x.IsSystem)
-        .HasDefaultValue(false);
+            entity.Property(x => x.IsSystem)
+                .HasDefaultValue(false);
 
-    entity.Property(x => x.IsActive)
-        .HasDefaultValue(true);
+            entity.Property(x => x.IsActive)
+                .HasDefaultValue(true);
 
-    entity.Property(x => x.DefaultGridWidth)
-        .HasDefaultValue(4);
+            entity.Property(x => x.DefaultGridWidth)
+                .HasDefaultValue(4);
 
-    entity.Property(x => x.DefaultGridHeight)
-        .HasDefaultValue(2);
+            entity.Property(x => x.DefaultGridHeight)
+                .HasDefaultValue(2);
 
-    /*
-     * PostgreSQL permits multiple null values in a normal unique index.
-     *
-     * System templates have TenantId = null.
-     * Tenant templates have a populated TenantId.
-     */
-    entity.HasIndex(x => new
-    {
-        x.TenantId,
-        x.TemplateCode
-    })
-    .IsUnique();
+            /*
+             * PostgreSQL permits multiple null values in a
+             * standard unique index.
+             *
+             * System templates use TenantId = null.
+             * Tenant templates use a populated TenantId.
+             */
+            entity.HasIndex(
+                    x => new
+                    {
+                        x.TenantId,
+                        x.TemplateCode
+                    })
+                .IsUnique();
 
-    entity.HasIndex(x => new
-    {
-        x.TenantId,
-        x.IsActive,
-        x.Category
-    });
+            entity.HasIndex(
+                x => new
+                {
+                    x.TenantId,
+                    x.IsActive,
+                    x.Category
+                });
 
-    entity.HasIndex(x => new
-    {
-        x.IsSystem,
-        x.IsActive
-    });
-});
+            entity.HasIndex(
+                x => new
+                {
+                    x.IsSystem,
+                    x.IsActive
+                });
+        });
 
+        // ------------------------------------------------------------
+        // Dashboard Layout
+        // ------------------------------------------------------------
+        builder.Entity<DashboardLayout>(entity =>
+        {
+            entity.ToTable("DashboardLayouts");
 
-// ------------------------------------------------------------
-// Audit Log
-// ------------------------------------------------------------
-builder.Entity<AuditLog>(entity =>
-{
-    entity.HasKey(x => x.Id);
+            entity.HasKey(x => x.Id);
 
-    entity.Property(x => x.ScreenCode)
-        .IsRequired()
-        .HasMaxLength(150);
+            entity.Property(x => x.LayoutCode)
+                .IsRequired()
+                .HasMaxLength(100);
 
-    entity.Property(x => x.RecordId)
-        .IsRequired()
-        .HasMaxLength(150);
+            entity.Property(x => x.LayoutName)
+                .IsRequired()
+                .HasMaxLength(200);
 
-    entity.Property(x => x.ActionType)
-        .IsRequired()
-        .HasMaxLength(30);
+            entity.Property(x => x.Description)
+                .HasMaxLength(1000);
 
-    entity.Property(x => x.FieldName)
-        .IsRequired()
-        .HasMaxLength(150);
+            entity.Property(x => x.CreatedBy)
+                .HasMaxLength(200);
 
-    entity.Property(x => x.OldValue);
+            entity.Property(x => x.UpdatedBy)
+                .HasMaxLength(200);
 
-    entity.Property(x => x.NewValue);
+            entity.Property(x => x.CreatedAt)
+                .IsRequired();
 
-    entity.Property(x => x.ChangedBy)
-        .IsRequired()
-        .HasMaxLength(200);
+            entity.Property(x => x.IsSystem)
+                .IsRequired()
+                .HasDefaultValue(false);
 
-    entity.Property(x => x.ChangedAt)
-        .IsRequired();
+            entity.Property(x => x.IsDefault)
+                .IsRequired()
+                .HasDefaultValue(false);
 
-    entity.HasIndex(x => new
-    {
-        x.TenantId,
-        x.ScreenCode,
-        x.RecordId,
-        x.ChangedAt
-    });
+            entity.Property(x => x.IsShared)
+                .IsRequired()
+                .HasDefaultValue(true);
 
-    entity.HasIndex(x => new
-    {
-        x.TenantId,
-        x.ActionType,
-        x.ChangedAt
-    });
+            entity.Property(x => x.IsActive)
+                .IsRequired()
+                .HasDefaultValue(true);
 
-    entity.HasIndex(x => new
-    {
-        x.TenantId,
-        x.ChangedBy,
-        x.ChangedAt
-    });
-});
-}
+            /*
+             * Layout codes are unique within a tenant.
+             *
+             * System layouts use TenantId = null.
+             */
+            entity.HasIndex(
+                    x => new
+                    {
+                        x.TenantId,
+                        x.LayoutCode
+                    })
+                .IsUnique();
+
+            /*
+             * Supports default-layout resolution by tenant,
+             * role and department.
+             */
+            entity.HasIndex(
+                x => new
+                {
+                    x.TenantId,
+                    x.AppRoleId,
+                    x.DepartmentId,
+                    x.IsDefault,
+                    x.IsActive
+                });
+        });
+
+        // ------------------------------------------------------------
+        // Dashboard Layout Item
+        // ------------------------------------------------------------
+        builder.Entity<DashboardLayoutItem>(entity =>
+        {
+            entity.ToTable("DashboardLayoutItems");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.GridRow)
+                .IsRequired()
+                .HasDefaultValue(1);
+
+            entity.Property(x => x.GridColumn)
+                .IsRequired()
+                .HasDefaultValue(1);
+
+            entity.Property(x => x.GridWidth)
+                .IsRequired()
+                .HasDefaultValue(4);
+
+            entity.Property(x => x.GridHeight)
+                .IsRequired()
+                .HasDefaultValue(2);
+
+            entity.Property(x => x.DisplayOrder)
+                .IsRequired()
+                .HasDefaultValue(0);
+
+            entity.Property(x => x.IsVisible)
+                .IsRequired()
+                .HasDefaultValue(true);
+
+            entity.Property(x => x.SettingsJson)
+                .HasColumnType("jsonb");
+
+            entity.HasOne(x => x.DashboardLayout)
+                .WithMany(x => x.Items)
+                .HasForeignKey(
+                    x => x.DashboardLayoutId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(
+                    x =>
+                        x.DashboardWidgetDefinition)
+                .WithMany(
+                    x =>
+                        x.DashboardLayoutItems)
+                .HasForeignKey(
+                    x =>
+                        x.DashboardWidgetDefinitionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            /*
+             * Prevent the same widget from appearing more
+             * than once inside the same layout.
+             */
+            entity.HasIndex(
+                    x => new
+                    {
+                        x.DashboardLayoutId,
+                        x.DashboardWidgetDefinitionId
+                    })
+                .IsUnique();
+
+            entity.HasIndex(
+                x => new
+                {
+                    x.DashboardLayoutId,
+                    x.DisplayOrder
+                });
+        });
+
+        // ------------------------------------------------------------
+        // Audit Log
+        // ------------------------------------------------------------
+        builder.Entity<AuditLog>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.ScreenCode)
+                .IsRequired()
+                .HasMaxLength(150);
+
+            entity.Property(x => x.RecordId)
+                .IsRequired()
+                .HasMaxLength(150);
+
+            entity.Property(x => x.ActionType)
+                .IsRequired()
+                .HasMaxLength(30);
+
+            entity.Property(x => x.FieldName)
+                .IsRequired()
+                .HasMaxLength(150);
+
+            entity.Property(x => x.OldValue);
+
+            entity.Property(x => x.NewValue);
+
+            entity.Property(x => x.ChangedBy)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.Property(x => x.ChangedAt)
+                .IsRequired();
+
+            entity.HasIndex(
+                x => new
+                {
+                    x.TenantId,
+                    x.ScreenCode,
+                    x.RecordId,
+                    x.ChangedAt
+                });
+
+            entity.HasIndex(
+                x => new
+                {
+                    x.TenantId,
+                    x.ActionType,
+                    x.ChangedAt
+                });
+
+            entity.HasIndex(
+                x => new
+                {
+                    x.TenantId,
+                    x.ChangedBy,
+                    x.ChangedAt
+                });
+        });
+    }
 }

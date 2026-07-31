@@ -38,6 +38,9 @@ public int GridHeight { get; set; } = 1;
 
     public bool IsActive { get; set; } = true;
 
+public ICollection<DashboardLayoutItem> DashboardLayoutItems { get; set; }
+    = new List<DashboardLayoutItem>();
+
 public ICollection<DashboardWidgetPermission> Permissions
 {
     get;
