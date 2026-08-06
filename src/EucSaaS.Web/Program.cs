@@ -14,6 +14,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
 using EucSaaS.Web.Services.DashboardWidgetTemplates;
+using EucSaaS.Web.Services.DashboardLayouts;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,6 +29,9 @@ builder.Services.AddScoped<
     IDashboardWidgetTemplateService,
     DashboardWidgetTemplateService>();
 
+builder.Services.AddScoped<
+    IDashboardLayoutService,
+    DashboardLayoutService>();
 
 builder.Services.AddScoped<DashboardDesignerQueryService>();
 // ------------------------------------------------------------

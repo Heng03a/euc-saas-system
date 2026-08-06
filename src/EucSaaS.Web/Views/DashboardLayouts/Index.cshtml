@@ -1,0 +1,1330 @@
+@model EucSaaS.Web.ViewModels.DashboardLayouts.DashboardLayoutIndexViewModel
+
+@{
+    ViewData["Title"] = "Dashboard Layouts";
+
+    var layouts =
+        Model.Layouts ??
+        Array.Empty<
+            EucSaaS.Web.ViewModels.DashboardLayouts
+                .DashboardLayoutListItemViewModel>();
+
+    var currentPage =
+        Model.Page < 1
+            ? 1
+            : Model.Page;
+
+    var totalPages =
+        Math.Max(
+            1,
+            Model.TotalPages);
+
+    string GetCurrentUrl()
+    {
+        return Context.Request.Path +
+               Context.Request.QueryString;
+    }
+}
+
+<div class="container-fluid py-4">
+
+    @* =========================================================
+       Page heading
+       ========================================================= *@
+
+    <div class="d-flex flex-column flex-lg-row
+                justify-content-between
+                align-items-lg-center
+                gap-3 mb-4">
+
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="dashboard-layout-page-icon">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                </span>
+
+                <h1 class="h3 mb-0">
+                    Dashboard Layouts
+                </h1>
+            </div>
+
+            <p class="text-muted mb-0">
+                Manage system and tenant-specific dashboard layouts,
+                assignments, visibility, and default settings.
+            </p>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-controller="Dashboard"
+               asp-action="Index"
+               class="btn btn-outline-secondary">
+
+                <i class="bi bi-speedometer2 me-1"></i>
+                Dashboard
+            </a>
+
+            <a asp-action="Create"
+               class="btn btn-primary px-4">
+
+                <i class="bi bi-plus-lg me-1"></i>
+                Create Layout
+            </a>
+        </div>
+    </div>
+
+    @* =========================================================
+       Messages
+       ========================================================= *@
+
+    @if (TempData["SuccessMessage"] is string successMessage &&
+         !string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="alert alert-success
+                    alert-dismissible fade show"
+             role="alert">
+
+            <i class="bi bi-check-circle-fill me-2"></i>
+            @successMessage
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] is string errorMessage &&
+         !string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger
+                    alert-dismissible fade show"
+             role="alert">
+
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @errorMessage
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
+    @* =========================================================
+       Summary cards
+       ========================================================= *@
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex
+                                justify-content-between
+                                align-items-start">
+
+                        <div>
+                            <div class="text-muted small mb-1">
+                                Matching Layouts
+                            </div>
+
+                            <div class="h3 mb-0">
+                                @Model.TotalItems
+                            </div>
+                        </div>
+
+                        <span class="summary-icon
+                                     bg-primary-subtle
+                                     text-primary">
+                            <i class="bi bi-grid"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex
+                                justify-content-between
+                                align-items-start">
+
+                        <div>
+                            <div class="text-muted small mb-1">
+                                Active on Page
+                            </div>
+
+                            <div class="h3 mb-0">
+                                @layouts.Count(x => x.IsActive)
+                            </div>
+                        </div>
+
+                        <span class="summary-icon
+                                     bg-success-subtle
+                                     text-success">
+                            <i class="bi bi-check-circle"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex
+                                justify-content-between
+                                align-items-start">
+
+                        <div>
+                            <div class="text-muted small mb-1">
+                                Default on Page
+                            </div>
+
+                            <div class="h3 mb-0">
+                                @layouts.Count(x => x.IsDefault)
+                            </div>
+                        </div>
+
+                        <span class="summary-icon
+                                     bg-warning-subtle
+                                     text-warning-emphasis">
+                            <i class="bi bi-star-fill"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex
+                                justify-content-between
+                                align-items-start">
+
+                        <div>
+                            <div class="text-muted small mb-1">
+                                Widgets on Page
+                            </div>
+
+                            <div class="h3 mb-0">
+                                @layouts.Sum(x => x.ItemCount)
+                            </div>
+                        </div>
+
+                        <span class="summary-icon
+                                     bg-info-subtle
+                                     text-info-emphasis">
+                            <i class="bi bi-columns-gap"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    @* =========================================================
+       Search and filter panel
+       ========================================================= *@
+
+    <div class="card shadow-sm border-0 mb-4">
+
+  <div class="card-header bg-body-tertiary py-3">
+            <div class="d-flex
+                        justify-content-between
+                        align-items-center
+                        gap-3">
+
+                <div>
+                    <h2 class="h6 mb-1">
+                        <i class="bi bi-funnel me-1"></i>
+                        Search and Filters
+                    </h2>
+
+                    <div class="small text-muted">
+                        Search layouts and narrow results by ownership,
+                        status, role, or department.
+                    </div>
+                </div>
+
+                @if (Model.HasFilters)
+                {
+                    <span class="badge text-bg-primary">
+                        Filters applied
+                    </span>
+                }
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <form asp-action="Index"
+                  method="get"
+                  id="dashboardLayoutFilterForm">
+
+                <div class="row g-3">
+
+                    <div class="col-12 col-xl-4">
+                        <label asp-for="SearchTerm"
+                               class="form-label">
+                            Search
+                        </label>
+
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-search"></i>
+                            </span>
+
+                            <input asp-for="SearchTerm"
+                                   class="form-control"
+                                   placeholder="Code, name, or description"
+                                   autocomplete="off" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-2">
+                        <label asp-for="Ownership"
+                               class="form-label">
+                            Ownership
+                        </label>
+
+                        <select asp-for="Ownership"
+                                asp-items="Model.OwnershipOptions"
+                                class="form-select">
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-2">
+                        <label asp-for="Status"
+                               class="form-label">
+                            Status
+                        </label>
+
+                        <select asp-for="Status"
+                                asp-items="Model.StatusOptions"
+                                class="form-select">
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-2">
+                        <label asp-for="AppRoleId"
+                               class="form-label">
+                            Role
+                        </label>
+
+                        <select asp-for="AppRoleId"
+                                asp-items="Model.RoleOptions"
+                                class="form-select">
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-2">
+                        <label asp-for="DepartmentId"
+                               class="form-label">
+                            Department
+                        </label>
+
+                        <select asp-for="DepartmentId"
+                                asp-items="Model.DepartmentOptions"
+                                class="form-select">
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label asp-for="SortBy"
+                               class="form-label">
+                            Sort by
+                        </label>
+
+                        <select asp-for="SortBy"
+                                asp-items="Model.SortOptions"
+                                class="form-select">
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label asp-for="SortDirection"
+                               class="form-label">
+                            Direction
+                        </label>
+
+                        <select asp-for="SortDirection"
+                                asp-items="Model.SortDirectionOptions"
+                                class="form-select">
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label asp-for="PageSize"
+                               class="form-label">
+                            Page size
+                        </label>
+
+                        <select asp-for="PageSize"
+                                asp-items="Model.PageSizeOptions"
+                                class="form-select">
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3
+                                d-flex align-items-end">
+
+                        <div class="d-flex flex-wrap gap-2 w-100">
+
+                            <button type="submit"
+                                    class="btn btn-primary flex-grow-1">
+
+                                <i class="bi bi-search me-1"></i>
+                                Apply
+                            </button>
+
+                            <a asp-action="Index"
+                               class="btn btn-outline-secondary"
+                               title="Clear all filters">
+
+                                <i class="bi bi-x-lg"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+
+                <input type="hidden"
+                       name="page"
+                       value="1" />
+            </form>
+        </div>
+    </div>
+
+    @* =========================================================
+       Result list
+       ========================================================= *@
+
+    <div class="card shadow-sm border-0">
+
+<div class="card-header bg-body-tertiary py-3">
+            <div class="d-flex flex-column flex-md-row
+                        justify-content-between
+                        align-items-md-center
+                        gap-2">
+
+                <div>
+                    <h2 class="h6 mb-1">
+                        Layout Records
+                    </h2>
+
+                    <div class="small text-muted">
+                        Showing @Model.StartItem to @Model.EndItem
+                        of @Model.TotalItems layouts
+                    </div>
+                </div>
+
+                @if (Model.PageSize > 0)
+                {
+    <span class="badge dashboard-neutral-badge">
+    Page @currentPage of @totalPages
+</span>
+
+                }
+                else
+                {
+    <span class="badge dashboard-neutral-badge">
+                        Showing all
+                    </span>
+                }
+            </div>
+        </div>
+
+        @if (!layouts.Any())
+        {
+            <div class="card-body py-5">
+                <div class="text-center">
+
+                    <div class="empty-state-icon mb-3">
+                        <i class="bi bi-grid"></i>
+                    </div>
+
+                    <h2 class="h5">
+                        No dashboard layouts found
+                    </h2>
+
+                    @if (Model.HasFilters)
+                    {
+                        <p class="text-muted mb-3">
+                            No layouts match the current search
+                            and filter criteria.
+                        </p>
+
+                        <a asp-action="Index"
+                           class="btn btn-outline-secondary">
+
+                            <i class="bi bi-x-circle me-1"></i>
+                            Clear Filters
+                        </a>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-3">
+                            Create the first tenant dashboard layout
+                            to begin managing dashboard arrangements.
+                        </p>
+
+                        <a asp-action="Create"
+                           class="btn btn-primary">
+
+                            <i class="bi bi-plus-lg me-1"></i>
+                            Create Layout
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card-body p-0">
+
+                <div class="dashboard-layout-list">
+
+                    @foreach (var item in layouts)
+                    {
+                        var changedAt =
+                            item.LastChangedAt;
+
+                        var returnUrl =
+                            GetCurrentUrl();
+
+                        <article class="dashboard-layout-record">
+
+                            <div class="dashboard-layout-record-main">
+
+                                <div class="d-flex align-items-start gap-3">
+
+                                    <span class="layout-record-icon
+                                                 bg-body-tertiary
+                                                 border">
+
+                                        <i class="bi
+                                                  @(item.IsDefault
+                                                      ? "bi-star-fill"
+                                                      : "bi-grid")">
+                                        </i>
+                                    </span>
+
+                                    <div class="min-width-0 flex-grow-1">
+
+                                        <div class="d-flex
+                                                    flex-column
+                                                    flex-md-row
+                                                    justify-content-between
+                                                    align-items-md-start
+                                                    gap-3">
+
+                                            <div class="min-width-0">
+
+                                                <div class="d-flex
+                                                            flex-wrap
+                                                            align-items-center
+                                                            gap-2 mb-1">
+
+                                                    <a asp-action="Details"
+                                                       asp-route-id="@item.Id"
+                                                       class="h5 mb-0
+                                                              text-decoration-none">
+
+                                                        @item.LayoutName
+                                                    </a>
+
+                                                    @if (item.IsDefault)
+                                                    {
+                                                        <span class="badge dashboard-default-badge">
+                                                            <i class="bi bi-star-fill me-1"></i>
+                                                            Default
+                                                        </span>
+                                                    }
+                                                </div>
+
+                                                <code class="small d-inline-block mb-2">
+                                                    @item.LayoutCode
+                                                </code>
+
+                                                @if (!string.IsNullOrWhiteSpace(
+                                                        item.Description))
+                                                {
+                                                    <p class="mb-0 dashboard-layout-description">
+
+                                                        @item.Description
+                                                    </p>
+                                                }
+                                            </div>
+
+                                            <div class="dashboard-layout-actions">
+
+                                                <div class="btn-group"
+                                                     role="group"
+                                                     aria-label="Layout actions">
+
+                                                    <a asp-action="Details"
+                                                       asp-route-id="@item.Id"
+                                                       class="btn
+                                                              btn-sm
+                                                              btn-outline-secondary"
+                                                       title="View details">
+
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+
+                                                    @if (!item.IsSystem)
+                                                    {
+                                                        <a asp-action="Edit"
+                                                           asp-route-id="@item.Id"
+                                                           class="btn
+                                                                  btn-sm
+                                                                  btn-outline-primary"
+                                                           title="Edit layout">
+
+                                                            <i class="bi bi-pencil"></i>
+                                                        </a>
+                                                    }
+
+                                                    <button type="button"
+                                                            class="btn
+                                                                   btn-sm
+                                                                   btn-outline-secondary
+                                                                   dropdown-toggle
+                                                                   dropdown-toggle-split"
+                                                            data-bs-toggle="dropdown"
+                                                            aria-expanded="false">
+
+                                                        <span class="visually-hidden">
+                                                            More actions
+                                                        </span>
+                                                    </button>
+
+                                                    <ul class="dropdown-menu
+                                                               dropdown-menu-end">
+
+                                                        <li>
+                                                            <form asp-action="Clone"
+                                                                  method="post">
+
+                                                                @Html.AntiForgeryToken()
+
+                                                                <input type="hidden"
+                                                                       name="id"
+                                                                       value="@item.Id" />
+
+                                                                <button type="submit"
+                                                                        class="dropdown-item">
+
+                                                                    <i class="bi bi-copy me-2"></i>
+                                                                    Clone
+                                                                </button>
+                                                            </form>
+                                                        </li>
+
+                                                        @if (!item.IsSystem)
+                                                        {
+                                                            @if (!item.IsDefault &&
+                                                                 item.IsActive)
+                                                            {
+                                                                <li>
+                                                                    <form asp-action="SetDefault"
+                                                                          method="post">
+
+                                                                        @Html.AntiForgeryToken()
+
+                                                                        <input type="hidden"
+                                                                               name="id"
+                                                                               value="@item.Id" />
+
+                                                                        <input type="hidden"
+                                                                               name="returnUrl"
+                                                                               value="@returnUrl" />
+
+                                                                        <button type="submit"
+                                                                                class="dropdown-item">
+
+                                                                            <i class="bi bi-star me-2"></i>
+                                                                            Set as Default
+                                                                        </button>
+                                                                    </form>
+                                                                </li>
+                                                            }
+
+                                                            @if (item.IsActive)
+                                                            {
+                                                                <li>
+                                                                    <form asp-action="Deactivate"
+                                                                          method="post">
+
+                                                                        @Html.AntiForgeryToken()
+
+                                                                        <input type="hidden"
+                                                                               name="id"
+                                                                               value="@item.Id" />
+
+                                                                        <input type="hidden"
+                                                                               name="returnUrl"
+                                                                               value="@returnUrl" />
+
+                                                                        <button type="submit"
+                                                                                class="dropdown-item">
+
+                                                                            <i class="bi bi-pause-circle me-2"></i>
+                                                                            Deactivate
+                                                                        </button>
+                                                                    </form>
+                                                                </li>
+                                                            }
+                                                            else
+                                                            {
+                                                                <li>
+                                                                    <form asp-action="Activate"
+                                                                          method="post">
+
+                                                                        @Html.AntiForgeryToken()
+
+                                                                        <input type="hidden"
+                                                                               name="id"
+                                                                               value="@item.Id" />
+
+                                                                        <input type="hidden"
+                                                                               name="returnUrl"
+                                                                               value="@returnUrl" />
+
+                                                                        <button type="submit"
+                                                                                class="dropdown-item">
+
+                                                                            <i class="bi bi-play-circle me-2"></i>
+                                                                            Activate
+                                                                        </button>
+                                                                    </form>
+                                                                </li>
+                                                            }
+
+                                                            <li>
+                                                                <hr class="dropdown-divider" />
+                                                            </li>
+
+                                                            <li>
+                                                                <a asp-action="Delete"
+                                                                   asp-route-id="@item.Id"
+                                                                   class="dropdown-item text-danger">
+
+                                                                    <i class="bi bi-trash me-2"></i>
+                                                                    Delete
+                                                                </a>
+                                                            </li>
+                                                        }
+                                                        else
+                                                        {
+                                                            <li>
+                                                                <span class="dropdown-item-text
+                                                                             small
+                                                                             text-muted">
+
+                                                                    <i class="bi bi-lock me-2"></i>
+                                                                    System layout is read-only
+                                                                </span>
+                                                            </li>
+                                                        }
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="dashboard-layout-record-meta">
+
+                                            <div class="dashboard-layout-meta-block dashboard-layout-meta-panel">
+
+                                                <div class="dashboard-layout-meta-label">
+                                                    Assignment
+                                                </div>
+
+                                                <div class="small mb-1">
+                                                    <span class="text-muted">
+                                                        Role:
+                                                    </span>
+
+                                                    <span class="fw-medium">
+                                                        @(string.IsNullOrWhiteSpace(
+                                                            item.RoleName)
+                                                            ? "All roles"
+                                                            : item.RoleName)
+                                                    </span>
+                                                </div>
+
+                                                <div class="small">
+                                                    <span class="text-muted">
+                                                        Department:
+                                                    </span>
+
+                                                    <span class="fw-medium">
+                                                        @(string.IsNullOrWhiteSpace(
+                                                            item.DepartmentName)
+                                                            ? "All departments"
+                                                            : item.DepartmentName)
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div class="dashboard-layout-meta-block dashboard-layout-meta-panel">
+
+                                                <div class="dashboard-layout-meta-label">
+                                                    Properties
+                                                </div>
+
+                                                <div class="d-flex flex-wrap gap-2">
+
+                                                    @if (item.IsSystem)
+                                                    {
+                                                        <span class="badge dashboard-system-badge">
+                                                            <i class="bi bi-shield-lock me-1"></i>
+                                                            System
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge dashboard-tenant-badge">
+                                                            <i class="bi bi-building me-1"></i>
+                                                            Tenant
+                                                        </span>
+                                                    }
+
+                                                    @if (item.IsActive)
+                                                    {
+                                                        <span class="badge dashboard-active-badge">
+                                                            <i class="bi bi-check-circle me-1"></i>
+                                                            Active
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge dashboard-inactive-badge">
+                                                            <i class="bi bi-pause-circle me-1"></i>
+                                                            Inactive
+                                                        </span>
+                                                    }
+
+                                                    @if (item.IsShared)
+                                                    {
+                                                        <span class="badge dashboard-shared-badge">
+                                                            <i class="bi bi-people me-1"></i>
+                                                            Shared
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge dashboard-restricted-badge">
+                                                            <i class="bi bi-lock me-1"></i>
+                                                            Restricted
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            <div class="dashboard-layout-meta-block dashboard-layout-meta-panel">
+
+                                                <div class="dashboard-layout-meta-label">
+                                                    Widgets
+                                                </div>
+
+                                                <span class="badge dashboard-widget-count-badge">
+                                                    @item.ItemCount
+                                                </span>
+                                            </div>
+
+                                            <div class="dashboard-layout-meta-block dashboard-layout-meta-panel">
+
+                                                <div class="dashboard-layout-meta-label">
+                                                    Last Changed
+                                                </div>
+
+                                                <div class="small fw-medium">
+                                                    @(changedAt
+                                                        .ToLocalTime()
+                                                        .ToString("dd MMM yyyy"))
+                                                </div>
+
+                                                <div class="small fw-medium">
+                                                    @(changedAt
+                                                        .ToLocalTime()
+                                                        .ToString("HH:mm"))
+                                                </div>
+
+                                                <div class="small text-muted mt-1">
+                                                    by @item.LastChangedBy
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    }
+
+                </div>
+            </div>
+
+            @* =================================================
+               Paging
+               ================================================= *@
+
+            @if (Model.PageSize > 0 &&
+                 totalPages > 1)
+            {
+                <div class="card-footer bg-body py-3">
+
+                    <div class="d-flex flex-column flex-md-row
+                                justify-content-between
+                                align-items-md-center
+                                gap-3">
+
+                        <div class="small text-muted">
+                            Showing @Model.StartItem to @Model.EndItem
+                            of @Model.TotalItems layouts
+                        </div>
+
+                        <nav aria-label="Dashboard layout paging">
+                            <ul class="pagination pagination-sm mb-0">
+
+                                <li class="page-item
+                                           @(!Model.HasPreviousPage
+                                               ? "disabled"
+                                               : string.Empty)">
+
+                                    <a class="page-link"
+                                       asp-action="Index"
+                                       asp-route-searchTerm="@Model.SearchTerm"
+                                       asp-route-ownership="@Model.Ownership"
+                                       asp-route-status="@Model.Status"
+                                       asp-route-appRoleId="@Model.AppRoleId"
+                                       asp-route-departmentId="@Model.DepartmentId"
+                                       asp-route-sortBy="@Model.SortBy"
+                                       asp-route-sortDirection="@Model.SortDirection"
+                                       asp-route-page="@(currentPage - 1)"
+                                       asp-route-pageSize="@Model.PageSize">
+
+                                        <i class="bi bi-chevron-left"></i>
+                                        Previous
+                                    </a>
+                                </li>
+
+                                @{
+                                    var firstPage =
+                                        Math.Max(
+                                            1,
+                                            currentPage - 2);
+
+                                    var lastPage =
+                                        Math.Min(
+                                            totalPages,
+                                            currentPage + 2);
+                                }
+
+                                @if (firstPage > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           asp-action="Index"
+                                           asp-route-searchTerm="@Model.SearchTerm"
+                                           asp-route-ownership="@Model.Ownership"
+                                           asp-route-status="@Model.Status"
+                                           asp-route-appRoleId="@Model.AppRoleId"
+                                           asp-route-departmentId="@Model.DepartmentId"
+                                           asp-route-sortBy="@Model.SortBy"
+                                           asp-route-sortDirection="@Model.SortDirection"
+                                           asp-route-page="1"
+                                           asp-route-pageSize="@Model.PageSize">
+
+                                            1
+                                        </a>
+                                    </li>
+
+                                    @if (firstPage > 2)
+                                    {
+                                        <li class="page-item disabled">
+                                            <span class="page-link">
+                                                …
+                                            </span>
+                                        </li>
+                                    }
+                                }
+
+                                @for (var pageNumber = firstPage;
+                                      pageNumber <= lastPage;
+                                      pageNumber++)
+                                {
+                                    <li class="page-item
+                                               @(pageNumber == currentPage
+                                                   ? "active"
+                                                   : string.Empty)">
+
+                                        <a class="page-link"
+                                           asp-action="Index"
+                                           asp-route-searchTerm="@Model.SearchTerm"
+                                           asp-route-ownership="@Model.Ownership"
+                                           asp-route-status="@Model.Status"
+                                           asp-route-appRoleId="@Model.AppRoleId"
+                                           asp-route-departmentId="@Model.DepartmentId"
+                                           asp-route-sortBy="@Model.SortBy"
+                                           asp-route-sortDirection="@Model.SortDirection"
+                                           asp-route-page="@pageNumber"
+                                           asp-route-pageSize="@Model.PageSize">
+
+                                            @pageNumber
+                                        </a>
+                                    </li>
+                                }
+
+                                @if (lastPage < totalPages)
+                                {
+                                    @if (lastPage <
+                                         totalPages - 1)
+                                    {
+                                        <li class="page-item disabled">
+                                            <span class="page-link">
+                                                …
+                                            </span>
+                                        </li>
+                                    }
+
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           asp-action="Index"
+                                           asp-route-searchTerm="@Model.SearchTerm"
+                                           asp-route-ownership="@Model.Ownership"
+                                           asp-route-status="@Model.Status"
+                                           asp-route-appRoleId="@Model.AppRoleId"
+                                           asp-route-departmentId="@Model.DepartmentId"
+                                           asp-route-sortBy="@Model.SortBy"
+                                           asp-route-sortDirection="@Model.SortDirection"
+                                           asp-route-page="@totalPages"
+                                           asp-route-pageSize="@Model.PageSize">
+
+                                            @totalPages
+                                        </a>
+                                    </li>
+                                }
+
+                                <li class="page-item
+                                           @(!Model.HasNextPage
+                                               ? "disabled"
+                                               : string.Empty)">
+
+                                    <a class="page-link"
+                                       asp-action="Index"
+                                       asp-route-searchTerm="@Model.SearchTerm"
+                                       asp-route-ownership="@Model.Ownership"
+                                       asp-route-status="@Model.Status"
+                                       asp-route-appRoleId="@Model.AppRoleId"
+                                       asp-route-departmentId="@Model.DepartmentId"
+                                       asp-route-sortBy="@Model.SortBy"
+                                       asp-route-sortDirection="@Model.SortDirection"
+                                       asp-route-page="@(currentPage + 1)"
+                                       asp-route-pageSize="@Model.PageSize">
+
+                                        Next
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<style>
+    .dashboard-layout-page-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.75rem;
+        background: var(--bs-primary-bg-subtle);
+        color: var(--bs-primary);
+        font-size: 1.2rem;
+        flex: 0 0 auto;
+    }
+
+    .summary-icon {
+        width: 2.75rem;
+        height: 2.75rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.75rem;
+        font-size: 1.2rem;
+        flex: 0 0 auto;
+    }
+
+    .layout-record-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.65rem;
+        flex: 0 0 auto;
+    }
+
+    .layout-record-icon .bi-star-fill {
+        color: var(--bs-warning);
+    }
+
+    .dashboard-layout-list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dashboard-layout-record {
+        border-bottom: 1px solid var(--bs-border-color);
+        background: var(--bs-body-bg);
+        transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease,
+            background-color 0.2s ease;
+    }
+
+    .dashboard-layout-record:last-child {
+        border-bottom: 0;
+    }
+
+    .dashboard-layout-record:hover {
+        position: relative;
+        z-index: 1;
+        background: var(--bs-body-bg);
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+    }
+
+    .dashboard-layout-record:hover .dashboard-layout-meta-panel {
+        background: var(--bs-body-bg);
+    }
+
+    .dashboard-layout-record-main {
+        padding: 1.25rem;
+    }
+
+    .dashboard-layout-description {
+        max-width: 60rem;
+        color: var(--bs-secondary-color);
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .dashboard-layout-actions {
+        flex: 0 0 auto;
+    }
+
+    .dashboard-layout-record-meta {
+        display: grid;
+        grid-template-columns:
+            minmax(12rem, 1.3fr)
+            minmax(14rem, 1.4fr)
+            minmax(7rem, 0.6fr)
+            minmax(11rem, 0.9fr);
+        gap: 1rem;
+        margin-top: 1.25rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--bs-border-color);
+    }
+
+    .dashboard-layout-meta-block {
+        min-width: 0;
+    }
+
+    .dashboard-layout-meta-panel {
+        min-height: 7.25rem;
+        padding: 1rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.75rem;
+        background: var(--bs-body-bg);
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.025);
+    }
+
+    .dashboard-layout-meta-label {
+        margin-bottom: 0.5rem;
+        color: var(--bs-secondary-color);
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .dashboard-widget-count-badge {
+        min-width: 2.5rem;
+        min-height: 2.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem 0.75rem;
+        border-radius: 999px;
+        background: var(--bs-primary);
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .dashboard-default-badge {
+        background: var(--bs-warning);
+        color: #212529;
+    }
+
+    .dashboard-system-badge {
+        background: #6f42c1;
+        color: #fff;
+    }
+
+    .dashboard-tenant-badge {
+        background: #0dcaf0;
+        color: #052c65;
+    }
+
+    .dashboard-active-badge {
+        background: var(--bs-success);
+        color: #fff;
+    }
+
+    .dashboard-inactive-badge {
+        background: var(--bs-secondary);
+        color: #fff;
+    }
+
+    .dashboard-shared-badge {
+        background: var(--bs-primary);
+        color: #fff;
+    }
+
+    .dashboard-restricted-badge {
+        background: var(--bs-tertiary-bg);
+        border: 1px solid var(--bs-border-color);
+        color: var(--bs-body-color);
+    }
+
+    .empty-state-icon {
+        width: 4rem;
+        height: 4rem;
+        margin-inline: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 1rem;
+        background: var(--bs-secondary-bg);
+        color: var(--bs-secondary-color);
+        font-size: 1.75rem;
+    }
+
+.card-header.bg-body-tertiary {
+    color: var(--bs-body-color);
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.card-header.bg-body-tertiary .text-muted {
+    color: var(--bs-secondary-color) !important;
+}
+
+    .min-width-0 {
+        min-width: 0;
+    }
+
+    .dropdown-menu form {
+        margin: 0;
+    }
+
+    .dropdown-menu form .dropdown-item {
+        width: 100%;
+        text-align: left;
+    }
+
+    @@media (max-width: 1199.98px) {
+        .dashboard-layout-record-meta {
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .dashboard-layout-record-main {
+            padding: 1rem;
+        }
+
+        .dashboard-layout-record-meta {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-layout-meta-panel {
+            min-height: 0;
+            padding: 0.8rem;
+        }
+
+        .dashboard-layout-actions {
+            align-self: flex-start;
+        }
+    }
+</style>
+
+@section Scripts
+{
+    <script>
+        $(document).ready(function () {
+
+            const filterForm =
+                $("#dashboardLayoutFilterForm");
+
+            const filterSelects =
+                filterForm.find(
+                    "select[name='Ownership'], " +
+                    "select[name='Status'], " +
+                    "select[name='AppRoleId'], " +
+                    "select[name='DepartmentId'], " +
+                    "select[name='SortBy'], " +
+                    "select[name='SortDirection'], " +
+                    "select[name='PageSize']");
+
+            filterSelects.on(
+                "change",
+                function () {
+                    filterForm.trigger("submit");
+                });
+
+            $("form[action*='Deactivate']")
+                .on(
+                    "submit",
+                    function (event) {
+                        const confirmed =
+                            window.confirm(
+                                "Deactivate this dashboard layout? " +
+                                "A deactivated default layout will no longer remain default.");
+
+                        if (!confirmed) {
+                            event.preventDefault();
+                        }
+                    });
+
+            $("form[action*='Clone']")
+                .on(
+                    "submit",
+                    function (event) {
+                        const confirmed =
+                            window.confirm(
+                                "Create a tenant-owned copy of this dashboard layout?");
+
+                        if (!confirmed) {
+                            event.preventDefault();
+                        }
+                    });
+        });
+    </script>
+}
