@@ -1,0 +1,520 @@
+@model EucSaaS.Web.ViewModels.DashboardLayouts.DashboardLayoutDetailsViewModel
+
+@{
+    ViewData["Title"] = "Delete Dashboard Layout";
+}
+
+<div class="container-fluid py-3">
+
+    <!-- ============================================================
+         Header
+         ============================================================ -->
+    <div class="d-flex
+                flex-column
+                flex-md-row
+                justify-content-between
+                align-items-md-center
+                gap-3
+                mb-4">
+
+        <div>
+            <h1 class="h3 mb-1">
+
+                <i class="bi bi-trash me-2"></i>
+
+                Delete Dashboard Layout
+
+            </h1>
+
+            <p class="text-muted mb-0">
+
+                Review this dashboard layout before permanently deleting it.
+
+            </p>
+        </div>
+
+        <div>
+            <a asp-action="Details"
+               asp-route-id="@Model.Id"
+               class="btn btn-outline-secondary">
+
+                <i class="bi bi-arrow-left me-1"></i>
+
+                Back to Details
+
+            </a>
+        </div>
+
+    </div>
+
+    <!-- ============================================================
+         Warning
+         ============================================================ -->
+    <div class="alert alert-danger"
+         role="alert">
+
+        <div class="d-flex gap-3">
+
+            <div>
+                <i class="bi
+                          bi-exclamation-triangle-fill
+                          fs-3">
+                </i>
+            </div>
+
+            <div>
+
+                <div class="fw-semibold mb-1">
+
+                    Delete dashboard layout?
+
+                </div>
+
+                <div>
+
+                    This action permanently deletes the layout and its
+                    assigned dashboard layout items.
+
+                </div>
+
+                <div class="mt-2 fw-semibold">
+
+                    This action cannot be undone.
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="row g-4">
+
+        <!-- ========================================================
+             Main Information
+             ======================================================== -->
+        <div class="col-12 col-xl-8">
+
+            <!-- Layout Information -->
+            <div class="card shadow-sm">
+
+                <div class="card-header bg-body-tertiary">
+
+                    <div class="fw-semibold">
+
+                        <i class="bi bi-info-circle me-2"></i>
+
+                        Layout Information
+
+                    </div>
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="row g-4">
+
+                        <div class="col-12 col-md-6">
+
+                            <div class="text-muted small">
+
+                                Layout Code
+
+                            </div>
+
+                            <div class="fw-semibold mt-1">
+
+                                @Model.LayoutCode
+
+                            </div>
+
+                        </div>
+
+                        <div class="col-12 col-md-6">
+
+                            <div class="text-muted small">
+
+                                Layout Name
+
+                            </div>
+
+                            <div class="fw-semibold mt-1">
+
+                                @Model.LayoutName
+
+                            </div>
+
+                        </div>
+
+                        <div class="col-12">
+
+                            <div class="text-muted small">
+
+                                Description
+
+                            </div>
+
+                            <div class="mt-1">
+
+                                @if (string.IsNullOrWhiteSpace(
+                                    Model.Description))
+                                {
+                                    <span class="text-muted">
+
+                                        No description provided.
+
+                                    </span>
+                                }
+                                else
+                                {
+                                    @Model.Description
+                                }
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Access Scope -->
+            <div class="card shadow-sm mt-4">
+
+                <div class="card-header bg-body-tertiary">
+
+                    <div class="fw-semibold">
+
+                        <i class="bi bi-people me-2"></i>
+
+                        Access Scope
+
+                    </div>
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="row g-4">
+
+                        <div class="col-12 col-md-6">
+
+                            <div class="text-muted small">
+
+                                Role
+
+                            </div>
+
+                            <div class="mt-1">
+
+                                @if (string.IsNullOrWhiteSpace(
+                                    Model.RoleName))
+                                {
+                                    <span class="badge bg-secondary">
+
+                                        All Roles
+
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-primary">
+
+                                        @Model.RoleName
+
+                                    </span>
+                                }
+
+                            </div>
+
+                        </div>
+
+                        <div class="col-12 col-md-6">
+
+                            <div class="text-muted small">
+
+                                Department
+
+                            </div>
+
+                            <div class="mt-1">
+
+                                @if (string.IsNullOrWhiteSpace(
+                                    Model.DepartmentName))
+                                {
+                                    <span class="badge bg-secondary">
+
+                                        All Departments
+
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-info text-dark">
+
+                                        @Model.DepartmentName
+
+                                    </span>
+                                }
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ========================================================
+             Status Summary
+             ======================================================== -->
+        <div class="col-12 col-xl-4">
+
+            <div class="card shadow-sm">
+
+                <div class="card-header bg-body-tertiary">
+
+                    <div class="fw-semibold">
+
+                        <i class="bi bi-sliders me-2"></i>
+
+                        Layout Status
+
+                    </div>
+
+                </div>
+
+                <div class="card-body">
+
+                    <!-- Ownership -->
+                    <div class="mb-4">
+
+                        <div class="text-muted small mb-1">
+
+                            Ownership
+
+                        </div>
+
+                        @if (Model.IsSystem)
+                        {
+                            <span class="badge bg-dark">
+
+                                System Layout
+
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-primary">
+
+                                Tenant Layout
+
+                            </span>
+                        }
+
+                    </div>
+
+                    <hr />
+
+                    <!-- Active -->
+                    <div class="d-flex
+                                justify-content-between
+                                align-items-center
+                                py-2">
+
+                        <span>
+
+                            Active
+
+                        </span>
+
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success">
+
+                                Active
+
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">
+
+                                Inactive
+
+                            </span>
+                        }
+
+                    </div>
+
+                    <!-- Shared -->
+                    <div class="d-flex
+                                justify-content-between
+                                align-items-center
+                                py-2">
+
+                        <span>
+
+                            Shared
+
+                        </span>
+
+                        @if (Model.IsShared)
+                        {
+                            <span class="badge bg-info text-dark">
+
+                                Shared
+
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">
+
+                                Private
+
+                            </span>
+                        }
+
+                    </div>
+
+                    <!-- Default -->
+                    <div class="d-flex
+                                justify-content-between
+                                align-items-center
+                                py-2">
+
+                        <span>
+
+                            Default
+
+                        </span>
+
+                        @if (Model.IsDefault)
+                        {
+                            <span class="badge bg-warning text-dark">
+
+                                Default
+
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">
+
+                                No
+
+                            </span>
+                        }
+
+                    </div>
+
+                    <!-- Items -->
+                    <div class="d-flex
+                                justify-content-between
+                                align-items-center
+                                py-2">
+
+                        <span>
+
+                            Dashboard Items
+
+                        </span>
+
+                        <span class="badge bg-secondary">
+
+                            @Model.Items.Count
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ============================================================
+         Delete Confirmation
+         ============================================================ -->
+    <div class="card
+                border-danger
+                shadow-sm
+                mt-4">
+
+        <div class="card-header">
+
+            <div class="fw-semibold text-danger">
+
+                <i class="bi bi-exclamation-octagon me-2"></i>
+
+                Confirm Deletion
+
+            </div>
+
+        </div>
+
+        <div class="card-body">
+
+            <p class="mb-4">
+
+                Are you sure you want to permanently delete
+
+                <strong>
+                    @Model.LayoutName
+                </strong>
+
+                (<code>@Model.LayoutCode</code>)?
+
+            </p>
+
+            <form asp-action="Delete"
+                  asp-route-id="@Model.Id"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div class="d-flex
+                            flex-column
+                            flex-sm-row
+                            justify-content-end
+                            gap-2">
+
+                    <a asp-action="Details"
+                       asp-route-id="@Model.Id"
+                       class="btn btn-outline-secondary">
+
+                        <i class="bi bi-x-circle me-1"></i>
+
+                        Cancel
+
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-danger">
+
+                        <i class="bi bi-trash me-1"></i>
+
+                        Delete Layout
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
