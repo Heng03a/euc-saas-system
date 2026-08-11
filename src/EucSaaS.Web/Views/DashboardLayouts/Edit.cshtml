@@ -1,0 +1,729 @@
+@model EucSaaS.Web.ViewModels.DashboardLayouts.DashboardLayoutEditViewModel
+
+@{
+    ViewData["Title"] = "Edit Dashboard Layout";
+}
+
+<div class="container-fluid py-3">
+
+    <!-- ============================================================
+         Header
+         ============================================================ -->
+    <div class="d-flex
+                flex-column
+                flex-md-row
+                justify-content-between
+                align-items-md-center
+                gap-3
+                mb-4">
+
+        <div>
+
+            <h1 class="h3 mb-1">
+
+                <i class="bi bi-pencil-square me-2"></i>
+
+                Edit Dashboard Layout
+
+            </h1>
+
+            <p class="text-muted mb-0">
+
+                Update the dashboard layout configuration,
+                access scope, and layout settings.
+
+            </p>
+
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+
+            <a asp-action="Details"
+               asp-route-id="@Model.Id"
+               class="btn btn-outline-secondary">
+
+                <i class="bi bi-arrow-left me-1"></i>
+
+                Back to Details
+
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- ============================================================
+         Validation Summary
+         ============================================================ -->
+    <div asp-validation-summary="ModelOnly"
+         class="alert alert-danger"
+         role="alert">
+    </div>
+
+    <!-- ============================================================
+         Edit Form
+         ============================================================ -->
+    <form asp-action="Edit"
+          asp-route-id="@Model.Id"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        <input asp-for="Id"
+               type="hidden" />
+
+        <div class="row g-4">
+
+            <!-- ====================================================
+                 Main Column
+                 ==================================================== -->
+            <div class="col-12 col-xl-8">
+
+                <!-- =================================================
+                     Layout Information
+                     ================================================= -->
+                <div class="card shadow-sm">
+
+                    <div class="card-header bg-body-tertiary">
+
+                        <div class="fw-semibold">
+
+                            <i class="bi bi-info-circle me-2"></i>
+
+                            Layout Information
+
+                        </div>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row g-3">
+
+                            <!-- Layout Code -->
+                            <div class="col-12 col-md-6">
+
+                                <label asp-for="LayoutCode"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="LayoutCode"
+                                       class="form-control"
+                                       maxlength="100"
+                                       autocomplete="off" />
+
+                                <span asp-validation-for="LayoutCode"
+                                      class="text-danger small">
+                                </span>
+
+                                <div class="form-text">
+
+                                    Letters, numbers, and underscores only.
+
+                                </div>
+
+                            </div>
+
+                            <!-- Layout Name -->
+                            <div class="col-12 col-md-6">
+
+                                <label asp-for="LayoutName"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="LayoutName"
+                                       class="form-control"
+                                       maxlength="200"
+                                       autocomplete="off" />
+
+                                <span asp-validation-for="LayoutName"
+                                      class="text-danger small">
+                                </span>
+
+                            </div>
+
+                            <!-- Description -->
+                            <div class="col-12">
+
+                                <label asp-for="Description"
+                                       class="form-label">
+                                </label>
+
+                                <textarea asp-for="Description"
+                                          class="form-control"
+                                          rows="4"
+                                          maxlength="1000">
+                                </textarea>
+
+                                <span asp-validation-for="Description"
+                                      class="text-danger small">
+                                </span>
+
+                                <div class="form-text">
+
+                                    Maximum 1,000 characters.
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- =================================================
+                     Access Scope
+                     ================================================= -->
+                <div class="card shadow-sm mt-4">
+
+                    <div class="card-header bg-body-tertiary">
+
+                        <div class="fw-semibold">
+
+                            <i class="bi bi-people me-2"></i>
+
+                            Access Scope
+
+                        </div>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row g-3">
+
+                            <!-- Role -->
+                            <div class="col-12 col-md-6">
+
+                                <label asp-for="AppRoleId"
+                                       class="form-label">
+                                </label>
+
+                                <select asp-for="AppRoleId"
+                                        asp-items="Model.RoleOptions"
+                                        class="form-select">
+                                </select>
+
+                                <span asp-validation-for="AppRoleId"
+                                      class="text-danger small">
+                                </span>
+
+                                <div class="form-text">
+
+                                    Select All roles if this layout
+                                    is not restricted to one role.
+
+                                </div>
+
+                            </div>
+
+                            <!-- Department -->
+                            <div class="col-12 col-md-6">
+
+                                <label asp-for="DepartmentId"
+                                       class="form-label">
+                                </label>
+
+                                <select asp-for="DepartmentId"
+                                        asp-items="Model.DepartmentOptions"
+                                        class="form-select">
+                                </select>
+
+                                <span asp-validation-for="DepartmentId"
+                                      class="text-danger small">
+                                </span>
+
+                                <div class="form-text">
+
+                                    Select All departments if this
+                                    layout applies to every department.
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ====================================================
+                 Right Column
+                 ==================================================== -->
+            <div class="col-12 col-xl-4">
+
+                <!-- =================================================
+                     Layout Settings
+                     ================================================= -->
+                <div class="card shadow-sm">
+
+                    <div class="card-header bg-body-tertiary">
+
+                        <div class="fw-semibold">
+
+                            <i class="bi bi-sliders me-2"></i>
+
+                            Layout Settings
+
+                        </div>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <!-- Ownership -->
+                        <div class="mb-4">
+
+                            <div class="text-muted small mb-1">
+
+                                Ownership
+
+                            </div>
+
+                            @if (Model.IsSystem)
+                            {
+                                <span class="badge bg-dark">
+
+                                    <i class="bi
+                                              bi-shield-lock
+                                              me-1">
+                                    </i>
+
+                                    System Layout
+
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-primary">
+
+                                    <i class="bi
+                                              bi-building
+                                              me-1">
+                                    </i>
+
+                                    Tenant Layout
+
+                                </span>
+                            }
+
+                        </div>
+
+                        <hr />
+
+                        <!-- Active -->
+                        <div class="form-check
+                                    form-switch
+                                    mb-4">
+
+                            <input asp-for="IsActive"
+                                   class="form-check-input"
+                                   type="checkbox"
+                                   role="switch" />
+
+                            <label asp-for="IsActive"
+                                   class="form-check-label fw-semibold">
+                            </label>
+
+                            <div class="form-text">
+
+                                Active layouts are available for use.
+
+                            </div>
+
+                        </div>
+
+                        <hr />
+
+                        <!-- Shared -->
+                        <div class="form-check
+                                    form-switch
+                                    my-4">
+
+                            <input asp-for="IsShared"
+                                   class="form-check-input"
+                                   type="checkbox"
+                                   role="switch" />
+
+                            <label asp-for="IsShared"
+                                   class="form-check-label fw-semibold">
+                            </label>
+
+                            <div class="form-text">
+
+                                Shared layouts may be available
+                                to other eligible users.
+
+                            </div>
+
+                        </div>
+
+                        <hr />
+
+                        <!-- Default -->
+                        <div class="form-check
+                                    form-switch
+                                    mt-4">
+
+                            <input asp-for="IsDefault"
+                                   class="form-check-input"
+                                   type="checkbox"
+                                   role="switch" />
+
+                            <label asp-for="IsDefault"
+                                   class="form-check-label fw-semibold">
+                            </label>
+
+                            <div class="form-text">
+
+                                Make this the default layout
+                                for its role and department scope.
+
+                            </div>
+
+                            <span asp-validation-for="IsDefault"
+                                  class="text-danger
+                                         small
+                                         d-block
+                                         mt-1">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- =================================================
+                     Audit Information
+                     ================================================= -->
+                <div class="card shadow-sm mt-4">
+
+                    <div class="card-header bg-body-tertiary">
+
+                        <div class="fw-semibold">
+
+                            <i class="bi bi-clock-history me-2"></i>
+
+                            Audit Information
+
+                        </div>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <!-- Created -->
+                        <div class="mb-3">
+
+                            <div class="text-muted small">
+
+                                Created
+
+                            </div>
+
+                            <div class="mt-1">
+
+                                @if (Model.CreatedAt.HasValue)
+                                {
+                                    @Model.CreatedAt.Value.ToString(
+                                        "dd MMM yyyy HH:mm")
+                                }
+                                else
+                                {
+                                    <span class="text-muted">
+
+                                        —
+
+                                    </span>
+                                }
+
+                            </div>
+
+                        </div>
+
+                        <!-- Created By -->
+                        <div class="mb-3">
+
+                            <div class="text-muted small">
+
+                                Created By
+
+                            </div>
+
+                            <div class="mt-1">
+
+                                @if (string.IsNullOrWhiteSpace(
+                                    Model.CreatedBy))
+                                {
+                                    <span class="text-muted">
+
+                                        —
+
+                                    </span>
+                                }
+                                else
+                                {
+                                    @Model.CreatedBy
+                                }
+
+                            </div>
+
+                        </div>
+
+                        <!-- Last Updated -->
+                        <div class="mb-3">
+
+                            <div class="text-muted small">
+
+                                Last Updated
+
+                            </div>
+
+                            <div class="mt-1">
+
+                                @if (Model.UpdatedAt.HasValue)
+                                {
+                                    @Model.UpdatedAt.Value.ToString(
+                                        "dd MMM yyyy HH:mm")
+                                }
+                                else
+                                {
+                                    <span class="text-muted">
+
+                                        Never
+
+                                    </span>
+                                }
+
+                            </div>
+
+                        </div>
+
+                        <!-- Updated By -->
+                        <div class="mb-3">
+
+                            <div class="text-muted small">
+
+                                Updated By
+
+                            </div>
+
+                            <div class="mt-1">
+
+                                @if (string.IsNullOrWhiteSpace(
+                                    Model.UpdatedBy))
+                                {
+                                    <span class="text-muted">
+
+                                        —
+
+                                    </span>
+                                }
+                                else
+                                {
+                                    @Model.UpdatedBy
+                                }
+
+                            </div>
+
+                        </div>
+
+                        <!-- Item Count -->
+                        <div>
+
+                            <div class="text-muted small">
+
+                                Dashboard Items
+
+                            </div>
+
+                            <div class="mt-1">
+
+                                <span class="badge bg-secondary">
+
+                                    @Model.ItemCount
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- =================================================
+                     Rules
+                     ================================================= -->
+                <div class="card shadow-sm mt-4">
+
+                    <div class="card-header bg-body-tertiary">
+
+                        <div class="fw-semibold">
+
+                            <i class="bi bi-lightbulb me-2"></i>
+
+                            Notes
+
+                        </div>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <ul class="small
+                                   text-muted
+                                   mb-0
+                                   ps-3">
+
+                            <li class="mb-2">
+
+                                Layout Code must remain unique
+                                within the tenant.
+
+                            </li>
+
+                            <li class="mb-2">
+
+                                Layout Code supports only letters,
+                                numbers, and underscores.
+
+                            </li>
+
+                            <li class="mb-2">
+
+                                A default layout must remain active.
+
+                            </li>
+
+                            <li>
+
+                                Changing Role or Department changes
+                                the scope of this layout.
+
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ============================================================
+             Actions
+             ============================================================ -->
+        <div class="d-flex
+                    flex-column
+                    flex-sm-row
+                    justify-content-end
+                    gap-2
+                    mt-4">
+
+            <a asp-action="Details"
+               asp-route-id="@Model.Id"
+               class="btn btn-outline-secondary">
+
+                <i class="bi bi-x-circle me-1"></i>
+
+                Cancel
+
+            </a>
+
+            <button type="submit"
+                    class="btn btn-primary">
+
+                <i class="bi bi-check-circle me-1"></i>
+
+                Save Changes
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        (() => {
+
+            const layoutCode =
+                document.getElementById("LayoutCode");
+
+            const activeCheckbox =
+                document.getElementById("IsActive");
+
+            const defaultCheckbox =
+                document.getElementById("IsDefault");
+
+            // ========================================================
+            // Normalize Layout Code
+            // ========================================================
+            if (layoutCode) {
+
+                layoutCode.addEventListener(
+                    "input",
+                    function () {
+
+                        this.value =
+                            this.value
+                                .toUpperCase()
+                                .replace(/\s+/g, "_");
+
+                    });
+
+            }
+
+            // ========================================================
+            // Default requires Active
+            // ========================================================
+            if (activeCheckbox &&
+                defaultCheckbox) {
+
+                defaultCheckbox.addEventListener(
+                    "change",
+                    function () {
+
+                        if (this.checked) {
+
+                            activeCheckbox.checked =
+                                true;
+
+                        }
+
+                    });
+
+                activeCheckbox.addEventListener(
+                    "change",
+                    function () {
+
+                        if (!this.checked &&
+                            defaultCheckbox.checked) {
+
+                            defaultCheckbox.checked =
+                                false;
+
+                        }
+
+                    });
+
+            }
+
+        })();
+    </script>
+}
