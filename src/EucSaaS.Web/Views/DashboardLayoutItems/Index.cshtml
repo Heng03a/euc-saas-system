@@ -1,0 +1,1156 @@
+@model EucSaaS.Web.ViewModels.DashboardLayoutItems.DashboardLayoutItemIndexViewModel
+
+@{
+    ViewData["Title"] = "Dashboard Layout Items";
+
+    var items =
+        Model.Items
+            .OrderBy(x => x.DisplayOrder)
+            .ThenBy(x => x.GridRow)
+            .ThenBy(x => x.GridColumn)
+            .ToList();
+
+    var returnUrl =
+        $"{Context.Request.Path}{Context.Request.QueryString}";
+}
+
+<div class="container-fluid py-4 dashboard-layout-items-page">
+
+    @* =========================================================
+       Page header
+       ========================================================= *@
+
+    <div class="d-flex
+                flex-column
+                flex-lg-row
+                justify-content-between
+                align-items-lg-start
+                gap-3
+                mb-4">
+
+        <div class="min-width-0">
+
+            <div class="d-flex
+                        flex-wrap
+                        align-items-center
+                        gap-2
+                        mb-2">
+
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-columns-gap me-2"></i>
+                    Dashboard Layout Items
+                </h1>
+
+                @if (Model.IsSystem)
+                {
+                    <span class="badge text-bg-secondary">
+
+                        <i class="bi bi-shield-lock me-1"></i>
+                        System
+
+                    </span>
+                }
+                else
+                {
+                    <span class="badge text-bg-primary">
+
+                        <i class="bi bi-building me-1"></i>
+                        Tenant
+
+                    </span>
+                }
+
+                @if (Model.IsDefault)
+                {
+                    <span class="badge text-bg-warning">
+
+                        <i class="bi bi-star-fill me-1"></i>
+                        Default
+
+                    </span>
+                }
+
+                @if (Model.IsActive)
+                {
+                    <span class="badge text-bg-success">
+
+                        <i class="bi bi-check-circle me-1"></i>
+                        Active
+
+                    </span>
+                }
+                else
+                {
+                    <span class="badge text-bg-secondary">
+
+                        <i class="bi bi-pause-circle me-1"></i>
+                        Inactive
+
+                    </span>
+                }
+
+            </div>
+
+            <div class="text-muted">
+                Manage the widgets, grid positions, sizes,
+                visibility and display order for this dashboard
+                layout.
+            </div>
+
+        </div>
+
+        <div class="d-flex
+                    flex-wrap
+                    gap-2">
+
+            <a asp-controller="DashboardLayouts"
+               asp-action="Details"
+               asp-route-id="@Model.DashboardLayoutId"
+               class="btn btn-outline-secondary">
+
+                <i class="bi bi-arrow-left me-1"></i>
+                Layout Details
+            </a>
+
+            @if (Model.CanManage)
+            {
+                <a asp-action="Create"
+                   asp-route-dashboardLayoutId="@Model.DashboardLayoutId"
+                   class="btn btn-primary">
+
+                    <i class="bi bi-plus-lg me-1"></i>
+                    Add Widget
+                </a>
+            }
+
+        </div>
+    </div>
+
+    @* =========================================================
+       System layout notice
+       ========================================================= *@
+
+    @if (!Model.CanManage)
+    {
+        <div class="alert
+                    alert-secondary
+                    d-flex
+                    align-items-start
+                    gap-3
+                    shadow-sm"
+             role="alert">
+
+            <i class="bi bi-shield-lock fs-4"></i>
+
+            <div>
+
+                <div class="fw-semibold">
+                    Read-only system layout
+                </div>
+
+                <div class="small">
+                    System dashboard layouts may be viewed,
+                    but their items cannot be added, edited,
+                    reordered, hidden or deleted by a tenant.
+                </div>
+
+            </div>
+        </div>
+    }
+
+    @* =========================================================
+       Layout information
+       ========================================================= *@
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header
+                    bg-body-tertiary
+                    py-3">
+
+            <div class="d-flex
+                        flex-column
+                        flex-md-row
+                        justify-content-between
+                        align-items-md-center
+                        gap-2">
+
+                <div>
+
+                    <h2 class="h6 mb-1">
+                        <i class="bi bi-grid me-1"></i>
+                        Layout
+                    </h2>
+
+                    <div class="small text-muted">
+                        Dashboard layout identity and assignment.
+                    </div>
+
+                </div>
+
+                <code class="layout-code text-body">
+                    @Model.LayoutCode
+                </code>
+
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row g-4">
+
+                <div class="col-12 col-xl-5">
+
+                    <div class="layout-info-panel h-100">
+
+                        <div class="layout-info-label">
+                            Layout
+                        </div>
+
+                        <div class="h5 mb-1">
+                            @Model.LayoutName
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(
+                            Model.Description))
+                        {
+                            <div class="text-muted small">
+                                @Model.Description
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-muted small fst-italic">
+                                No description.
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+
+                <div class="col-12 col-md-6 col-xl-3">
+
+                    <div class="layout-info-panel h-100">
+
+                        <div class="layout-info-label">
+                            Access Scope
+                        </div>
+
+                        <div class="mb-2">
+
+                            <span class="text-muted small">
+                                Role
+                            </span>
+
+                            <div class="fw-semibold">
+                                @Model.RoleLabel
+                            </div>
+
+                        </div>
+
+                        <div>
+
+                            <span class="text-muted small">
+                                Department
+                            </span>
+
+                            <div class="fw-semibold">
+                                @Model.DepartmentLabel
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-12 col-md-6 col-xl-4">
+
+                    <div class="layout-info-panel h-100">
+
+                        <div class="layout-info-label">
+                            Properties
+                        </div>
+
+                        <div class="d-flex
+                                    flex-wrap
+                                    gap-2">
+
+                            @if (Model.IsSystem)
+                            {
+                                <span class="badge text-bg-secondary">
+                                    System
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-primary">
+                                    Tenant
+                                </span>
+                            }
+
+                            @if (Model.IsDefault)
+                            {
+                                <span class="badge text-bg-warning">
+                                    Default
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-light border text-dark">
+                                    Standard
+                                </span>
+                            }
+
+                            @if (Model.IsShared)
+                            {
+                                <span class="badge text-bg-info">
+                                    Shared
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-light border text-dark">
+                                    Restricted
+                                </span>
+                            }
+
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge text-bg-success">
+                                    Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">
+                                    Inactive
+                                </span>
+                            }
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    @* =========================================================
+       Summary cards
+       ========================================================= *@
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-12 col-sm-6 col-xl-4">
+
+            <div class="card shadow-sm border-0 h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex
+                                justify-content-between
+                                align-items-start">
+
+                        <div>
+
+                            <div class="text-muted small mb-1">
+                                Total Widgets
+                            </div>
+
+                            <div class="h3 mb-0">
+                                @Model.ItemCount
+                            </div>
+
+                        </div>
+
+                        <span class="summary-icon
+                                     bg-primary-subtle
+                                     text-primary">
+
+                            <i class="bi bi-columns-gap"></i>
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-4">
+
+            <div class="card shadow-sm border-0 h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex
+                                justify-content-between
+                                align-items-start">
+
+                        <div>
+
+                            <div class="text-muted small mb-1">
+                                Visible
+                            </div>
+
+                            <div class="h3 mb-0">
+                                @Model.VisibleItemCount
+                            </div>
+
+                        </div>
+
+                        <span class="summary-icon
+                                     bg-success-subtle
+                                     text-success">
+
+                            <i class="bi bi-eye"></i>
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-4">
+
+            <div class="card shadow-sm border-0 h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex
+                                justify-content-between
+                                align-items-start">
+
+                        <div>
+
+                            <div class="text-muted small mb-1">
+                                Hidden
+                            </div>
+
+                            <div class="h3 mb-0">
+                                @Model.HiddenItemCount
+                            </div>
+
+                        </div>
+
+                        <span class="summary-icon
+                                     bg-secondary-subtle
+                                     text-secondary">
+
+                            <i class="bi bi-eye-slash"></i>
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    @* =========================================================
+       Dashboard items
+       ========================================================= *@
+
+    <div class="card shadow-sm border-0">
+
+        <div class="card-header
+                    bg-body-tertiary
+                    py-3">
+
+            <div class="d-flex
+                        flex-column
+                        flex-md-row
+                        justify-content-between
+                        align-items-md-center
+                        gap-2">
+
+                <div>
+
+                    <h2 class="h6 mb-1">
+                        Dashboard Items
+                    </h2>
+
+                    <div class="small text-muted">
+
+                        @if (Model.ItemCount == 1)
+                        {
+                            <span>
+                                1 widget assigned to this layout.
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                @Model.ItemCount widgets assigned
+                                to this layout.
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+                @if (Model.CanManage &&
+                     Model.HasItems)
+                {
+                    <a asp-action="Create"
+                       asp-route-dashboardLayoutId="@Model.DashboardLayoutId"
+                       class="btn btn-sm btn-outline-primary">
+
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Add Widget
+                    </a>
+                }
+
+            </div>
+
+        </div>
+
+        @if (!Model.HasItems)
+        {
+            <div class="card-body py-5">
+
+                <div class="text-center">
+
+                    <div class="empty-state-icon mb-3">
+                        <i class="bi bi-columns-gap"></i>
+                    </div>
+
+                    <h2 class="h5">
+                        No dashboard items assigned
+                    </h2>
+
+                    @if (Model.CanManage)
+                    {
+                        <p class="text-muted mb-4">
+                            Add a dashboard widget to begin
+                            designing this layout.
+                        </p>
+
+                        <a asp-action="Create"
+                           asp-route-dashboardLayoutId="@Model.DashboardLayoutId"
+                           class="btn btn-primary">
+
+                            <i class="bi bi-plus-lg me-1"></i>
+                            Add First Widget
+                        </a>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">
+                            No dashboard items have been assigned
+                            to this system layout.
+                        </p>
+                    }
+
+                </div>
+
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="table
+                              table-hover
+                              align-middle
+                              mb-0
+                              dashboard-layout-item-table">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th scope="col"
+                                class="text-center order-column">
+                                Order
+                            </th>
+
+                            <th scope="col">
+                                Widget
+                            </th>
+
+                            <th scope="col">
+                                Type
+                            </th>
+
+                            <th scope="col">
+                                Position
+                            </th>
+
+                            <th scope="col">
+                                Size
+                            </th>
+
+                            <th scope="col"
+                                class="text-center">
+                                Visibility
+                            </th>
+
+                            <th scope="col"
+                                class="text-center">
+                                Settings
+                            </th>
+
+                            <th scope="col"
+                                class="text-end actions-column">
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @for (var index = 0;
+                              index < items.Count;
+                              index++)
+                        {
+                            var item =
+                                items[index];
+
+                            var isFirst =
+                                index == 0;
+
+                            var isLast =
+                                index ==
+                                items.Count - 1;
+
+                            <tr class="@(
+                                item.IsVisible
+                                    ? string.Empty
+                                    : "dashboard-item-hidden")">
+
+                                <td class="text-center">
+
+                                    <span class="display-order-badge">
+                                        @item.DisplayOrder
+                                    </span>
+
+                                </td>
+
+                                <td>
+
+                                    <div class="d-flex
+                                                align-items-start
+                                                gap-3">
+
+                                        <span class="widget-icon
+                                                     bg-body-tertiary
+                                                     border">
+
+                                            <i class="bi bi-grid"></i>
+
+                                        </span>
+
+                                        <div class="min-width-0">
+
+                                            <div class="fw-semibold">
+                                                @item.WidgetName
+                                            </div>
+
+                                            <code class="small
+                                                         widget-code
+                                                         text-body">
+
+                                                @item.WidgetCode
+
+                                            </code>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+<td>
+    <span class="fw-semibold text-dark">
+        @item.WidgetType
+    </span>
+</td>
+
+                                <td>
+
+                                    <div class="small">
+
+                                        <div>
+
+                                            <span class="text-muted">
+                                                Row:
+                                            </span>
+
+                                            <span class="fw-semibold">
+                                                @item.GridRow
+                                            </span>
+
+                                        </div>
+
+                                        <div>
+
+                                            <span class="text-muted">
+                                                Column:
+                                            </span>
+
+                                            <span class="fw-semibold">
+                                                @item.GridColumn
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+
+                                    <span class="grid-size-badge">
+                                        @item.GridWidth × @item.GridHeight
+                                    </span>
+
+                                    <div class="small text-muted mt-1">
+                                        Width × Height
+                                    </div>
+
+                                </td>
+
+                                @* ---------------------------------
+                                   Visibility - fixed
+                                   --------------------------------- *@
+
+  <td class="text-center">
+
+    @if (item.IsVisible)
+    {
+        <span class="badge dashboard-visible-badge">
+
+            <i class="bi bi-eye me-1"></i>
+            Visible
+
+        </span>
+    }
+    else
+    {
+        <span class="badge dashboard-hidden-badge">
+
+            <i class="bi bi-eye-slash me-1"></i>
+            Hidden
+
+        </span>
+    }
+
+</td>
+
+
+                                <td class="text-center">
+
+                                    @if (item.HasSettings)
+                                    {
+                                        <span class="badge text-bg-info">
+
+                                            <i class="bi bi-braces me-1"></i>
+                                            Yes
+
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">
+                                            —
+                                        </span>
+                                    }
+
+                                </td>
+
+                                <td class="text-end">
+
+                                    @if (Model.CanManage)
+                                    {
+                                        <div class="d-flex
+                                                    flex-wrap
+                                                    justify-content-end
+                                                    gap-1">
+
+                                            <form asp-action="MoveUp"
+                                                  asp-route-dashboardLayoutId="@Model.DashboardLayoutId"
+                                                  asp-route-id="@item.Id"
+                                                  method="post"
+                                                  class="d-inline">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <input type="hidden"
+                                                       name="returnUrl"
+                                                       value="@returnUrl" />
+
+                                                <button type="submit"
+                                                        class="btn
+                                                               btn-sm
+                                                               btn-outline-secondary"
+                                                        title="Move up"
+                                                        disabled="@isFirst">
+
+                                                    <i class="bi bi-arrow-up"></i>
+
+                                                    <span class="visually-hidden">
+                                                        Move up
+                                                    </span>
+
+                                                </button>
+
+                                            </form>
+
+                                            <form asp-action="MoveDown"
+                                                  asp-route-dashboardLayoutId="@Model.DashboardLayoutId"
+                                                  asp-route-id="@item.Id"
+                                                  method="post"
+                                                  class="d-inline">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <input type="hidden"
+                                                       name="returnUrl"
+                                                       value="@returnUrl" />
+
+                                                <button type="submit"
+                                                        class="btn
+                                                               btn-sm
+                                                               btn-outline-secondary"
+                                                        title="Move down"
+                                                        disabled="@isLast">
+
+                                                    <i class="bi bi-arrow-down"></i>
+
+                                                    <span class="visually-hidden">
+                                                        Move down
+                                                    </span>
+
+                                                </button>
+
+                                            </form>
+
+                                            @if (item.IsVisible)
+                                            {
+                                                <form asp-action="Hide"
+                                                      asp-route-dashboardLayoutId="@Model.DashboardLayoutId"
+                                                      asp-route-id="@item.Id"
+                                                      method="post"
+                                                      class="d-inline">
+
+                                                    @Html.AntiForgeryToken()
+
+                                                    <input type="hidden"
+                                                           name="returnUrl"
+                                                           value="@returnUrl" />
+
+                                                    <button type="submit"
+                                                            class="btn
+                                                                   btn-sm
+                                                                   btn-outline-warning"
+                                                            title="Hide widget">
+
+                                                        <i class="bi bi-eye-slash"></i>
+
+                                                        <span class="d-none
+                                                                     d-xxl-inline
+                                                                     ms-1">
+                                                            Hide
+                                                        </span>
+
+                                                    </button>
+
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <form asp-action="Show"
+                                                      asp-route-dashboardLayoutId="@Model.DashboardLayoutId"
+                                                      asp-route-id="@item.Id"
+                                                      method="post"
+                                                      class="d-inline">
+
+                                                    @Html.AntiForgeryToken()
+
+                                                    <input type="hidden"
+                                                           name="returnUrl"
+                                                           value="@returnUrl" />
+
+                                                    <button type="submit"
+                                                            class="btn
+                                                                   btn-sm
+                                                                   btn-outline-success"
+                                                            title="Show widget">
+
+                                                        <i class="bi bi-eye"></i>
+
+                                                        <span class="d-none
+                                                                     d-xxl-inline
+                                                                     ms-1">
+                                                            Show
+                                                        </span>
+
+                                                    </button>
+
+                                                </form>
+                                            }
+
+                                            <a asp-action="Edit"
+                                               asp-route-dashboardLayoutId="@Model.DashboardLayoutId"
+                                               asp-route-id="@item.Id"
+                                               class="btn
+                                                      btn-sm
+                                                      btn-outline-primary"
+                                               title="Edit widget layout item">
+
+                                                <i class="bi bi-pencil"></i>
+
+                                                <span class="d-none
+                                                             d-xxl-inline
+                                                             ms-1">
+                                                    Edit
+                                                </span>
+
+                                            </a>
+
+                                            <a asp-action="Delete"
+                                               asp-route-dashboardLayoutId="@Model.DashboardLayoutId"
+                                               asp-route-id="@item.Id"
+                                               class="btn
+                                                      btn-sm
+                                                      btn-outline-danger"
+                                               title="Remove widget">
+
+                                                <i class="bi bi-trash"></i>
+
+                                                <span class="d-none
+                                                             d-xxl-inline
+                                                             ms-1">
+                                                    Delete
+                                                </span>
+
+                                            </a>
+
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge text-bg-secondary">
+
+                                            <i class="bi bi-lock me-1"></i>
+                                            Read-only
+
+                                        </span>
+                                    }
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+    @* =========================================================
+       Bottom navigation
+       ========================================================= *@
+
+    <div class="d-flex
+                flex-column
+                flex-sm-row
+                justify-content-between
+                align-items-sm-center
+                gap-2
+                mt-4">
+
+        <a asp-controller="DashboardLayouts"
+           asp-action="Details"
+           asp-route-id="@Model.DashboardLayoutId"
+           class="btn btn-outline-secondary">
+
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to Layout Details
+        </a>
+
+        @if (Model.CanManage)
+        {
+            <a asp-action="Create"
+               asp-route-dashboardLayoutId="@Model.DashboardLayoutId"
+               class="btn btn-primary">
+
+                <i class="bi bi-plus-lg me-1"></i>
+                Add Widget
+            </a>
+        }
+
+    </div>
+
+</div>
+
+<style>
+    .dashboard-layout-items-page {
+        max-width: 1800px;
+    }
+
+    .min-width-0 {
+        min-width: 0;
+    }
+
+    .layout-code,
+    .widget-code {
+        overflow-wrap: anywhere;
+    }
+
+    .layout-info-panel {
+        padding: 1rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: var(--bs-border-radius);
+        background-color: var(--bs-tertiary-bg);
+    }
+
+    .layout-info-label {
+        margin-bottom: .65rem;
+        color: var(--bs-secondary-color);
+        font-size: .75rem;
+        font-weight: 600;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    .summary-icon {
+        width: 2.75rem;
+        height: 2.75rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border-radius: .75rem;
+        font-size: 1.15rem;
+    }
+
+    .empty-state-icon {
+        width: 4rem;
+        height: 4rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 1rem;
+        background-color: var(--bs-tertiary-bg);
+        color: var(--bs-secondary-color);
+        font-size: 1.75rem;
+    }
+
+    .widget-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border-radius: .65rem;
+        font-size: 1rem;
+    }
+
+    .display-order-badge {
+        min-width: 2.25rem;
+        height: 2.25rem;
+        padding: 0 .6rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 999px;
+        background-color: var(--bs-tertiary-bg);
+        font-weight: 600;
+    }
+
+    .grid-size-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: .3rem .55rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: .45rem;
+        background-color: var(--bs-tertiary-bg);
+        font-family: var(--bs-font-monospace);
+        font-size: .85rem;
+        font-weight: 600;
+    }
+
+    .dashboard-layout-item-table th {
+        white-space: nowrap;
+        font-size: .8rem;
+        font-weight: 600;
+        color: var(--bs-secondary-color);
+    }
+
+    .dashboard-layout-item-table td {
+        vertical-align: middle;
+    }
+
+    .dashboard-layout-item-table .order-column {
+        width: 5rem;
+    }
+
+    .dashboard-layout-item-table .actions-column {
+        min-width: 20rem;
+    }
+
+    .dashboard-item-hidden {
+        opacity: .72;
+    }
+
+    .dashboard-item-hidden td {
+        background-color:
+            rgba(var(--bs-secondary-bg-rgb), .35);
+    }
+
+    @@media (max-width: 1199.98px) {
+        .dashboard-layout-item-table .actions-column {
+            min-width: 13rem;
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .dashboard-layout-items-page {
+            padding-left: .5rem;
+            padding-right: .5rem;
+        }
+
+        .layout-info-panel {
+            padding: .85rem;
+        }
+    }
+
+.dashboard-visible-badge {
+    background-color: #198754;
+    color: #ffffff;
+    border: 1px solid #198754;
+}
+
+.dashboard-hidden-badge {
+    background-color: #6c757d;
+    color: #ffffff;
+    border: 1px solid #6c757d;
+}
+</style>

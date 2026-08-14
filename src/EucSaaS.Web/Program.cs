@@ -15,6 +15,7 @@ using Microsoft.OpenApi;
 using System.Text;
 using EucSaaS.Web.Services.DashboardWidgetTemplates;
 using EucSaaS.Web.Services.DashboardLayouts;
+using EucSaaS.Web.Services.DashboardLayoutItems;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +33,10 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     IDashboardLayoutService,
     DashboardLayoutService>();
+
+builder.Services.AddScoped<
+    IDashboardLayoutItemService,
+    DashboardLayoutItemService>();
 
 builder.Services.AddScoped<DashboardDesignerQueryService>();
 // ------------------------------------------------------------

@@ -1,0 +1,412 @@
+@model EucSaaS.Web.ViewModels.DashboardLayoutItems.DashboardLayoutItemEditViewModel
+
+@{
+    ViewData["Title"] = "Edit Dashboard Widget";
+}
+
+<div class="container-fluid py-4 dashboard-layout-item-edit-page">
+
+    <div class="d-flex
+                flex-column
+                flex-lg-row
+                justify-content-between
+                align-items-lg-start
+                gap-3
+                mb-4">
+
+        <div>
+            <h1 class="h3 mb-2">
+                <i class="bi bi-pencil-square me-2"></i>
+                Edit Dashboard Widget
+            </h1>
+
+            <div class="text-muted">
+                Update the grid placement, ordering,
+                visibility and settings for
+                <span class="fw-semibold">
+                    @Model.WidgetName
+                </span>.
+            </div>
+        </div>
+
+        <a asp-action="Index"
+           asp-route-dashboardLayoutId="@Model.DashboardLayoutId"
+           class="btn btn-outline-secondary">
+
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to Items
+        </a>
+
+    </div>
+
+    @* =========================================================
+       Layout / widget information
+       ========================================================= *@
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header
+                    bg-body-tertiary
+                    py-3">
+
+            <h2 class="h6 mb-1">
+                <i class="bi bi-columns-gap me-1"></i>
+                Widget Assignment
+            </h2>
+
+            <div class="small text-muted">
+                The widget assignment cannot be changed during edit.
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row g-4">
+
+                <div class="col-12 col-md-6">
+
+                    <div class="text-muted small mb-1">
+                        Dashboard Layout
+                    </div>
+
+                    <div class="fw-semibold">
+                        @Model.LayoutName
+                    </div>
+
+                    <code class="text-body small">
+                        @Model.LayoutCode
+                    </code>
+
+                </div>
+
+                <div class="col-12 col-md-6">
+
+                    <div class="text-muted small mb-1">
+                        Dashboard Widget
+                    </div>
+
+                    <div class="fw-semibold">
+                        @Model.WidgetName
+                    </div>
+
+                    <div class="d-flex
+                                flex-wrap
+                                gap-2
+                                mt-1">
+
+                        <code class="text-body small">
+                            @Model.WidgetCode
+                        </code>
+
+ <span class="badge dashboard-widget-type">
+
+    @Model.WidgetType
+
+</span>
+
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    @* =========================================================
+       Edit form
+       ========================================================= *@
+
+    <form asp-action="Edit"
+          asp-route-dashboardLayoutId="@Model.DashboardLayoutId"
+          asp-route-id="@Model.Id"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        <input asp-for="Id"
+               type="hidden" />
+
+        <input asp-for="DashboardLayoutId"
+               type="hidden" />
+
+        <input asp-for="DashboardWidgetDefinitionId"
+               type="hidden" />
+
+        <div asp-validation-summary="ModelOnly"
+             class="alert alert-danger"
+             role="alert">
+        </div>
+
+        @* =====================================================
+           Grid placement
+           ===================================================== *@
+
+        <div class="card shadow-sm border-0 mb-4">
+
+            <div class="card-header
+                        bg-body-tertiary
+                        py-3">
+
+                <h2 class="h6 mb-1">
+                    <i class="bi bi-grid-3x3-gap me-1"></i>
+                    Grid Placement
+                </h2>
+
+                <div class="small text-muted">
+                    Update the widget position and size
+                    within the dashboard grid.
+                </div>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="row g-3">
+
+                    <div class="col-12 col-sm-6 col-lg-3">
+
+                        <label asp-for="GridRow"
+                               class="form-label">
+                        </label>
+
+                        <input asp-for="GridRow"
+                               class="form-control"
+                               type="number"
+                               min="1" />
+
+                        <span asp-validation-for="GridRow"
+                              class="text-danger small">
+                        </span>
+
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-lg-3">
+
+                        <label asp-for="GridColumn"
+                               class="form-label">
+                        </label>
+
+                        <input asp-for="GridColumn"
+                               class="form-control"
+                               type="number"
+                               min="1" />
+
+                        <span asp-validation-for="GridColumn"
+                              class="text-danger small">
+                        </span>
+
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-lg-3">
+
+                        <label asp-for="GridWidth"
+                               class="form-label">
+                        </label>
+
+                        <input asp-for="GridWidth"
+                               class="form-control"
+                               type="number"
+                               min="1" />
+
+                        <span asp-validation-for="GridWidth"
+                              class="text-danger small">
+                        </span>
+
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-lg-3">
+
+                        <label asp-for="GridHeight"
+                               class="form-label">
+                        </label>
+
+                        <input asp-for="GridHeight"
+                               class="form-control"
+                               type="number"
+                               min="1" />
+
+                        <span asp-validation-for="GridHeight"
+                              class="text-danger small">
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <div class="form-text mt-3">
+                    Example: Row 1, Column 1,
+                    Width 4, Height 2.
+                </div>
+
+            </div>
+        </div>
+
+        @* =====================================================
+           Display settings
+           ===================================================== *@
+
+        <div class="card shadow-sm border-0 mb-4">
+
+            <div class="card-header
+                        bg-body-tertiary
+                        py-3">
+
+                <h2 class="h6 mb-1">
+                    <i class="bi bi-sliders me-1"></i>
+                    Display Settings
+                </h2>
+
+                <div class="small text-muted">
+                    Control the widget display order
+                    and visibility.
+                </div>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="row g-4">
+
+                    <div class="col-12 col-md-6">
+
+                        <label asp-for="DisplayOrder"
+                               class="form-label">
+                        </label>
+
+                        <input asp-for="DisplayOrder"
+                               class="form-control"
+                               type="number"
+                               min="0" />
+
+                        <span asp-validation-for="DisplayOrder"
+                              class="text-danger small">
+                        </span>
+
+                        <div class="form-text">
+                            After saving, display order will be
+                            normalized automatically.
+                        </div>
+
+                    </div>
+
+                    <div class="col-12 col-md-6">
+
+                        <div class="form-check
+                                    form-switch
+                                    mt-md-4
+                                    pt-md-2">
+
+                            <input asp-for="IsVisible"
+                                   class="form-check-input"
+                                   role="switch" />
+
+                            <label asp-for="IsVisible"
+                                   class="form-check-label">
+                            </label>
+
+                        </div>
+
+                        <div class="form-text">
+                            Hidden widgets remain assigned
+                            but are not displayed.
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        @* =====================================================
+           Settings JSON
+           ===================================================== *@
+
+        <div class="card shadow-sm border-0 mb-4">
+
+            <div class="card-header
+                        bg-body-tertiary
+                        py-3">
+
+                <h2 class="h6 mb-1">
+                    <i class="bi bi-braces me-1"></i>
+                    Advanced Settings
+                </h2>
+
+                <div class="small text-muted">
+                    Optional layout-specific widget configuration.
+                </div>
+
+            </div>
+
+            <div class="card-body">
+
+                <label asp-for="SettingsJson"
+                       class="form-label">
+                </label>
+
+                <textarea asp-for="SettingsJson"
+                          class="form-control font-monospace"
+                          rows="7"
+                          spellcheck="false">
+                </textarea>
+
+                <span asp-validation-for="SettingsJson"
+                      class="text-danger small">
+                </span>
+
+                <div class="form-text">
+                    Leave blank unless this layout requires
+                    widget-specific configuration.
+                    If entered, the value must be valid JSON.
+                </div>
+
+            </div>
+        </div>
+
+        @* =====================================================
+           Actions
+           ===================================================== *@
+
+        <div class="d-flex
+                    flex-column
+                    flex-sm-row
+                    justify-content-between
+                    gap-2">
+
+            <a asp-action="Index"
+               asp-route-dashboardLayoutId="@Model.DashboardLayoutId"
+               class="btn btn-outline-secondary">
+
+                <i class="bi bi-x-circle me-1"></i>
+                Cancel
+            </a>
+
+            <button type="submit"
+                    class="btn btn-primary">
+
+                <i class="bi bi-check-lg me-1"></i>
+                Save Changes
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+<style>
+    .dashboard-layout-item-edit-page {
+        max-width: 1200px;
+    }
+
+    .font-monospace {
+        font-family: var(--bs-font-monospace);
+    }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
